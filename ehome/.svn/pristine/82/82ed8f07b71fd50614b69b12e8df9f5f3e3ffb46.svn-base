@@ -1,0 +1,9 @@
+
+package com.ehome.cloud.demo.mapper;
+
+import com.ehome.cloud.demo.model.Country;
+import com.ehome.core.frame.MyMapper;
+
+public interface CountryMapper extends MyMapper<Country> {
+
+}

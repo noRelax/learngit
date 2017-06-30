@@ -1,0 +1,158 @@
+package com.ehome.cloud.marry.service.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.activiti.editor.language.json.converter.util.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
+
+import tk.mybatis.mapper.entity.Condition;
+import tk.mybatis.mapper.entity.Example.Criteria;
+
+import com.ehome.cloud.marry.dto.MarryPhotoDto;
+import com.ehome.cloud.marry.dto.MarryPhotoLogDto;
+import com.ehome.cloud.marry.mapper.MarryPhotoMapper;
+import com.ehome.cloud.marry.model.MarryPhoto;
+import com.ehome.cloud.marry.model.MarryPhotoLog;
+import com.ehome.cloud.marry.service.IMarryPhotoLogService;
+import com.ehome.cloud.marry.service.IMarryPhotoService;
+import com.ehome.core.frame.BaseService;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.util.DateUtils;
+import com.ehome.core.util.EntityUtils;
+import com.ehome.core.util.NumberUtils;
+import com.github.pagehelper.PageHelper;
+
+/**
+ * 
+ * @Title:MarryPhotoServiceImpl
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年4月17日 上午11:20:22
+ * @version:
+ */
+@Service("marryPhotoService")
+public class MarryPhotoServiceImpl extends BaseService<MarryPhoto> implements
+		IMarryPhotoService {
+
+	@Resource
+	private MarryPhotoMapper marryPhotoMapper;
+
+	@Resource
+	private IMarryPhotoLogService marryPhotoLogService;
+
+	@Override
+	public List<MarryPhotoDto> queryForList(MarryPhotoDto marryPhotoDto,
+			Integer start, Integer pageSize) throws BusinessException {
+		PageHelper.startPage(start, pageSize, true);
+		return marryPhotoMapper.queryForList(marryPhotoDto.getSearchType(),
+				marryPhotoDto.getKeyword(), marryPhotoDto.getSelectRequire(),
+				marryPhotoDto.getIsRecommended(),
+				marryPhotoDto.getIsShielding(),
+				marryPhotoDto.getStartPublictTime(),
+				marryPhotoDto.getEndPublicTime(), marryPhotoDto.getFieldName(),
+				marryPhotoDto.getFieldSort());
+	}
+
+	@Override
+	public void updateShielding(Integer userId, Integer isShielding,
+			List<Integer> photoIdsList) throws BusinessException {
+		if (CollectionUtils.isNotEmpty(photoIdsList)) {
+			for (Integer photoId : photoIdsList) {
+				MarryPhoto photo = this.selectByKey(photoId);
+				if (null != photo) {
+					Condition condition = new Condition(MarryPhoto.class);
+					Criteria createCriteria = condition.createCriteria();
+					createCriteria
+							.andEqualTo("appUserId", photo.getAppUserId());
+					condition.orderBy("publicTime").desc();
+					List<MarryPhoto> list = this.selectByCondition(condition);
+					if (isShielding.equals(1)) {
+						if (photo.getIsNew().equals(1)) {
+
+							if (CollectionUtils.isNotEmpty(list)
+									&& list.size() > 1) {
+								MarryPhoto model = list.get(1);
+								model.setIsNew(1);
+								this.updateByKey(model);
+							}
+						}
+					} else {
+						if (CollectionUtils.isNotEmpty(list) && list.size() > 1) {
+							if (photo.getId().intValue() == list.get(0).getId()
+									.intValue()) {
+								MarryPhoto marryPhoto = list.get(1);
+								marryPhoto.setIsNew(0);
+								this.updateByKey(marryPhoto);
+								marryPhoto = list.get(0);
+								marryPhoto.setIsNew(1);
+								this.updateByKey(marryPhoto);
+							}
+						}
+					}
+
+					photo.setIsShielding(isShielding);
+					this.updateNotNull(photo);
+					MarryPhotoLogDto marryPhotoLogDto = new MarryPhotoLogDto();
+					marryPhotoLogDto.setPhotoId(photoId);
+					marryPhotoLogDto.setIsShielding(isShielding);
+					marryPhotoLogDto.setShieldingReason("");
+					this.saveEvent(userId, null, marryPhotoLogDto, 1, 1);
+				}
+			}
+		}
+	}
+
+	@Override
+	public void saveEvent(Integer userId, Integer blacklist,
+			MarryPhotoLogDto marryPhotoLogDto, Integer isAddRec,
+			Integer isAddShield) throws BusinessException {
+		MarryPhoto marryPhoto = this.selectByKey(marryPhotoLogDto.getPhotoId());
+		//if (!NumberUtils.isNull(blacklist) && !NumberUtils.eqZero(blacklist))
+		marryPhoto.setBlacklist(blacklist);
+		marryPhotoLogDto.setCreateTime(new Date());
+		marryPhotoLogDto.setUid(userId);
+		String event = "";
+		if (!NumberUtils.isNull(marryPhotoLogDto.getIsRecommended())
+				&& isAddRec.equals(1)) {
+			if (NumberUtils.eqZero(marryPhotoLogDto.getIsRecommended())) {
+				event += "设为推荐'否'";
+			} else {
+				event += "设为推荐'是'";
+				if (marryPhotoLogDto.getStartDate() != null)
+					event += ","
+							+ DateUtils.getDay(marryPhotoLogDto.getStartDate());
+				if (marryPhotoLogDto.getEndDate() != null)
+					event += "至"
+							+ DateUtils.getDay(marryPhotoLogDto.getEndDate());
+			}
+			marryPhotoLogDto.setEvent(event);
+			MarryPhotoLog marryPhotoLog = EntityUtils.convert(marryPhotoLogDto,
+					MarryPhotoLog.class);
+			marryPhotoLogService.save(marryPhotoLog);
+			marryPhoto.setIsRecommended(marryPhotoLogDto.getIsRecommended());
+
+		}
+		if (!NumberUtils.isNull(marryPhotoLogDto.getIsShielding())
+				&& isAddShield.equals(1)) {
+			event = "";
+			if (NumberUtils.eqZero(marryPhotoLogDto.getIsShielding())) {
+				event += "设为屏蔽'否'";
+			} else {
+				event += "设为屏蔽'是'";
+				if (StringUtils.isNotBlank(marryPhotoLogDto
+						.getShieldingReason()))
+					event += "," + marryPhotoLogDto.getShieldingReason();
+			}
+			marryPhotoLogDto.setEvent(event);
+			MarryPhotoLog marryPhotoLog = EntityUtils.convert(marryPhotoLogDto,
+					MarryPhotoLog.class);
+			marryPhotoLogService.save(marryPhotoLog);
+			marryPhoto.setIsShielding(marryPhotoLogDto.getIsShielding());
+		}
+		this.updateByKey(marryPhoto);
+	}
+}

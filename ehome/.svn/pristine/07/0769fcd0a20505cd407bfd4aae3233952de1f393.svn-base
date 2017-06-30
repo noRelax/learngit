@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.member.mapper.MemberResumeMapper">
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.member.model.MemberResume">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="member_id" property="memberId"/>
+		<result column="company_name" property="companyName" jdbcType="VARCHAR" />
+		<result column="job" property="job" jdbcType="VARCHAR" />
+		<result column="joined_date" property="joinedDate"/>
+		<result column="release_date" property="releaseDate"/>
+		<result column="job_content" property="jobContent"/>
+	</resultMap>
+
+	<select id="queryForList" resultMap="BaseResultMap">
+		 SELECT id,member_id,company_name,job,joined_date,release_date,job_content
+		 FROM t_member_resume
+		 <where>
+             member_id = #{memberId}
+ 		 </where>
+	</select>
+</mapper>

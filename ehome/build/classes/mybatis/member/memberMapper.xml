@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.member.mapper.MemberMapper">
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.member.dto.MemberDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="member_name" property="memberName" jdbcType="VARCHAR" />
+		<result column="basic_union_id" property="basicUnionId"  />
+		<result column="upper_union_id" property="upperUnionId"  />
+		<result column="app_user_id" property="appUserId" />
+		<result column="status" property="status"  />
+		<result column="birthday" property="birthday"  />
+		<result column="position" property="position" jdbcType="VARCHAR" />
+		<result column="job" property="job" jdbcType="VARCHAR" />
+		<result column="political" property="political" />
+		<result column="nation" property="nation" />
+		<result column="create_time" property="createTime"  jdbcType="TIMESTAMP" />
+		<result column="id_card" property="idCard" jdbcType="VARCHAR" />
+		<result column="sex" property="sex"  />
+		<result column="education" property="education"  />
+		<result column="degree" property="degree"  />
+		<result column="tel" property="tel" jdbcType="VARCHAR" />
+		<result column="address" property="address" jdbcType="VARCHAR" />
+		<result column="specialty" property="specialty" jdbcType="VARCHAR" />
+		<result column="opinion" property="opinion" jdbcType="VARCHAR" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="audit_status" property="auditStatus"  />
+		<result column="user_resource" property="userResource" />
+		<result column="user_id" property="userId" />
+		<result column="orgName" property="orgName"/>
+		<result column="province" property="province"/>
+		<result column="city" property="city"/>
+		<result column="marital_status" property="maritalStatus"/>
+	</resultMap>
+	
+	<sql id="commonSQL">
+		 SELECT t.id,t.member_name,t.basic_union_id,t.upper_union_id,t.app_user_id,t.status,t.birthday,t.position,t.job,t.political,t.nation, 
+                t.create_time,t.id_card,t.sex,t.education,t.degree,t.tel,t.address,t.specialty,t.opinion
+                ,t.remark,t.audit_status,t.user_resource,t.user_id,o.orgain_name orgName ,t.province,t.city,t.marital_status
+         FROM
+         t_member t LEFT JOIN t_orgain o ON basic_union_id = o.id
+	</sql>
+
+	<select id="queryForList" resultMap="BaseResultMap">
+         <include refid="commonSQL"></include>
+         <where>
+         	  <if test="baseOrgIdList != null and baseOrgIdList.size() != 0">
+		           AND t.basic_union_id IN 
+		           <foreach collection="baseOrgIdList" item="item" index="index" open="("
+			         separator="," close=")">
+			         #{item}
+		           </foreach>
+		      </if>
+              <if test="keyword!=null and keyword!=''">
+                  AND (t.member_name like CONCAT(#{keyword},'%')
+                  OR t.id_card like CONCAT(#{keyword},'%')
+                  OR t.tel like CONCAT(#{keyword},'%')
+                  OR t.id like CONCAT(#{keyword},'%'))
+              </if>
+              <if test="sex!=null and sex!='' and sex!=0">
+                  AND t.sex=#{sex}
+              </if>
+              <if test="status!=null and status!='' and status!=0">
+                  AND t.status=#{status}
+              </if>
+              <if test="education!=null and education!='' and education!=0">
+                  AND t.education=#{education}
+              </if>
+              <if test="auditStatus!=null and auditStatus!='' and auditStatus!=0">
+                  AND t.audit_status=#{auditStatus}
+              </if>
+              <if test="userResource!=null and userResource!='' and userResource!=0">
+                  AND t.user_resource=#{userResource}
+              </if>
+              <if test="political!=null and political!='' and political!=0">
+                  AND t.political=#{political}
+              </if>
+              <if test="basicUnionId!=null and basicUnionId!='' and basicUnionId!=0">
+                  AND t.basic_union_id = #{basicUnionId}
+              </if>
+<!--               <if test="userId!=null and userId!='' and userId!=0"> -->
+<!-- 		           AND t.user_id = #{userId} -->
+<!-- 		      </if> -->
+         </where>
+         ORDER BY t.create_time DESC
+	</select>
+	
+	<select id="queryByIdCard" resultType = "com.ehome.cloud.member.dto.MemberDto">
+	   SELECT * FROM t_member WHERE id_card = #{idCard} LIMIT 1
+	</select>
+	
+	<update id="updateStatus">
+	    <if test="auditStatus==1">
+	    	UPDATE t_member SET audit_status = #{auditStatus},status = 1
+	        WHERE 1=1
+	    </if>
+	    <if test="auditStatus==2">
+	    	UPDATE t_member SET audit_status = #{auditStatus},status = 7
+	        WHERE 1=1
+	    </if>
+	    <if test="auditStatus==3">
+	        UPDATE t_member SET audit_status = #{auditStatus}
+            WHERE 1=1
+	    </if>
+	    <if test="memberIdList != null and memberIdList.size() != 0">
+                AND id IN 
+     	        <foreach collection="memberIdList" item="item" index="index" open="("
+                  separator="," close=")">
+                  #{item}
+                </foreach>
+	    </if>
+	</update>
+
+
+    
+    <select id="selectMemberList" resultType="java.lang.Integer">
+       SELECT id from t_member where basic_union_id = #{baseUnionId}
+    </select>
+</mapper>

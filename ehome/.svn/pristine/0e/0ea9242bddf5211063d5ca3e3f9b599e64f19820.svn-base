@@ -1,0 +1,326 @@
+package com.ehome.cloud.app.marry;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.alibaba.fastjson.JSONObject;
+import com.ehome.cloud.app.marry.dto.AppMarryLoveDto;
+import com.ehome.cloud.marry.service.IAppMarryLoveService;
+import com.ehome.cloud.member.model.Member;
+import com.ehome.cloud.member.service.IMemberService;
+import com.ehome.cloud.sys.model.AppUserModel;
+import com.ehome.cloud.sys.service.IAppUserService;
+import com.ehome.core.dict.ResponseCode;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.model.AjaxResult;
+import com.ehome.core.util.CollectionUtils;
+import com.ehome.core.util.DictoryCodeUtils;
+import com.ehome.core.util.redis.JedisUtils;
+import com.ehome.push.PushUtil;
+
+/**
+ * @Title: AppMarryLoveController
+ * @Description: TODO
+ * @author hl@diandianwifi.com
+ * @date 2017年4月20日 下午2:29:01
+ * @version
+ */
+@Controller
+@RequestMapping(value = "/app/marry/love")
+public class AppMarryLoveController extends BaseController {
+
+    @Resource
+    private IAppMarryLoveService appMarryLoveService;
+   
+    @Resource
+    private IMemberService memberService;
+    
+    @Resource
+    private IAppUserService appUserService;
+    
+
+    /**
+     * 推荐喜欢
+     * 
+     * @param appUserId
+     *            App用户ID
+     * @return
+     */
+    @RequestMapping(value = "/recommend", method = RequestMethod.POST)
+    @ResponseBody
+    private AjaxResult recommend(@RequestParam(required = false, defaultValue = "") Integer appUserId,
+            @RequestParam(required = false, defaultValue = "20") Integer rows) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("获取推荐喜欢");
+        }
+        List<AppMarryLoveDto> list = null;
+        try {
+            list = appMarryLoveService.recommend(appUserId, rows);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AjaxResult(ResponseCode.error.getCode(), ResponseCode.error.getMsg(), null);
+        }
+        if (CollectionUtils.isNotEmpty(list)) {
+            for (AppMarryLoveDto appMarryLoveDto : list) {
+                Member entity = new Member();
+                entity.setAppUserId(appMarryLoveDto.getAppUserId());
+                Member member = memberService.selectOne(entity);
+                if (member != null) {
+                    appMarryLoveDto.setMemberId(member.getId());
+                    appMarryLoveDto.setJobTitle(member.getJob());
+                    appMarryLoveDto.setMemberStatu(member.getStatus());
+                }
+            }
+        } else {
+            return new AjaxResult(ResponseCode.success.getCode(), "暂时没有给你推荐喜欢的人", Collections.EMPTY_LIST);
+        }
+        DictoryCodeUtils.renderList(list);
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), list);
+    }
+
+    /**
+     * 分页获取我喜欢的
+     * 
+     * @param appUserId
+     *            App用户ID
+     * @return
+     */
+    @RequestMapping(value = "/myLove", method = RequestMethod.POST)
+    @ResponseBody
+    private AjaxResult getMyLoveList(@RequestParam(required = false, defaultValue = "") Integer appUserId,
+            @RequestParam(required = false, defaultValue = "1") Integer page, @RequestParam(required = false, defaultValue = "20") Integer rows) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("获取我喜欢的人");
+        }
+        List<AppMarryLoveDto> list = null;
+        try {
+            List<Integer> myLove = appMarryLoveService.queryMyLove(appUserId);
+            if (CollectionUtils.isNotEmpty(myLove)) {
+                list = appMarryLoveService.getMyLoveList(myLove, page, rows);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AjaxResult(ResponseCode.error.getCode(), ResponseCode.error.getMsg(), Collections.EMPTY_LIST);
+        }
+
+        if (CollectionUtils.isNotEmpty(list)) {
+            for (AppMarryLoveDto appMarryLoveDto : list) {
+                appMarryLoveDto.setIsLoved(1);
+                Member entity = new Member();
+                entity.setAppUserId(appMarryLoveDto.getAppUserId());
+                Member member = memberService.selectOne(entity);
+                if (member != null) {
+                    appMarryLoveDto.setMemberId(member.getId());
+                    appMarryLoveDto.setJobTitle(member.getJob());
+                    appMarryLoveDto.setMemberStatu(member.getStatus());
+                }
+            }
+        } else {
+            return new AjaxResult(ResponseCode.success.getCode(), "你还没有喜欢过别的用户！", Collections.EMPTY_LIST);
+        }
+        DictoryCodeUtils.renderList(list);
+
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), list);
+    }
+
+    /**
+     * 分页获取喜欢我的
+     * 
+     * @param appUserId
+     *            App用户ID
+     * @return
+     */
+    @RequestMapping(value = "/loveMe", method = RequestMethod.POST)
+    @ResponseBody
+    private AjaxResult getLoveMeList(@RequestParam(required = false, defaultValue = "") Integer appUserId,
+            @RequestParam(required = false, defaultValue = "1") Integer page, @RequestParam(required = false, defaultValue = "20") Integer rows) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("获取喜欢我的人");
+        }
+        List<AppMarryLoveDto> list = null;
+        List<Integer> mylove = null;
+        try {
+            List<Integer> loveMe = appMarryLoveService.queryLoveMe(appUserId);
+            mylove = appMarryLoveService.queryMyLove(appUserId);
+            if (CollectionUtils.isNotEmpty(loveMe)) {
+                list = appMarryLoveService.getLoveMeList(loveMe, page, rows);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AjaxResult(ResponseCode.error.getCode(), ResponseCode.error.getMsg(), Collections.EMPTY_LIST);
+        }
+
+        if (CollectionUtils.isNotEmpty(list)) {
+            for (AppMarryLoveDto appMarryLoveDto : list) {
+                if (mylove.contains(appMarryLoveDto.getAppUserId())) {
+                    appMarryLoveDto.setIsLoved(1);
+                }
+                Member entity = new Member();
+                entity.setAppUserId(appMarryLoveDto.getAppUserId());
+                Member member = memberService.selectOne(entity);
+                if (member != null) {
+                    appMarryLoveDto.setMemberId(member.getId());
+                    appMarryLoveDto.setJobTitle(member.getJob());
+                    appMarryLoveDto.setMemberStatu(member.getStatus());
+                }
+            }
+        } else {
+            return new AjaxResult(ResponseCode.success.getCode(), "很遗憾，目前还没有喜欢你的用户！", Collections.EMPTY_LIST);
+        }
+        DictoryCodeUtils.renderList(list);
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), list);
+    }
+
+    /**
+     * 分页获取相互喜欢的
+     * 
+     * @param appUserId
+     *            App用户ID
+     * @return
+     */
+    @RequestMapping(value = "/loveTogether", method = RequestMethod.POST)
+    @ResponseBody
+    private AjaxResult getLoveTogetherList(@RequestParam(required = false, defaultValue = "") Integer appUserId,
+            @RequestParam(required = false, defaultValue = "") Integer page, @RequestParam(required = false, defaultValue = "") Integer rows) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("获取相互喜欢的人");
+        }
+        List<AppMarryLoveDto> list = null;
+        List<Integer> loveMe = null;
+        try {
+            List<Integer> mylove = appMarryLoveService.queryMyLove(appUserId);
+            loveMe = appMarryLoveService.queryLoveMe(appUserId);
+            mylove.retainAll(loveMe); // 此时myLove 变成两个集合的交集
+            if (CollectionUtils.isNotEmpty(mylove)) {
+                list = appMarryLoveService.getLoveTogetherList(mylove, page, rows);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AjaxResult(ResponseCode.error.getCode(), ResponseCode.error.getMsg(), Collections.EMPTY_LIST);
+        }
+
+        if (CollectionUtils.isNotEmpty(list)) {
+            for (AppMarryLoveDto appMarryLoveDto : list) {
+                appMarryLoveDto.setIsLoved(1);
+                Member entity = new Member();
+                entity.setAppUserId(appMarryLoveDto.getAppUserId());
+                Member member = memberService.selectOne(entity);
+                if (member != null) {
+                    appMarryLoveDto.setMemberId(member.getId());
+                    appMarryLoveDto.setJobTitle(member.getJob());
+                    appMarryLoveDto.setMemberStatu(member.getStatus());
+                }
+            }
+        } else {
+            return new AjaxResult(ResponseCode.success.getCode(), "很遗憾，目前你还没有相互喜欢的用户", Collections.EMPTY_LIST);
+        }
+        DictoryCodeUtils.renderList(list);
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), list);
+    }
+
+    /**
+     * 添加喜欢
+     * 
+     * @param appUserId
+     * @return
+     */
+    @RequestMapping(value = "/addLove", method = RequestMethod.POST)
+    @ResponseBody
+    private AjaxResult addLove(@RequestParam(required = false, defaultValue = "") Integer appUserId,
+            @RequestParam(required = false, defaultValue = "") String arrayId) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("添加喜欢的人");
+        }
+        String[] ids = arrayId.split(",");
+        if (ids.length > 0) {
+            List<String> arrayIds = new ArrayList<String>(ids.length);
+            AppUserModel currentAppUser = appUserService.selectByKey(appUserId);
+            for (int i = 0; i < ids.length; i++) {
+                arrayIds.add(ids[i]);
+            }
+            for (String loveAppUserId : arrayIds) {
+                try {
+                    appMarryLoveService.addLove(appUserId, Integer.parseInt(loveAppUserId));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return new AjaxResult(ResponseCode.error.getCode(), ResponseCode.error.getMsg(), "");
+                }
+                JedisUtils.zAdd("marry:MyLove:" + appUserId, new Date().getTime(), loveAppUserId.toString()); // 我喜欢的人
+                JedisUtils.zAdd("marry:LoveMe:" + loveAppUserId, new Date().getTime(), appUserId.toString()); // 喜欢我的人sortSet
+                Double zScore = null;
+                if (JedisUtils.exist("marry:MyLove:" + loveAppUserId)) {
+                    zScore = JedisUtils.zScore("marry:MyLove:" + loveAppUserId, appUserId.toString());
+                }
+                // 统计相互相互喜欢的个数
+                if (zScore != null) {
+                    JedisUtils.zAdd("mutual", new Date().getTime(), appUserId + "-" + loveAppUserId);
+                }
+                
+            }
+            //推送消息
+            Map<String, Object> resultMap = new HashMap<String, Object>();
+            resultMap.put("users", arrayIds);
+            JSONObject obj = new JSONObject();
+            obj.put("subject", "");
+            obj.put("data", "用户" + currentAppUser.getNickName()+"喜欢了你");
+            obj.put("type", 11);
+            resultMap.put("content", obj.toString());//传递的内容 根据业务不同 传递的内容也不同
+            PushUtil.push(3, resultMap);
+            
+        } else {
+            return new AjaxResult(ResponseCode.fail.getCode(), ResponseCode.fail.getMsg(), "");
+        }
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), "");
+    }
+
+    /**
+     * 取消喜欢
+     * 
+     * @param appUserId
+     * @param loveAppUserId
+     * @return
+     */
+    @RequestMapping(value = "/cancelLove", method = RequestMethod.POST)
+    @ResponseBody
+    private AjaxResult cancelLove(@RequestParam(required = false, defaultValue = "") Integer appUserId,
+            @RequestParam(required = false, defaultValue = "") Integer loveAppUserId) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("取消喜欢的人");
+        }
+        try {
+            appMarryLoveService.canceLove(appUserId, loveAppUserId);
+            
+            if (JedisUtils.exist("marry:MyLove:" + appUserId)) {
+                JedisUtils.zRemove("marry:MyLove:" + appUserId, loveAppUserId.toString());
+            }
+            if (JedisUtils.exist("marry:LoveMe:" + loveAppUserId)) {
+                JedisUtils.zRemove("marry:LoveMe:" + loveAppUserId, appUserId.toString());
+            }
+
+            Double zScore = null;
+            if (JedisUtils.exist("marry:MyLove:" + loveAppUserId)) {
+                zScore = JedisUtils.zScore("marry:MyLove:" + loveAppUserId, appUserId.toString());
+            }
+            // 统计相互相互喜欢的个数
+            if (zScore != null) {
+                JedisUtils.zRemove("mutual", appUserId + "-" + loveAppUserId);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AjaxResult(ResponseCode.error.getCode(), ResponseCode.error.getMsg(), "");
+        }
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), "");
+    }
+}

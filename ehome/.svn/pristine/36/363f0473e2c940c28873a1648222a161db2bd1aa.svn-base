@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ehome.cloud.help.mapper.RightsMapper">
+  <resultMap id="BaseResultMap" type="com.ehome.cloud.help.model.RightsModel">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="sex" jdbcType="VARCHAR" property="sex" />
+    <result column="nation" jdbcType="VARCHAR" property="nation" />
+    <result column="birthday" jdbcType="VARCHAR" property="birthday" />
+    <result column="IDcard" jdbcType="VARCHAR" property="idcard" />
+    <result column="registered" jdbcType="VARCHAR" property="registered" />
+    <result column="company" jdbcType="VARCHAR" property="company" />
+    <result column="address" jdbcType="VARCHAR" property="address" />
+    <result column="education" jdbcType="VARCHAR" property="education" />
+    <result column="homeTel" jdbcType="VARCHAR" property="hometel" />
+    <result column="workPhone" jdbcType="VARCHAR" property="workphone" />
+    <result column="legalProceedings" jdbcType="VARCHAR" property="legalproceedings" />
+    <result column="health" jdbcType="VARCHAR" property="health" />
+    <result column="industry" jdbcType="VARCHAR" property="industry" />
+    <result column="rightApplyType" jdbcType="VARCHAR" property="rightapplytype" />
+    <result column="postcode" jdbcType="VARCHAR" property="postcode" />
+    <result column="reasons" jdbcType="VARCHAR" property="reasons" />
+    <result column="unionId" jdbcType="VARCHAR" property="unionid" />
+    <result column="parentUnionId" jdbcType="VARCHAR" property="parentunionid" />
+    <result column="userId" jdbcType="VARCHAR" property="userid" />
+    <result column="idCardPics" jdbcType="VARCHAR" property="idcardpics" />
+    <result column="proofPics" jdbcType="VARCHAR" property="proofpics" />
+    <result column="applicationTime" jdbcType="TIMESTAMP" property="applicationtime" />
+    <result column="processInstanceId" jdbcType="VARCHAR" property="processinstanceid" />
+    <result column="result" jdbcType="VARCHAR" property="result" />
+    <result column="filetime" jdbcType="TIMESTAMP" property="filetime" />
+    <result column="remark" jdbcType="VARCHAR" property="remark" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, name, sex, nation, birthday, IDcard, registered, company, address, education, 
+    homeTel, workPhone, legalProceedings, health, industry, rightApplyType, postcode, 
+    reasons, unionId, parentUnionId, userId, idCardPics, proofPics, applicationTime, 
+    processInstanceId, result, filetime, remark
+  </sql>
+  
+  <select id="selectForListByCondition" parameterType="java.util.Map" resultMap="BaseResultMap">
+  	select * from t_rightsfile
+  	where 1=1 
+  		<if test="keyword != ''">
+  		and(
+  			name like concat('%', #{keyword}, '%')
+  			or homeTel like concat('%', #{keyword}, '%')
+  			or workPhone like concat('%', #{keyword}, '%')
+  			or IDcard like concat('%', #{keyword}, '%')
+  		)
+  		</if>
+  		
+  		<if test="startTime != ''">
+  			and filetime &gt;= #{startTime}
+  		</if>
+  		<if test="endTime != ''">
+  			and filetime &lt;= #{endTime}
+  		</if>
+  		<if test="result != ''">
+  			and result = #{result}
+  		</if>
+  </select>
+</mapper>

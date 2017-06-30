@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.marry.mapper.AppMarryMapper">
+
+	<insert id="insertInterests" parameterType="java.util.HashMap"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO t_marry_interest (app_user_id,interest_id) VALUES
+		<foreach item="item" collection="list" index="index"
+			separator=",">
+			(#{item.app_user_id},#{item.interest_id})
+		</foreach>
+	</insert>
+
+	<delete id="deleteInterests" parameterType="java.util.HashMap">
+		delete from
+		t_marry_interest where app_user_id=#{id}
+	</delete>
+
+	<select id="queryInterets" parameterType="java.lang.Integer"
+		resultType="java.util.HashMap">
+		select id,app_user_id as appUserId,interest_id as
+		interestId from
+		t_marry_interest where app_user_id=#{id} order by id
+	</select>
+
+	<select id="queryUserMarryInfo" parameterType="java.lang.Integer"
+		resultType="java.util.HashMap">
+		SELECT
+		c.id,
+		c.user_account,
+		c.user_password,
+		c.user_name,
+		c.user_email,
+		c.user_tel,
+		c.user_mobile,
+		c.user_desc,
+		DATE_FORMAT(c.create_time,'%Y-%m-%d %H:%i:%S') create_time,
+		c.status,
+		c.sex,
+		c.id_card,
+		c.province,
+		c.city,
+		c.county,
+		c.address,
+		c.source_device,
+		c.is_member,
+		DATE_FORMAT(c.last_login_time,'%Y-%m-%d %H:%i:%S')
+		last_login_time,
+		DATE_FORMAT(c.cur_login_time,'%Y-%m-%d %H:%i:%S')
+		cur_login_time,
+		c.street,
+		c.imei,
+		c.real_name,
+		c.ip,
+		c.nick_name,
+		c.portrait,
+		c.signature,
+		c.invitation_code,
+		c.reg_code,
+		c.invitation_code_from,
+		c.from_type,
+		c.from_key,
+		c.black_type,
+		c.salt,
+		c.original,
+		c.work_place,
+		c.height,
+		c.birthday,
+		c.annual_income,
+		c.is_third,
+		m.id AS
+		marry_id,
+		m.member_id,
+		m.gold_coins,
+		m.photo_num,
+		m.comment_num,
+		m.thumb_up_num,
+		m.report_num,
+		m.is_blacklist,
+		m.hometown,
+		m.interest_number,
+		m.dating_statu,
+		m.marry_demand,
+		m.weixing,
+		m.self_introduction,
+		m.star,
+		DATE_FORMAT(m.active_time,'%Y-%m-%d
+		%H:%i:%S') active_time,
+		m.marital_status,
+		m.dict_age,
+		DATE_FORMAT(m.update_time,'%Y-%m-%d %H:%i:%S') update_time,
+		tm.audit_status
+		FROM
+		t_app_user c
+		LEFT JOIN t_marry_member m ON c.id =
+		m.app_user_id
+		LEFT JOIN t_member tm ON c.id = tm.app_user_id
+		WHERE
+		c.id
+		=#{id} limit 1
+	</select>
+
+	<select id="queryThumpByAppUserId" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		SELECT
+		c.id,
+		c.app_user_id AS thumb_app_user_id,
+		m.nick_name,
+		m.portrait,
+		c.photo_id,
+		DATE_FORMAT(
+		c.create_time,
+		'%Y-%m-%d %H:%i:%S'
+		)create_time,
+		c.source_device,
+		c.goldCoin,
+		o.picture_url
+		FROM
+		t_marry_thumb c
+		INNER JOIN t_marry_photo o ON o.id = c.photo_id
+		INNER
+		JOIN t_app_user
+		a ON a.id = o.app_user_id
+		INNER JOIN t_app_user m ON
+		m.id =
+		c.app_user_id
+		WHERE
+		a.id = #{appUserId}
+		ORDER BY
+		c.create_time DESC
+		LIMIT
+		#{page},#{rows}
+	</select>
+
+	<select id="querytMarryLoveByAppUserId" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		SELECT
+		c.id,
+		c.app_user_id as love_me_app_user_id,
+		DATE_FORMAT(c.create_time,'%Y-%m-%d %H:%i:%S') create_time,
+		c.statu,
+		c.goldCoin,
+		m.nick_name,
+		m.portrait
+		FROM
+		t_marry_love c
+		INNER JOIN
+		t_app_user m ON m.id = c.app_user_id
+		WHERE
+		c.love_app_user_id =
+		#{appUserId} and c.statu = 1
+		ORDER BY
+		c.create_time DESC
+		LIMIT
+		#{page},#{rows}
+	</select>
+
+	<select id="querytMarryReplysByAppUserId" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		<!-- SELECT w.nick_name, w.portrait, w.picture_id, w.picture_url, w. COMMENT, 
+			DATE_FORMAT(w.public_time,'%Y-%m-%d %H:%i:%S') public_time, w.goldCoin, w.type 
+			FROM ( SELECT us.nick_name, us.portrait, o.picture_id, o.picture_url, t.COMMENT, 
+			t.public_time, t.goldCoin, 'comment' as type FROM t_marry_comment t JOIN 
+			t_marry_photo o ON t.photo_id = o.id JOIN t_app_user us ON us.id = t.app_user_id 
+			where us.id=#{appUserId} UNION SELECT er.nick_name, er.portrait, ph.picture_id, 
+			ph.picture_url, y.reply_msg AS COMMENT, y.create_date AS public_time, '' 
+			as goldCoin, 'reply' as type FROM t_marry_reply y JOIN t_app_user er ON er.id 
+			= y.to_user_id JOIN t_marry_comment m ON m.id = y.coment_id JOIN t_marry_photo 
+			ph ON m.photo_id = ph.id where er.id = #{appUserId} )w ORDER BY public_time 
+			DESC LIMIT #{page},#{rows} -->
+
+		SELECT
+        w.app_user_id,
+        w.nick_name,
+        w.portrait,
+        w.picture_id,
+        w.picture_url,
+        w.COMMENT,
+        w.public_time,
+        w.goldCoin,
+        w.type from
+
+        (
+        select
+        t.id as app_user_id,
+        t.nick_name,
+        t.portrait,
+        a.picture_id,
+        a.picture_url,
+        a.COMMENT,
+        a.public_time,
+        a.goldCoin,
+        'comment' as type
+        from
+        (select m.comment,m.public_time,m.goldCoin, m.app_user_id, p.id as
+        picture_id, p.picture_url from t_marry_comment m INNER JOIN (select
+        id, picture_url from t_marry_photo where app_user_id = #{appUserId}) p ON
+        m.photo_id = p.id) a INNER JOIN
+        t_app_user t ON a.app_user_id = t.id
+        UNION
+
+        select u.id as app_user_id,
+        u.nick_name,
+        u.portrait,
+        p.id AS picture_id,
+        p.picture_url,
+        r.reply_msg AS COMMENT,
+        r.create_date AS public_time,
+        '' as goldCoin,
+        'reply' as type
+
+        from (
+        select coment_id, from_user_id, reply_msg, create_date from
+        t_marry_reply where to_user_id = #{appUserId} ) r
+
+        INNER JOIN t_app_user u ON
+        u.id = r.from_user_id
+
+        INNER JOIN t_marry_comment c ON c.id =
+        r.coment_id
+
+        INNER JOIN t_marry_photo p ON c.photo_id = p.id)w
+
+		ORDER BY w.public_time
+		DESC LIMIT #{page},#{rows}
+
+	</select>
+
+	<select id="querytMarryLooksByAppUserId" parameterType="java.util.HashMap"
+		resultType="java.util.HashMap">
+		SELECT
+		o.id,
+		o.look_user_id,
+		m.nick_name,
+		m.portrait,
+		DATE_FORMAT(o.update_date,'%Y-%m-%d %H:%i:%S') update_date
+		FROM
+		t_marry_look o
+		INNER JOIN t_app_user m ON m.id = o.look_user_id
+		WHERE
+		o.be_look_user_id = #{appUserId}
+		ORDER BY
+		o.update_date DESC
+		LIMIT #{page},#{rows}
+	</select>
+
+	<select id="queryMemberByAppUserId" parameterType="java.lang.Integer"
+		resultType="java.util.HashMap">
+		select n.orgain_name as
+		basic_union_name,t.basic_union_id,t.member_name,t.position,t.job,t.member_name,t.id
+		as member_id ,t.status from t_member t
+		inner join t_orgain n on n.id =
+		t.basic_union_id
+		where t.app_user_id = #{app_user_id}
+	</select>
+
+</mapper>

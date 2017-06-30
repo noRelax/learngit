@@ -1,0 +1,189 @@
+/**
+ * @Project:ZGHome
+ * @FileName:StringUtil.java
+ */
+package com.ehome.core.util;
+
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * @Title:StringUtil
+ * @Description:TODO
+ * @author:ddl
+ * @date:2017年1月4日
+ * @version:
+ */
+public class StringUtil {
+
+    /** 把一个可以迭代的字符串集合中的元素用指定的字符连接起来
+     * @param delimiter
+     * @param elements
+     * @return
+     */
+    public static String join(CharSequence delimiter,
+            Iterable<? extends CharSequence> elements){
+        return StringUtils.join(elements,delimiter);
+    }
+    
+    
+	/**
+	 * 将以逗号分隔的字符串转换成字符串数组
+	 * 
+	 * @param valStr
+	 * @return String[]
+	 */
+	public static String[] StrList(String valStr) {
+		if (null == valStr)
+			return new String[] {};
+		return valStr.split(",");
+	}
+
+	/**
+	 * 字符串转化为数字
+	 * 
+	 * @param valStr
+	 * @return
+	 */
+	public static int String2Int(String valStr, int def) {
+
+		if (valStr == null) {
+			return def;
+		}
+		try {
+			return Integer.parseInt(valStr);
+		} catch (final NumberFormatException nfe) {
+			return def;
+		}
+
+	}
+
+	/**
+	 * 将对象转化为字符串
+	 * 
+	 * @param o
+	 * @return
+	 */
+	public static String obj2String(Object o, String def) {
+		if (o == null) {
+			return def;
+		} else {
+			return String.valueOf(o);
+		}
+	}
+
+	/**
+	 * 
+	 * @param map
+	 * @param key
+	 * @param def
+	 * @return
+	 */
+	public static String getString(Map<String, Object> map, String key,
+			String def) {
+
+		return obj2String(map.get(key), def);
+	}
+
+	/**
+	 * 
+	 * @param map
+	 * @param key
+	 * @param def
+	 * @return
+	 */
+	public static String getString(Map<String, Object> map, String key) {
+		return obj2String(map.get(key), "");
+	}
+
+	/**
+	 * 获取map的value为int
+	 * 
+	 * @param map
+	 * @param key
+	 * @param def
+	 * @return
+	 */
+	public static int getInt(Map<String, Object> map, String key, int def) {
+
+		return String2Int(obj2String(map.get(key), ""), def);
+	}
+
+	/**
+	 * 将驼峰命名转化为下划线命名 HelloWorldMyLove -> hello_world_my_love
+	 * 
+	 * @param s
+	 * @return
+	 */
+	public static String toUnderlineName2(String s) {
+		return s.replaceAll("[A-Z]", "_$0").toLowerCase();
+	}
+
+	public static String toUnderlineName(String s) {
+		String SEPARATOR = "_";
+		if (s == null) {
+			return null;
+		}
+
+		StringBuilder sb = new StringBuilder();
+		boolean upperCase = false;
+		for (int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+
+			boolean nextUpperCase = true;
+
+			if (i < (s.length() - 1)) {
+				nextUpperCase = Character.isUpperCase(s.charAt(i + 1));
+			}
+
+			if ((i >= 0) && Character.isUpperCase(c)) {
+				if (!upperCase || !nextUpperCase) {
+					if (i > 0)
+						sb.append(SEPARATOR);
+				}
+				upperCase = true;
+			} else {
+				upperCase = false;
+			}
+
+			sb.append(Character.toLowerCase(c));
+		}
+
+		return sb.toString();
+	}
+
+	/**
+	 * 将下划线命名转化为驼峰命名 hello_world_my_love -> helloWorldMyLove
+	 * 
+	 * @param s
+	 * @return
+	 */
+	private static Pattern linePattern = Pattern.compile("_(\\w)");
+
+	public static String toCamelCase(String s) {
+		s = s.toLowerCase();
+		Matcher matcher = linePattern.matcher(s);
+		StringBuffer sb = new StringBuffer();
+		while (matcher.find()) {
+			matcher.appendReplacement(sb, matcher.group(1).toUpperCase());
+		}
+		matcher.appendTail(sb);
+		return sb.toString();
+	}
+
+	public static String toCapitalizeCamelCase(String s) {
+		if (s == null) {
+			return null;
+		}
+		s = toCamelCase(s);
+		return s.substring(0, 1).toUpperCase() + s.substring(1);
+	}
+
+	public static void main(String[] args) {
+		System.out.println(toUnderlineName("HelloIOSMyLove"));
+		System.out.println(toUnderlineName2("HelloIOSMyLove"));
+		System.out.println(toCamelCase("hello_IOS_my_love"));
+	}
+
+}

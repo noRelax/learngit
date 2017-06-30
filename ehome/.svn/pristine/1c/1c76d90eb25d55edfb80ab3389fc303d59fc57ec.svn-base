@@ -1,0 +1,198 @@
+package com.ehome.cloud.sys.service.impl;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+
+import com.ehome.cloud.sys.mapper.OrgainMapper;
+import com.ehome.cloud.sys.model.OrgainModel;
+import com.ehome.cloud.sys.model.TreeModel;
+import com.ehome.cloud.sys.service.IOrgainService;
+import com.ehome.core.frame.BaseService;
+import com.ehome.core.frame.BusinessException;
+import com.github.pagehelper.PageHelper;
+
+/*
+ * @Title:OrgainServiceImpl
+ * @Description:TODO
+ * @author:zsh
+ * @date:2017年2月3日
+ * @version 1.0,2017年2月3日
+ * @{tags}
+ */
+@Service("orgainService")
+public class OrgainServiceImpl extends BaseService<OrgainModel> implements
+		IOrgainService {
+
+	@Resource
+	private OrgainMapper orgainMapper;
+
+	/**
+	 * 
+	 * @param OrgainModel
+	 * @return
+	 * @throws Exception
+	 */
+	@Override
+	public int insertOrgain(OrgainModel orgainModel) throws Exception {
+		return orgainMapper.insertOrgain(orgainModel);
+	}
+
+	/**
+	 * 
+	 * @param id
+	 * @return
+	 * @throws Exception
+	 */
+	@Override
+	public int deleteOrgainById(Integer id) throws Exception {
+		return orgainMapper.deleteOrgainById(id);
+	}
+
+	/**
+	 * 
+	 * @param keyword
+	 * @param start
+	 * @param pageSize
+	 * @return
+	 * @throws BusinessException
+	 */
+	@Override
+	public List<OrgainModel> queryForList(String keyword, Integer page,
+			Integer rows) throws Exception {
+		// PageHelper.startPage(start, pageSize, true);//分页
+		PageHelper.startPage(page, rows);// 分页
+		return orgainMapper.queryForList(keyword);
+	}
+
+	/**
+	 * 
+	 * @param id
+	 * @return
+	 * @throws Exception
+	 */
+	@Override
+	public OrgainModel queryById(Integer id) throws Exception {
+		// TODO Auto-generated method stub
+		return orgainMapper.queryById(id);
+	}
+
+	/**
+	 * 
+	 * @param OrgainModel
+	 * @return
+	 * @throws Exception
+	 */
+	@Override
+	public int updateOrgain(OrgainModel orgainModel) throws Exception {
+		return orgainMapper.updateOrgain(orgainModel);
+	}
+
+	/**
+	 * 
+	 * @param map
+	 * @return
+	 */
+	@Override
+	public List<Map<String, Object>> queryTreelist(Map<String, Object> map) {
+		return orgainMapper.queryTreelist(map);
+	}
+
+	/**
+	 * 
+	 * @param pid
+	 * @return
+	 */
+	@Override
+	public List<Map<String, Object>> getChilds(String pid) {
+		return orgainMapper.getChilds(pid);
+	}
+
+	/**
+	 * 
+	 * @param parseInt
+	 * @return
+	 */
+	@Override
+	public Map<String, Object> queryByIdReturnMap(int id) {
+		return orgainMapper.queryByIdReturnMap(id);
+	}
+
+	/**
+	 * 
+	 * @param orgainId
+	 * @return
+	 */
+	@Override
+	public List<Map<String, Object>> queryUsersByOrgainId(Integer orgainId) {
+		return orgainMapper.queryUsersByOrgainId(orgainId);
+	}
+
+	@Override
+	public List<Map<String, Object>> queryUsersByDeptId(Integer deptId) {
+		// TODO Auto-generated method stub
+		return orgainMapper.queryUsersByDeptId(deptId);
+	}
+
+	/**
+	 * 
+	 * @param map
+	 */
+	@Override
+	public int insertOrgainByMap(Map<String, Object> map) {
+		return orgainMapper.insertOrgainByMap(map);
+	}
+
+	/**
+	 * 
+	 * @param map
+	 */
+	@Override
+	public int updateOrgainByMap(Map<String, Object> map) {
+		return orgainMapper.updateOrgainByMap(map);
+	}
+
+	@Override
+	public List<TreeModel> findTreeNode(Integer baseOrgId, Integer isChild) {
+		return orgainMapper.findTreeNode(baseOrgId, isChild);
+	}
+
+	@Override
+	public List<OrgainModel> queryOrgainList(List<Integer> orgIdList) {
+		return orgainMapper.queryOrgainList(orgIdList);
+	}
+
+	@Override
+	public int seletctUpperUnionId(Integer unionChairId) {
+		// TODO Auto-generated method stub
+		return orgainMapper.seletctUpperUnionId(unionChairId);
+	}
+
+	@Override
+	public OrgainModel quserUnionChairName(Integer id) {
+		// TODO Auto-generated method stub
+		return orgainMapper.quserUnionChairName(id);
+	}
+
+	@Override
+	public OrgainModel quserySupUnionChairName(Integer id) {
+		// TODO Auto-generated method stub
+		return orgainMapper.quserySupUnionChairName(id);
+	}
+
+	@Override
+	public List<OrgainModel> selectOrgainType(Integer id) {
+		// TODO Auto-generated method stub
+		return orgainMapper.selectOrgainType(id);
+	}
+
+	@Override
+	public Integer selectOrgainId(Integer id) {
+		// TODO Auto-generated method stub
+		return orgainMapper.selectOrgainId(id);
+	}
+
+}

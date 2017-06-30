@@ -1,0 +1,330 @@
+package com.ehome.cloud.app.marry;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.ehome.cloud.app.marry.dto.AppMarryCommentDto;
+import com.ehome.cloud.app.marry.dto.AppMarryLoveDto;
+import com.ehome.cloud.app.marry.dto.AppMarryPhotoDto;
+import com.ehome.cloud.marry.model.MarryCommentModel;
+import com.ehome.cloud.marry.model.MarryPhoto;
+import com.ehome.cloud.marry.service.IAppMarryCommentService;
+import com.ehome.cloud.marry.service.IAppMarryLookService;
+import com.ehome.cloud.marry.service.IAppMarryLoveService;
+import com.ehome.cloud.marry.service.IAppMarryPhotoService;
+import com.ehome.cloud.marry.service.IAppMarryThumpUpService;
+import com.ehome.cloud.member.model.Member;
+import com.ehome.cloud.member.service.IMemberService;
+import com.ehome.cloud.sys.model.AppUserModel;
+import com.ehome.cloud.sys.service.IAppUserService;
+import com.ehome.core.dict.ResponseCode;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.model.AjaxResult;
+import com.ehome.core.util.CollectionUtils;
+import com.ehome.core.util.DictoryCodeUtils;
+import com.ehome.push.PushUtil;
+
+/**
+ * @Title: AppMarryPhotoController.java
+ * @Description: TODO
+ * @author hl@diandianwifi
+ * @date 2017年4月18日 下午3:53:24
+ * @version
+ */
+@Controller
+@RequestMapping(value = "/app/marry/photo")
+public class AppMarryPhotoController extends BaseController {
+
+    @Resource
+    private IAppMarryPhotoService appMarryPhotoService;
+
+    @Resource
+    private IAppMarryThumpUpService appMarryThumpUpService;
+
+    @Resource
+    private IAppMarryLoveService appMarryLoveService;
+
+    @Resource
+    private IMemberService memberService;
+
+    @Resource
+    private IAppMarryLookService appMarryLookService;
+
+    @Resource
+    private IAppUserService appUserService;
+    
+    @Resource
+    private IAppMarryCommentService appMarryCommentService;
+
+    /**
+     * 展示照片详细
+     * 
+     * @return
+     */
+    @RequestMapping(value = "/showPhotoDetail", method = RequestMethod.POST)
+    @ResponseBody
+    public AjaxResult showPhotoDetail(@RequestParam(required = false, defaultValue = "") Integer appUserId,
+            @RequestParam(required = false, defaultValue = "") Integer photoId) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("获取照片详细");
+        }
+        AppMarryPhotoDto appMarryPhotoDto = null;
+        try {
+            //获取照片信息
+            
+            MarryPhoto marryPhoto = appMarryPhotoService.selectByKey(photoId);
+            if(marryPhoto==null){
+                return new AjaxResult(ResponseCode.fail.getCode(), "该照片已删除", "");
+            }
+            appMarryPhotoDto = appMarryPhotoService.getPhotoDetail(appUserId, photoId);
+            
+            if (marryPhoto.getAppUserId().intValue() != appUserId.intValue()) {
+                //更新或插入一条看过我记录
+                appMarryLookService.saveOrUpdateLookHistory(appUserId, marryPhoto.getAppUserId());
+                //推送--看过我
+                AppUserModel currentAppUser = appUserService.selectByKey(appUserId);
+                PushUtil.marryPush(13, marryPhoto.getAppUserId().toString(), currentAppUser.getNickName() + "看过了你");
+
+                /*  Map<String, Object> resultMap = new HashMap<String, Object>();
+                  List<String> users = new ArrayList<>();
+                  users.add(photo.getAppUserId().toString());
+                  resultMap.put("users", users);
+                  JSONObject obj = new JSONObject();
+                  obj.put("subject", "");
+                  obj.put("data", currentAppUser.getNickName() + "看过了你");
+                  obj.put("type", 13);
+                  resultMap.put("content", obj.toString());//传递的内容 根据业务不同 传递的内容也不同
+                  PushUtil.push(3, resultMap);*/
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AjaxResult(ResponseCode.error.getCode(), ResponseCode.error.getMsg(), "");
+        }
+
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), appMarryPhotoDto);
+    }
+
+    /**
+     * 发布照片
+     * 
+     * @return
+     */
+    @RequestMapping(value = "/publishPhoto", method = RequestMethod.POST)
+    @ResponseBody
+    public AjaxResult publishPhoto(@RequestParam(required = false, defaultValue = "") Integer appUserId,
+            @RequestParam(required = false, defaultValue = "") Integer pictureId,
+            @RequestParam(required = false, defaultValue = "") Integer sourceDevice,
+            @RequestParam(required = false, defaultValue = "") String pictureUrl, @RequestParam(required = false, defaultValue = "") String idea,
+            @RequestParam(required = false, defaultValue = "") String location, @RequestParam(required = false, defaultValue = "") String publicTime) {
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("发布照片");
+        }
+        try {
+            appMarryPhotoService.publishPhoto(appUserId, pictureId, sourceDevice, pictureUrl, idea, location, publicTime);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AjaxResult(ResponseCode.fail.getCode(), ResponseCode.fail.getMsg(), "");
+        }
+
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), "");
+    }
+
+    @RequestMapping(value = "/deletePhoto", method = RequestMethod.POST)
+    @ResponseBody
+    public AjaxResult deletePhoto(@RequestParam(required = false, defaultValue = "") Integer photoId) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("删除照片");
+        }
+
+        try {
+            appMarryPhotoService.deletePhoto(photoId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AjaxResult(ResponseCode.fail.getCode(), ResponseCode.fail.getMsg(), null);
+        }
+
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), null);
+    }
+
+    @RequestMapping(value = "/addComment", method = RequestMethod.POST)
+    @ResponseBody
+    public AjaxResult addComment(@RequestParam(required = false, defaultValue = "") Integer appUserId,
+            @RequestParam(required = false, defaultValue = "") Integer photoId, @RequestParam(required = false, defaultValue = "") String comment,
+            @RequestParam(required = false, defaultValue = "") Integer sourceDevice) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("增加评论");
+        }
+        try {
+            MarryPhoto photo = appMarryPhotoService.selectByKey(photoId);
+            if(photo==null){
+                return new AjaxResult(ResponseCode.fail.getCode(), "该照片已删除", "");
+            }
+            Integer goldCoins = appMarryPhotoService.addComment(appUserId, photoId, comment, sourceDevice);
+            //消息推送
+            AppUserModel currentAppUser = appUserService.selectByKey(appUserId);
+            
+            PushUtil.marryPush(12, photo.getAppUserId().toString(), currentAppUser.getNickName() + "评论了你的照片");
+
+            /*Map<String, Object> resultMap = new HashMap<String, Object>();
+            List<String> users = new ArrayList<>();
+            users.add(photo.getAppUserId().toString());
+            resultMap.put("users", users);
+            JSONObject obj = new JSONObject();
+            obj.put("subject", "");
+            obj.put("data", currentAppUser.getNickName() + "评论了你的照片");
+            obj.put("type", 12);
+            resultMap.put("content", obj.toString());//传递的内容 根据业务不同 传递的内容也不同
+            PushUtil.push(3, resultMap);*/
+
+            return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), goldCoins);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AjaxResult(ResponseCode.fail.getCode(), ResponseCode.fail.getMsg(), "");
+        }
+    }
+
+    @RequestMapping(value = "/addReply", method = RequestMethod.POST)
+    @ResponseBody
+    public AjaxResult addReply(@RequestParam(required = false, defaultValue = "") Integer commentId,
+            @RequestParam(required = false, defaultValue = "") Integer fromUserId,
+            @RequestParam(required = false, defaultValue = "") Integer toUserId, @RequestParam(required = false, defaultValue = "") String replyMsg) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("增加回复");
+        }
+
+        try {
+            MarryCommentModel commentModel = appMarryCommentService.selectByKey(commentId);
+            if(commentModel==null){
+                return new AjaxResult(ResponseCode.fail.getCode(), "该照片已删除", "");
+            }
+            appMarryPhotoService.addReply(commentId, fromUserId, toUserId, replyMsg);
+            AppUserModel currentAppUser = appUserService.selectByKey(fromUserId);
+            PushUtil.marryPush(12, toUserId.toString(), currentAppUser.getNickName() + "回复你的评论");
+
+            /*Map<String, Object> resultMap = new HashMap<String, Object>();
+            List<String> users = new ArrayList<>();
+            users.add(toUserId.toString());
+            resultMap.put("users", users);
+            JSONObject obj = new JSONObject();
+            obj.put("subject", "");
+            obj.put("data", currentAppUser.getNickName() + "回复你的评论");
+            obj.put("type", 12);
+            resultMap.put("content", obj.toString());//传递的内容 根据业务不同 传递的内容也不同
+            PushUtil.push(3, resultMap);*/
+
+            return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), "");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AjaxResult(ResponseCode.error.getCode(), ResponseCode.error.getMsg(), "");
+        }
+    }
+
+    @RequestMapping(value = "/getList", method = RequestMethod.POST)
+    @ResponseBody
+    public AjaxResult getList(@RequestParam(required = false, defaultValue = "") Integer photoId,
+            @RequestParam(required = false, defaultValue = "1") Integer page, @RequestParam(required = false, defaultValue = "20") Integer rows) {
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("获取评论列表");
+        }
+
+        List<AppMarryCommentDto> appMarryCommentDtoList = null;
+        try {
+            appMarryCommentDtoList = appMarryPhotoService.getComment(photoId, page, rows);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AjaxResult(ResponseCode.error.getCode(), ResponseCode.error.getMsg(), "");
+        }
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), appMarryCommentDtoList);
+    }
+
+    @RequestMapping(value = "/thumpUp", method = RequestMethod.POST)
+    @ResponseBody
+    public AjaxResult thumpUp(@RequestParam(required = false, defaultValue = "") Integer photoId,
+            @RequestParam(required = false, defaultValue = "") Integer appUserId,
+            @RequestParam(required = false, defaultValue = "") Integer sourceDevice) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("点赞");
+        }
+        Map<String, Integer> map = null;
+        try {
+            MarryPhoto photo = appMarryPhotoService.selectByKey(photoId);
+            if(photo==null){
+                return new AjaxResult(ResponseCode.fail.getCode(), "该照片已删除", "");
+            }
+            //保存点赞记录
+            map = appMarryPhotoService.thumpUp(photoId, appUserId, sourceDevice);
+            // 消息推送
+
+            AppUserModel currentAppUser = appUserService.selectByKey(appUserId);
+            
+            PushUtil.marryPush(10, photo.getAppUserId().toString(), currentAppUser.getNickName() + "赞了你的照片");
+
+            /*Map<String, Object> resultMap = new HashMap<String, Object>();
+            List<String> users = new ArrayList<>();
+            users.add(photo.getAppUserId().toString());
+            resultMap.put("users", users);
+            JSONObject obj = new JSONObject();
+            obj.put("subject", "");
+            obj.put("data", currentAppUser.getNickName() + "赞了你的照片");
+            obj.put("type", 10);
+            resultMap.put("content", obj.toString());
+            PushUtil.push(3, resultMap);*/
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AjaxResult(ResponseCode.error.getCode(), ResponseCode.error.getMsg(), "");
+        }
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), map.get("thumpUpAppUserAddNum"));
+    }
+
+    @RequestMapping(value = "/thumpUpPerson", method = RequestMethod.POST)
+    @ResponseBody
+    public AjaxResult getThumpUpPerson(@RequestParam(required = false, defaultValue = "") Integer appUserId,
+            @RequestParam(required = false, defaultValue = "") Integer photoId, @RequestParam(required = false, defaultValue = "1") Integer page,
+            @RequestParam(required = false, defaultValue = "20") Integer rows) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("分页获取点赞人列表");
+        }
+        MarryPhoto photo = appMarryPhotoService.selectByKey(photoId);
+        if(photo==null){
+            return new AjaxResult(ResponseCode.fail.getCode(), "该照片已删除", "");
+        }
+        
+        List<Integer> appUserIdList = appMarryThumpUpService.queryAppUserIdByPhotoId(photoId);
+        List<AppMarryLoveDto> list = appMarryLoveService.getMyLoveList(appUserIdList, page, rows);
+        List<Integer> myLove = appMarryLoveService.queryMyLove(appUserId);
+
+        for (AppMarryLoveDto appMarryLoveDto : list) {
+            for (Integer integer : myLove) {
+                if (appMarryLoveDto.getAppUserId().intValue() == integer.intValue()) {
+                    appMarryLoveDto.setIsLoved(1);
+                    break;
+                }
+            }
+        }
+        if (CollectionUtils.isNotEmpty(list)) {
+            for (AppMarryLoveDto appMarryLoveDto : list) {
+                Member entity = new Member();
+                entity.setAppUserId(appMarryLoveDto.getAppUserId());
+                Member member = memberService.selectOne(entity);
+                if (member != null) {
+                    appMarryLoveDto.setMemberId(member.getId());
+                    appMarryLoveDto.setJobTitle(member.getJob());
+                    appMarryLoveDto.setMemberStatu(member.getStatus());
+                }
+            }
+        }
+        DictoryCodeUtils.renderCode(list);
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), list);
+    }
+}

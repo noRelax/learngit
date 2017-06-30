@@ -1,0 +1,70 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="renderer" content="webkit">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<link href="${ctxPath}/static/ui/layui/css/layui.css" rel="stylesheet">
+		<link rel="stylesheet" href="${ctxPath}/static/zTreev3/css/zTreeStyle/zTreeStyle.css" type="text/css" />
+        <link rel="stylesheet" href="${ctxPath}/static/web/system/orgain/css/list-css.css" type="text/css" />
+       <!--  <link href="${ctxPath}/static/system/public/css/bootstrap-3.3.4.css" rel="stylesheet"> -->
+	</head>
+	<body>
+		<form class="layui-form" style="padding:15px" action="" method="post" enctype="multipart/form-data">
+			 <div class="layui-form-item">
+				<input type="hidden" id="id" name="id" value="${id}"/><!-- 保存多选的id -->
+				<p>设置黑名单类型为：</p>
+			    <div class="layui-input-block">
+			      <input type="radio" name="blackType" value="0" title="取消黑名单">
+			      <br>
+			      <input type="radio" name="blackType" value="1" title="评论黑名单">
+			      <input type="radio" name="blackType" value="2" title="广场黑名单">
+			      <input type="radio" name="blackType" value="3" title="活动黑名单">
+			    </div>
+  			</div>
+			<div class="layui-form-item">
+				<div class="layui-input-block">
+					<button class="layui-btn" lay-submit lay-filter="form">
+						保存
+					</button>
+					<button type="reset" class="layui-btn layui-btn-danger" >
+						重置
+					</button>
+				</div>
+			</div>
+
+			
+		</form>
+		<script src="${ctxPath}/static/system/olive/all/js/jquery-1.8.3.min.js"></script>
+		<script src="${ctxPath}/static/ui/layui/layui.js"></script>
+       
+		<script>
+		jQuery(document).ready(function() {
+			layui.use('form',function() {
+				var form = layui.form();
+				//监听提交
+				form.on('submit(form)',function(data) {
+					if(!$('input:radio[name="blackType"]:checked').val()){
+						layer.msg('请选择黑名单类型');
+						return false;
+					}
+					
+					$.post('${ctxPath}/appUser/setBlack',data.field,function(data){
+						if(data.status == 10000){
+							parent.layer.alert('黑名单设置成功', {title : '操作提示', icon : 1, time:2000, end: function(){
+								window.parent.location.reload();  
+								parent.layer.closeAll();
+							}});
+						}else{
+							layer.alert('黑名单设置失败，请稍后重试或联系管理员',{title : '操作提示',icon: 2});
+						}
+					},'json');
+					return false;
+				}); 
+				
+			});
+		});
+		</script>
+	</body>
+
+</html>

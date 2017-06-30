@@ -1,0 +1,37 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="renderer" content="webkit">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	</head>
+	<body>
+			<div id="allmap" style="height:500px; width:700px;margin-bottom:10px"></div>       
+		<script src="${ctxPath}/static/system/olive/all/js/jquery-1.8.3.min.js"></script>
+		<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=VmgS14G91S5hynY92eZd94aTCEoeB9Ky"></script>
+		<script>
+			var map = new BMap.Map("allmap");
+			var point = new BMap.Point(113.353085,23.149879);
+			map.centerAndZoom(point, 12);                     //北京：116.331398,39.897445  广州：113.297610,23.130983 金山大厦：113.353085,23.149879
+			var marker1 = new BMap.Marker(point);  //创建标注
+			map.addOverlay(marker1);                 // 将标注添加到地图中
+
+			map.enableScrollWheelZoom(true);
+		
+			//点击设置经纬度
+			function setPosition(e){
+				map.removeOverlay(marker1);//移除旧图标位置
+				point = new BMap.Point(e.point.lng,e.point.lat);
+				marker1 = new BMap.Marker(point);  // 创建标注
+				map.centerAndZoom(point,18);//设置中心位置
+				
+				map.addOverlay(marker1);//添加新图标位置
+				//设经纬度
+				parent.$("#longitude").val(e.point.lng);
+				parent.$("#latitude").val(e.point.lat);
+			}
+			map.addEventListener("click", setPosition);
+		</script>
+	</body>
+
+</html>

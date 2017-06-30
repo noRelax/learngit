@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.ankang.mapper.AnKangCupMapper">
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.ankang.dto.AnKangCupDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="game_name" property="gameName" />
+		<result column="begin_time" property="beginTime" jdbcType="TIMESTAMP" />
+		<result column="end_time" property="endTime" jdbcType="TIMESTAMP" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="create_user" property="createUser"/>
+	</resultMap>
+
+</mapper>

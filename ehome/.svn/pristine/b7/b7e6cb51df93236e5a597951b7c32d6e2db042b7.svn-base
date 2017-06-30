@@ -1,0 +1,40 @@
+package com.ehome.cloud.sys.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+
+import com.ehome.cloud.sys.dto.AdvertiseDto;
+import com.ehome.cloud.sys.mapper.AdvertiseMapper;
+import com.ehome.cloud.sys.model.Advertise;
+import com.ehome.cloud.sys.service.IAdvertiseService;
+import com.ehome.core.frame.BaseService;
+import com.ehome.core.frame.BusinessException;
+import com.github.pagehelper.PageHelper;
+
+/**
+ * 
+ * @Title:AdvertiseServiceImpl
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年4月14日 下午4:06:16
+ * @version:
+ */
+@Service("advertiseService")
+public class AdvertiseServiceImpl extends BaseService<Advertise> implements
+		IAdvertiseService {
+
+	@Resource
+	private AdvertiseMapper advertiseMapper;
+
+	@Override
+	public List<AdvertiseDto> queryForList(String keyword, Integer start,
+			Integer pageSize) throws BusinessException {
+		PageHelper.startPage(start, pageSize, true);
+		List<AdvertiseDto> list = advertiseMapper.queryForList(keyword);
+		return list;
+	}
+
+}

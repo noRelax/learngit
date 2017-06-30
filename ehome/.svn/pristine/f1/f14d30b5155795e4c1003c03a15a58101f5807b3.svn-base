@@ -1,0 +1,741 @@
+package com.ehome.activiti.services;
+
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+
+import org.activiti.engine.history.HistoricProcessInstance;
+import org.activiti.engine.history.HistoricTaskInstance;
+import org.activiti.engine.repository.Model;
+import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.Task;
+
+public interface WorkFlowService {
+
+	/**
+	 * 查询全部模型
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-19
+	 * @param iDisplayStart
+	 *            起始
+	 * @param iDisplayLength
+	 *            每页显示的size
+	 * @return
+	 */
+	public List<Model> selectAllModel(String category, Integer iDisplayStart,
+			Integer iDisplayLength);
+
+	/**
+	 * 查询模型数量
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-2-3
+	 * @return category 类型
+	 */
+	public long selectModelCount(String category);
+
+	/**
+	 * 新建流程模型
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-19
+	 * @param name
+	 *            模型名称
+	 * @param key
+	 *            标识
+	 * @param description
+	 *            备注
+	 * @return
+	 */
+	public Model createModel(String name, String key, String category,
+			String description) throws Exception;
+
+	/**
+	 * 批量删除模型
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-19
+	 * @param ids
+	 *            模型的ID，可以批量，用逗号隔开
+	 * @throws Exception
+	 */
+	public void delModel(String ids) throws Exception;
+
+	/**
+	 * 通过模型ID部署流程
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-19
+	 * @param modelId
+	 *            模型ID
+	 * @param tenantId
+	 *            城市ID
+	 */
+	public void deploymentModel(String modelId, String tenantId)
+			throws Exception;
+
+	/**
+	 * 查询流程部署列表
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-19
+	 * @param iDisplayStart
+	 *            起始条数
+	 * @param iDisplayLength
+	 *            每页显示的条数
+	 * @return
+	 */
+	public List<Map<String, Object>> selectProcessDefinitionList(
+			String category, Integer iDisplayStart, Integer iDisplayLength);
+
+	/**
+	 * 查询流程部署数量
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-2-3
+	 * @return
+	 */
+	public long selectProcessDefinitionCount();
+	
+	
+	public long selectProcessDefinitionCount(String category);
+	
+
+	/**
+	 * 批量删除流程定义
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-19
+	 * @param deploymentIds
+	 *            流程部署ID， 可批量，用逗号隔开
+	 * @throws Exception
+	 */
+	public void delProcessDefinition(String deploymentIds) throws Exception;
+
+	/**
+	 * 获取流程定义图片
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-19
+	 * @param deploymentId
+	 *            流程部署ID
+	 * @return
+	 */
+	public InputStream viewProcessDefinitionImage(String deploymentId);
+
+	/**
+	 * 查询我发起的任务
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-19
+	 * @param assignee
+	 *            用户ID
+	 * @param iDisplayStart
+	 *            起始条数
+	 * @param iDisplayLength
+	 *            每页条数
+	 * @param isPage
+	 *            是否分页
+	 * @return
+	 */
+	public List<HistoricProcessInstance> getMyCreateTaskList(String assignee,
+			Integer iDisplayStart, Integer iDisplayLength, boolean isPage);
+
+	/**
+	 * 查询我发起的任务，根据类别查找
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-3-28
+	 * @param assignee
+	 *            用户ID
+	 * @param category
+	 *            流程类别
+	 * @param iDisplayStart
+	 *            起始条数
+	 * @param iDisplayLength
+	 *            每页条数
+	 * @param isPage
+	 *            是否分页
+	 * @return
+	 */
+	public List<HistoricProcessInstance> getMyCreateTaskList(String assignee,
+			String processDefinitionId, Integer iDisplayStart,
+			Integer iDisplayLength, boolean isPage);
+
+	/**
+	 * 获取我发起的任务总数，根据类别查找
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-2-3
+	 * @param assignee
+	 *            用户ID
+	 * @return
+	 */
+	public long getMyCreateTaskCount(String assignee);
+
+	/**
+	 * 获取我发起的任务总数
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-3-28
+	 * @param assignee
+	 *            用户ID
+	 * @param category
+	 *            流程类别
+	 * @return
+	 */
+	public long getMyCreateTaskCount(String assignee, String category);
+
+	/**
+	 * 批量删除历史任务
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-19
+	 * @param ids
+	 *            历史流程ID，可批量，用逗号隔开
+	 * @throws Exception
+	 */
+	public void delHistoricProcess(String ids) throws Exception;
+
+	/**
+	 * 查询我的代办任务
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-19
+	 * @param assignee
+	 *            用户ID
+	 * @return
+	 */
+	public List<Task> getMyAssignTask(String assignee, Integer iDisplayStart,
+			Integer iDisplayLength);
+
+	/**
+	 * 根据变量查询我的代办任务
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-3-24
+	 * @param assignee
+	 *            用户ID
+	 * @param iDisplayStart
+	 *            起始
+	 * @param iDisplayLength
+	 *            每页条数
+	 * @param variables
+	 *            查询条件
+	 * @return
+	 */
+	public List<Task> getMyAssignTask(String assignee, Integer iDisplayStart,
+			Integer iDisplayLength, Map<String, String> variables);
+
+	/**
+	 * 根据变量查询我的代办任务
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-4-7
+	 * @param assignee
+	 *            用户ID
+	 * @param category
+	 *            流程类别
+	 * @param iDisplayStart
+	 *            起始
+	 * @param iDisplayLength
+	 *            每页条数
+	 * @param variables
+	 *            查询条件
+	 * @return
+	 */
+	public List<Task> getMyAssignTask(String assignee, String category,
+			Integer iDisplayStart, Integer iDisplayLength,
+			Map<String, String> variables);
+
+	/**
+	 * 查询我的代办任务数量
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-2-3
+	 * @param assignee
+	 *            用户ID
+	 * @return
+	 */
+	public long getMyAssignCount(String assignee);
+
+	/**
+	 * 查询我的代办任务数量
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-4-7
+	 * @param assignee
+	 *            用户ID
+	 * @param variables
+	 *            查询条件
+	 * @return
+	 */
+	public long getMyAssignCount(String assignee, Map<String, String> variables);
+
+	/**
+	 * 查询我的代办任务数量
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-4-7
+	 * @param assignee
+	 *            用户ID
+	 * @param category
+	 *            流程类别
+	 * @param variables
+	 *            查询条件
+	 * @return
+	 */
+	public long getMyAssignCount(String assignee, String category,
+			Map<String, String> variables);
+
+	/**
+	 * 查询我处理过的任务
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-2-21
+	 * @param assignee
+	 *            用户ID
+	 * @return
+	 */
+	public List<HistoricTaskInstance> getDisposeTaskList(String assignee,
+			Integer iDisplayStart, Integer iDisplayLength);
+
+	/**
+	 * 查询我处理过的任务
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-4-7
+	 * @param assignee
+	 *            用户ID
+	 * @param iDisplayStart
+	 * @param iDisplayLength
+	 * @param variables
+	 *            查询条件
+	 * @return
+	 */
+	public List<HistoricTaskInstance> getDisposeTaskList(String assignee,
+			Integer iDisplayStart, Integer iDisplayLength,
+			Map<String, String> variables);
+
+	/**
+	 * 查询我处理过的任务
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-4-7
+	 * @param assignee
+	 *            用户ID
+	 * @param category
+	 *            流程类别
+	 * @param iDisplayStart
+	 * @param iDisplayLength
+	 * @param variables
+	 *            查询条件
+	 * @return
+	 */
+	public List<HistoricTaskInstance> getDisposeTaskList(String assignee,
+			String category, Integer iDisplayStart, Integer iDisplayLength,
+			Map<String, String> variables);
+
+	/**
+	 * 查询我处理过的任务数量
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-3-30
+	 * @param assignee
+	 *            用户ID
+	 * @param category
+	 *            流程类别
+	 * @param variables
+	 *            查询条件
+	 * @return
+	 */
+	public long getDisposeTaskCount(String assignee, String category,
+			Map<String, String> variables);
+
+	/**
+	 * 启动表单流程
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-19
+	 * @param processDefinitionId
+	 *            流程部署ID
+	 * @param assignee
+	 *            用户ID
+	 * @param variables
+	 *            提交的参数
+	 * 
+	 * @return
+	 */
+	public ProcessInstance startFormProcess(String processDefinitionId,
+			String assignee, Map<String, String> variables);
+
+	/**
+	 * 处理普通流程
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-20
+	 * @param taskId
+	 *            节点ID
+	 * @param variables
+	 *            提交的参数
+	 * @throws Exception
+	 */
+	public void commitProcess(String taskId, Map<String, Object> variables)
+			throws Exception;
+
+	/**
+	 * 提交流程
+	 * 
+	 * @param taskId
+	 *            当前任务ID
+	 * @param variables
+	 *            流程变量
+	 * @param activityId
+	 *            流程转向执行任务节点ID<br>
+	 *            此参数为空，默认为提交操作
+	 * @throws Exception
+	 */
+	public void commitProcess(String taskId, Map<String, Object> variables,
+			String activityId) throws Exception;
+
+	/**
+	 * 提交表单流程
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-2-8
+	 * @param taskId
+	 *            节点ID
+	 * @param variables
+	 *            提交的参数
+	 * @param activityId
+	 *            要跳转的节点ID，可以通过util服务类获取
+	 * @throws Exception
+	 */
+	public void commitFormProcess(String taskId, Map<String, String> variables,
+			String activityId) throws Exception;
+
+	/**
+	 * 获取流程变量
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-20
+	 * @param processInstanceId
+	 *            流程实例ID
+	 * @param assignee
+	 *            用户ID
+	 * @return
+	 */
+	public Map<String, Object> getTaskVariables(String processInstanceId,
+			String assignee);
+
+	/**
+	 * 获取自己发起的流程，第一个节点变量列表
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-20
+	 * @param processInstanceId
+	 *            流程实例ID
+	 * @param assignee
+	 *            用户ID
+	 * @return
+	 */
+	public List<Map<String, Object>> getHistoricVariableInstanceByProcessInstanceId(
+			String processInstanceId, String assignee);
+
+	/**
+	 * 获取走过的任务变量列表，可用于获取审批结果
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-20
+	 * @param taskId
+	 *            节点ID
+	 * @return
+	 * @throws Exception
+	 */
+	public List<Map<String, Object>> getApproveList(String taskId)
+			throws Exception;
+
+	/**
+	 * 获取已经审批过的流程节点变量
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-3-29
+	 * @param processInstanceId
+	 *            流程实例ID
+	 * @return
+	 * @throws Exception
+	 */
+	public List<Map<String, Object>> getApproveListByProcessInstanceId(
+			String processInstanceId) throws Exception;
+
+	/**
+	 * 获取在我的任务之前的全部变量信息，之后的不能看到
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-2-22
+	 * @param processInstanceId
+	 *            流程实例ID
+	 * @param assignee
+	 *            用户ID
+	 * @return
+	 * @throws Exception
+	 */
+	public List<Map<String, Object>> getAllVariablesList(
+			String processInstanceId, String assignee) throws Exception;
+
+	/**
+	 * 获取任务全部变量信息
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-2-22
+	 * @param processInstanceId
+	 *            流程实例ID
+	 * @param assignee
+	 *            用户ID
+	 * @return
+	 * @throws Exception
+	 */
+	public List<Map<String, Object>> getAllVariablesListByProcessInstanceId(
+			String processInstanceId, String assignee) throws Exception;
+
+	/**
+	 * 获取全部流程变量，无论是否已经审批
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-3-29
+	 * @param processInstanceId
+	 *            流程实例ID
+	 * @return
+	 */
+	public List<Map<String, Object>> getAllProcessVariables(
+			String processInstanceId);
+
+	/**
+	 * 驳回上一步
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-13
+	 * @param taskId
+	 *            节点ID
+	 * @param activityId
+	 *            要驳回的节点
+	 * @param variables
+	 *            参数
+	 * @return
+	 */
+	public void backToLast(String taskId, String activityId,
+			Map<String, Object> variables) throws Exception;
+
+	/**
+	 * 表单驳回上一步
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-4-1
+	 * @param taskId
+	 *            节点ID
+	 * @param activityId
+	 *            要驳回的节点
+	 * @param variables
+	 *            参数
+	 * @throws Exception
+	 */
+	public void backFormToLast(String taskId, String activityId,
+			Map<String, String> variables) throws Exception;
+
+	/**
+	 * 会签操作
+	 * 
+	 * @param taskId
+	 *            当前任务ID
+	 * @param userCodes
+	 *            会签人账号集合
+	 * @throws Exception
+	 */
+	public void countersignProcess(String taskId, List<String> userCodes)
+			throws Exception;
+
+	/**
+	 * 转办流程
+	 * 
+	 * @param taskId
+	 *            当前任务节点ID
+	 * @param userCode
+	 *            被转办人Code
+	 */
+	public void transferAssignee(String taskId, String userCode);
+
+	/**
+	 * 流程是否结束 0结束 1未结束
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-3-27
+	 * @param processInstanceId
+	 *            流程实例ID
+	 * @return
+	 */
+	public Integer processIsEnd(String processInstanceId);
+
+	/**
+	 * 提交任务
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-3-27
+	 * @param processInstance
+	 *            流程实例对象
+	 * @param formProperties
+	 *            参数
+	 * @param assignee
+	 *            用户ID
+	 */
+	public void submitTaskFormData(ProcessInstance processInstance,
+			Map<String, String> formProperties, String assignee);
+
+	/**
+	 * 动态指定办理人
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-3-30
+	 * @param processInstance
+	 *            程实例对象
+	 * @param approverList
+	 *            审批人ID列表
+	 * @param formProperties
+	 *            参数
+	 */
+	public void submitTaskFormData(ProcessInstance processInstance,
+			List<String> approverList, Map<String, String> formProperties,
+			String assignee);
+
+	/**
+	 * 动态指定办理人
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-3-30
+	 * @param taskId
+	 *            节点ID
+	 * @param approverList
+	 *            审批人ID列表
+	 * @param formProperties
+	 *            参数
+	 */
+	public void submitTaskFormData(String taskId, List<String> approverList,
+			Map<String, String> formProperties, String assignee);
+
+	/**
+	 * 提交任务
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-3-28
+	 * @param taskId
+	 *            节点ID
+	 * @param formProperties
+	 *            参数
+	 */
+	public void submitTaskFormData(String taskId,
+			Map<String, String> formProperties, String assignee);
+
+	/**
+	 * 获取节点信息和变量
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-3-29
+	 * @param processInstanceId
+	 *            流程实例ID
+	 */
+	public List<Map<String, Object>> getTaskAndVariables(
+			String processInstanceId);
+
+	/**
+	 * 获取历史节点变量
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-4-1
+	 * @param historicTaskId
+	 *            历史节点ID
+	 * @return
+	 */
+	public Map<String, Object> getHistoricTaskVariables(String historicTaskId);
+
+	/**
+	 * 用于判断当前节点的上一节点是否是开始节点
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-4-6
+	 * @param taskId
+	 *            节点ID
+	 * @return 0表示不是开始节点，1反之
+	 */
+	public int judgeTaskById(String taskId);
+
+	/**
+	 * 终止正在运行的流程
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-4-6
+	 * @param taskId
+	 *            节点ID
+	 * @param variables
+	 *            参数
+	 */
+	public void stopProcess(String taskId, Map<String, String> variables)
+			throws Exception;
+
+	/**
+	 * 终止并删除正在运行的流程
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-4-6
+	 * @param taskId
+	 *            节点ID
+	 * @throws Exception
+	 */
+	public void stopAndDeleteProcess(String taskId) throws Exception;
+
+}

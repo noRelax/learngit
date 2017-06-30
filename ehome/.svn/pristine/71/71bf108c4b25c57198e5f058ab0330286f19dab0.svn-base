@@ -1,0 +1,688 @@
+package com.ehome.cloud.sys.controller;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authz.annotation.Logical;
+import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.apache.shiro.authz.annotation.RequiresUser;
+import org.apache.shiro.crypto.hash.Md5Hash;
+import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.subject.Subject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.alibaba.fastjson.JSON;
+import com.ehome.cloud.common.service.CommonService;
+import com.ehome.cloud.sys.model.Dictionary;
+import com.ehome.cloud.sys.model.OrgainModel;
+import com.ehome.cloud.sys.model.RoleModel;
+import com.ehome.cloud.sys.model.UserModel;
+import com.ehome.cloud.sys.service.IDictionaryService;
+import com.ehome.cloud.sys.service.IOrgainService;
+import com.ehome.cloud.sys.service.IRoleService;
+import com.ehome.cloud.sys.service.IUserService;
+import com.ehome.core.dict.ResponseCode;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.frame.BaseModelAndView;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.frame.Pagination;
+import com.ehome.core.model.AjaxResult;
+import com.ehome.core.util.CollectionUtils;
+import com.ehome.core.util.DictoryCodeUtils;
+import com.ehome.core.util.NumberUtils;
+import com.ehome.core.util.StringUtils;
+import com.github.pagehelper.PageInfo;
+
+/**
+ * 用户管理控制类入口
+ * 
+ * @Title:UserController
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年1月20日 上午11:33:15
+ * @version:
+ */
+@Controller
+@RequestMapping(value = "/user")
+public class UserController extends BaseController {
+
+	@Resource(name = "commonService")
+	private CommonService commonService;
+
+	@Resource
+	private IUserService userService;
+
+	@Resource
+	private IRoleService roleService;
+
+	@Autowired
+	private SecurityManager securityManager;
+
+	@Resource
+	private IOrgainService orgainService;
+
+	@Resource
+	private IDictionaryService dictionaryService;
+
+	/**
+	 * 后台用户首页
+	 * 
+	 * @param req
+	 * @return
+	 */
+	@RequestMapping(value = "/index")
+	@RequiresUser
+	@RequiresPermissions("sys:user:list")
+	public ModelAndView index(HttpServletRequest request) {
+		ModelAndView view = new BaseModelAndView("/system/user/index.html",
+				request);
+		return view;
+	}
+
+	/**
+	 * 用户查询列表
+	 * 
+	 * @param model
+	 * @param request
+	 * @param keyword
+	 * @param start
+	 * @param pageSize
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/queryUser", method = RequestMethod.POST)
+	@ResponseBody
+	@RequiresUser
+	@RequiresPermissions("sys:user:list")
+	// @RequiresRoles("roles")
+	public AjaxResult queryUserList(Model model, NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") String userName,
+			@RequestParam(required = false, defaultValue = "") String roleName,
+			@RequestParam(required = false, defaultValue = "") String orgName,
+			@RequestParam(required = false, defaultValue = "") Integer deptId,
+			@RequestParam(required = false, defaultValue = "") Integer sEcho,
+			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false, defaultValue = "10") int rows)
+			throws BusinessException {
+		// 当前登录者ID
+		Integer userId = this.getCurrentUserId();
+		List<UserModel> userList = userService.queryForList(userName, roleName,
+				orgName, deptId, userId, page, rows);
+		DictoryCodeUtils.renderList(userList);
+		PageInfo<UserModel> pageInfo = new PageInfo<>(userList);
+		Pagination<UserModel> pagination = new Pagination<>();
+		pagination.setData(pageInfo.getList());
+		pagination.setsEcho(sEcho);
+		pagination.setiTotalDisplayRecords((int) pageInfo.getTotal());
+		pagination.setiTotalRecords((int) pageInfo.getTotal());
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+	}
+
+	/**
+	 * 删除用户
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/deleteUser", method = RequestMethod.POST)
+	@ResponseBody
+	@RequiresUser
+	@RequiresPermissions("sys:user:delete")
+	public AjaxResult deleteUser(Model model, NativeWebRequest request)
+			throws BusinessException {
+		Integer userId = NumberUtils.toInt(request.getParameter("userId"), 0);
+		int key = 0;
+		if (userId != 0) {
+			key = userService.deleteUser(userId);
+		}
+		return new AjaxResult(ResponseCode.success.getCode(), "", key);
+	}
+
+	/**
+	 * 新增用户
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "add-user-page", method = RequestMethod.GET)
+	@RequiresUser
+	@RequiresPermissions("sys:user:add")
+	public String addUserPage(Model model, NativeWebRequest request) {
+		List<Dictionary> dictList = dictionaryService
+				.queryByCode("CODE_USER_TYPE");
+		if (CollectionUtils.isNotEmpty(dictList))
+			model.addAttribute("dictList", JSON.toJSON(dictList));
+		Integer baseOrgId = this.getCurrentUserBaseOrgId();
+		if (!NumberUtils.isNull(baseOrgId) && !NumberUtils.eqZero(baseOrgId))
+			return "/system/user/add_user_base.html";
+		else
+			return "/system/user/add_user.html";
+	}
+
+	/**
+	 * 修改用户
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "update-user-page", method = RequestMethod.GET)
+	@RequiresUser
+	@RequiresPermissions("sys:user:update")
+	public String updateUserPage(Model model, NativeWebRequest request) {
+		Integer userId = NumberUtils.toInt(request.getParameter("userId"));
+		UserModel userModel = userService.queryById(userId);
+		List<Integer> orgIdList = new ArrayList<>();
+		orgIdList.add(userModel.getOrgainId());
+		orgIdList.add(userModel.getDeptId());
+		orgIdList.add(userModel.getBaseUnionId());
+		List<OrgainModel> listOrg = orgainService.queryOrgainList(orgIdList);
+		if (CollectionUtils.isNotEmpty(listOrg)) {
+			for (OrgainModel org : listOrg) {
+				if (org.getId().intValue() == userModel.getOrgainId()
+						.intValue())
+					userModel.setOrgainName(org.getOrgainName());
+				else if (org.getId().intValue() == userModel.getDeptId()
+						.intValue())
+					userModel.setDeptName(org.getOrgainName());
+				else
+					userModel.setBaseUnionName(org.getOrgainName());
+			}
+		}
+		model.addAttribute("userId", userId);
+		model.addAttribute("userModel", userModel);
+		List<Dictionary> dictList = dictionaryService
+				.queryByCode("CODE_USER_TYPE");
+		if (CollectionUtils.isNotEmpty(dictList))
+			model.addAttribute("dictList", JSON.toJSON(dictList));
+		Integer baseOrgId = this.getCurrentUserBaseOrgId();
+		if (!NumberUtils.isNull(baseOrgId) && !NumberUtils.eqZero(baseOrgId))
+			return "/system/user/edit_base.html";
+		else
+			return "/system/user/edit.html";
+	}
+
+	/**
+	 * 增加用户
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/addUser", method = RequestMethod.POST)
+	@RequiresUser
+	@RequiresPermissions(value = { "sys:user:add", "sys:user:update" }, logical = Logical.OR)
+	@ResponseBody
+	public AjaxResult addUser(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer id,
+			@RequestParam(required = false, defaultValue = "") Integer userType,
+			@RequestParam(required = false, defaultValue = "") String userAccount,
+			@RequestParam(required = false, defaultValue = "") String userPassword,
+			@RequestParam(required = false, defaultValue = "") String confirmUserPassword,
+			@RequestParam(required = false, defaultValue = "") String userName,
+			@RequestParam(required = false, defaultValue = "") String userMobile,
+			@RequestParam(required = false, defaultValue = "") String userEmail,
+			@RequestParam(required = false, defaultValue = "") String userDesc,
+			@RequestParam(required = false, defaultValue = "") Integer orgainId,
+			@RequestParam(required = false, defaultValue = "") Integer deptId,
+			@RequestParam(required = false, defaultValue = "") Integer baseUnionId)
+			throws BusinessException {
+		Integer userId = this.getCurrentUserId();
+		Integer baseOrgId = this.getCurrentUserBaseOrgId();
+		//基层工会用户创建用户不需选择工会默认为当前基层工会用户
+		if (!NumberUtils.isNull(baseOrgId) && !NumberUtils.eqZero(baseOrgId)) {
+			orgainId = baseOrgId;
+		}
+		// 修改
+		if (!NumberUtils.isNull(id) && !NumberUtils.eqZero(id)) {
+			UserModel userModel = userService.queryById(id);
+			if (null != userModel) {
+				userModel.setUserAccount(userAccount);
+				userModel.setUserName(userName);
+				userModel.setUserEmail(userEmail);
+				userModel.setUserMobile(userMobile);
+				userModel.setStreet(0);
+				userModel.setStatus(0);
+				userModel.setActiveFlag(0);
+				userModel.setUserType(userType);
+				userModel.setOrgainId(orgainId);
+				userModel.setDeptId(deptId);
+				userModel.setBaseUnionId(baseUnionId);
+				userModel.setCreateUser(userId);
+				userModel.setUserDesc(userDesc);
+				userService.updateUser(userModel);
+			}
+		} else {
+			// 新增
+			UserModel userModel = new UserModel();
+			userModel.setUserAccount(userAccount);
+			// userModel.setUserPassword(userPassword);
+			userModel.setUserName(userName);
+			userModel.setUserEmail(userEmail);
+			// userModel.setUserTel(userTel);
+			userModel.setUserMobile(userMobile);
+			userModel.setStreet(0);
+			userModel.setStatus(0);
+			userModel.setActiveFlag(0);
+			userModel.setUserType(userType);
+			userModel.setCreateUser(userId);
+			userModel.setOrgainId(orgainId);
+			userModel.setDeptId(deptId);
+			userModel.setBaseUnionId(baseUnionId);
+			userModel.setCreateUser(userId);
+			userModel.setUserDesc(userDesc);
+			String salt = UUID.randomUUID().toString().replaceAll("-", "");
+			userModel.setSalt(salt);
+			if (StringUtils.isNoneBlank(userPassword)) {
+				Md5Hash md5Hash = new Md5Hash(userPassword.trim(), salt, 2);
+				userModel.setUserPassword(md5Hash.toString());
+			}
+			userService.insertUser(userModel);
+		}
+		return new AjaxResult(ResponseCode.success.getCode(), "",
+				ResponseCode.success.getMsg());
+	}
+
+	/**
+	 * 冻结或者解冻用户帐号
+	 * 
+	 * @param model
+	 * @param request
+	 * @param status
+	 * @param id
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/updateStatus", method = RequestMethod.POST)
+	@ResponseBody
+	@RequiresUser
+	@RequiresPermissions("sys:user:freeze")
+	public AjaxResult updateStatus(Model model, NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer status,
+			@RequestParam(required = false, defaultValue = "") Integer id)
+			throws BusinessException {
+		userService.updateStatus(status, id);
+		return new AjaxResult(ResponseCode.success.getCode(), "",
+				ResponseCode.success.getMsg());
+	}
+
+	/**
+	 * 重置密码页面
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/resetPassword.html", method = RequestMethod.GET)
+	@RequiresUser
+	@RequiresPermissions("sys:user:reset")
+	public String toResetPassWord(Model model, NativeWebRequest request) {
+		Integer userId = NumberUtils.toInt(request.getParameter("pkId"));
+		model.addAttribute("userId", userId);
+		return "/system/user/reset_password.html";
+	}
+
+	/**
+	 * 重置密码
+	 * 
+	 * @param model
+	 * @param request
+	 * @param id
+	 * @param userPassword
+	 * @param comfirmUserPassword
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/resetPassword", method = RequestMethod.POST)
+	@ResponseBody
+	@RequiresUser
+	@RequiresPermissions("sys:user:reset")
+	public AjaxResult resetPassWord(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer id,
+			@RequestParam(required = false, defaultValue = "") String userPassword,
+			@RequestParam(required = false, defaultValue = "") String confirmUserPassword)
+			throws BusinessException {
+		Integer userId = this.getCurrentUserId();
+		if (StringUtils.isBlank(userPassword)) {
+			return new AjaxResult(ResponseCode.fail.getCode(), "", "密码不能为空");
+		}
+		if (StringUtils.isBlank(confirmUserPassword)) {
+			return new AjaxResult(ResponseCode.fail.getCode(), "", "密码不能为空");
+		}
+		if (!userPassword.equalsIgnoreCase(confirmUserPassword)) {
+			return new AjaxResult(ResponseCode.fail.getCode(), "", "请输入相同的密码");
+		} else {
+			String salt = UUID.randomUUID().toString().replaceAll("-", "");
+			Md5Hash md5Hash = new Md5Hash(userPassword.trim(), salt, 2);
+			userService.updatePassword(salt, md5Hash.toString(), id);
+			if (userId.intValue() == id.intValue()) {
+				SecurityUtils.setSecurityManager(securityManager);
+				Subject subject = SecurityUtils.getSubject();
+				subject.logout();
+			}
+			return new AjaxResult(ResponseCode.success.getCode(), "",
+					ResponseCode.success.getMsg());
+		}
+	}
+
+	/**
+	 * 根据pkId查找User对象
+	 * 
+	 * @param model
+	 * @param request
+	 * @param id
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/queryById", method = RequestMethod.POST)
+	@ResponseBody
+	@RequiresUser
+	public AjaxResult getUserById(Model model, NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer id)
+			throws BusinessException {
+		UserModel userModel = userService.queryById(id);
+		return new AjaxResult(ResponseCode.success.getCode(), "", userModel);
+	}
+
+	/**
+	 * 配置角色
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/toAuthRole", method = RequestMethod.GET)
+	@RequiresUser
+	@RequiresPermissions("sys:user:authRole")
+	public String toAuthRole(Model model, NativeWebRequest request) {
+		Integer pkId = NumberUtils.toInt(request.getParameter("pkId"));
+		model.addAttribute("userId", pkId);
+		return "/system/user/auth_role.html";
+	}
+
+	/**
+	 * 查找角色配置
+	 * 
+	 * @param model
+	 * @param request
+	 * @param roleName
+	 * @param roleType
+	 * @param sEcho
+	 * @param isPage
+	 * @param page
+	 * @param rows
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/queryRoleList", method = RequestMethod.POST)
+	@ResponseBody
+	@RequiresUser
+	@RequiresPermissions("sys:user:authRole")
+	public AjaxResult queryRoleList(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer userId,
+			@RequestParam(required = false, defaultValue = "") String roleName,
+			@RequestParam(required = false, defaultValue = "") Integer roleType,
+			@RequestParam(name = "authRoleId[]", required = false) Integer[] authRoleId,
+			@RequestParam(name = "unAuthRoleId[]", required = false) Integer[] unAuthRoleId,
+			@RequestParam(required = false, defaultValue = "") Integer sEcho,
+			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false, defaultValue = "10") int rows)
+			throws BusinessException {
+		// CollectionUtils.substract(unAuthRoleId, authRoleId);
+		Integer loginUserId = this.getCurrentUserId();
+		List<Integer> authRoleList = new ArrayList<>(), unAuthRoleList = new ArrayList<>();
+		if (!CollectionUtils.isEmpty(authRoleId)) {
+			authRoleList = CollectionUtils.removeNull(new ArrayList<>(Arrays
+					.asList(authRoleId)));
+		}
+		if (!CollectionUtils.isEmpty(unAuthRoleId)) {
+			unAuthRoleList = CollectionUtils.removeNull(new ArrayList<>(Arrays
+					.asList(unAuthRoleId)));
+		}
+		List<RoleModel> roleList = roleService.queryRoleList(loginUserId,
+				userId, authRoleList, unAuthRoleList, roleName, roleType, page,
+				rows);
+		PageInfo<RoleModel> pageInfo = new PageInfo<>(roleList);
+		Pagination<RoleModel> pagination = new Pagination<>();
+		pagination.setData(pageInfo.getList());
+		pagination.setsEcho(sEcho);
+		pagination.setiTotalDisplayRecords((int) pageInfo.getTotal());
+		pagination.setiTotalRecords((int) pageInfo.getTotal());
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+	}
+
+	/**
+	 * 已配置角色列表
+	 * 
+	 * @param model
+	 * @param request
+	 * @param userId
+	 * @param sEcho
+	 * @param page
+	 * @param rows
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/querySelectRoleList", method = RequestMethod.POST)
+	@ResponseBody
+	@RequiresUser
+	@RequiresPermissions("sys:user:authRole")
+	public AjaxResult querySelectRoleList(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer userId,
+			@RequestParam(required = false, defaultValue = "") Integer sEcho,
+			@RequestParam(name = "authRoleId[]", required = false) Integer[] authRoleId,
+			@RequestParam(name = "unAuthRoleId[]", required = false) Integer[] unAuthRoleId,
+			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false, defaultValue = "10") int rows)
+			throws BusinessException {
+		List<Integer> authRoleList = new ArrayList<>(), unAuthRoleList = new ArrayList<>();
+		// CollectionUtils.substract(authRoleId, unAuthRoleId);
+		if (!CollectionUtils.isEmpty(authRoleId)) {
+			authRoleList = CollectionUtils.removeNull(new ArrayList<>(Arrays
+					.asList(authRoleId)));
+		}
+		if (!CollectionUtils.isEmpty(unAuthRoleId)) {
+			unAuthRoleList = CollectionUtils.removeNull(new ArrayList<>(Arrays
+					.asList(unAuthRoleId)));
+		}
+		List<RoleModel> roleList = roleService.querySelectRoleList(userId,
+				authRoleList, unAuthRoleList, page, rows);
+		PageInfo<RoleModel> pageInfo = new PageInfo<>(roleList);
+		Pagination<RoleModel> pagination = new Pagination<>();
+		pagination.setData(pageInfo.getList());
+		pagination.setsEcho(sEcho);
+		pagination.setiTotalDisplayRecords((int) pageInfo.getTotal());
+		pagination.setiTotalRecords((int) pageInfo.getTotal());
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+	}
+
+	/**
+	 * 角色授权
+	 * 
+	 * @param model
+	 * @param request
+	 * @param userId
+	 * @param authRoleId
+	 * @param unAuthRoleId
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/authRole", method = RequestMethod.POST)
+	@ResponseBody
+	@RequiresUser
+	@RequiresPermissions("sys:user:authRole")
+	public AjaxResult authRole(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer userId,
+			@RequestParam(name = "authRoleId[]", required = false) Integer[] authRoleId,
+			@RequestParam(name = "unAuthRoleId[]", required = false) Integer[] unAuthRoleId)
+			throws BusinessException {
+		List<Integer> authRoleList = new ArrayList<>(), unAuthRoleList = new ArrayList<>();
+		if (!CollectionUtils.isEmpty(authRoleId)) {
+			authRoleList = CollectionUtils.removeNull(new ArrayList<>(Arrays
+					.asList(authRoleId)));
+		}
+		if (!CollectionUtils.isEmpty(unAuthRoleId)) {
+			unAuthRoleList = CollectionUtils.removeNull(new ArrayList<>(Arrays
+					.asList(unAuthRoleId)));
+		}
+		roleService.saveAuthRole(userId, authRoleList, unAuthRoleList);
+		return new AjaxResult(ResponseCode.success.getCode(), "",
+				ResponseCode.success.getMsg());
+	}
+
+	/**
+	 * 批量配置角色
+	 * 
+	 * @param model
+	 * @param request
+	 * @param userId
+	 * @param authRoleId
+	 * @param unAuthRoleId
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/batchAuthRole", method = RequestMethod.POST)
+	@ResponseBody
+	@RequiresUser
+	@RequiresPermissions("sys:user:batchAuthRole")
+	public AjaxResult batchAuthRole(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer userId,
+			@RequestParam(name = "authRoleId[]", required = false) Integer[] authRoleId,
+			@RequestParam(name = "unAuthRoleId[]", required = false) Integer[] unAuthRoleId)
+			throws BusinessException {
+		List<Integer> authRoleList = new ArrayList<>(), unAuthRoleList = new ArrayList<>();
+		if (!CollectionUtils.isEmpty(authRoleId)) {
+			authRoleList = CollectionUtils.removeNull(new ArrayList<>(Arrays
+					.asList(authRoleId)));
+		}
+		if (!CollectionUtils.isEmpty(unAuthRoleId)) {
+			unAuthRoleList = CollectionUtils.removeNull(new ArrayList<>(Arrays
+					.asList(unAuthRoleId)));
+		}
+		roleService.saveAuthRole(userId, authRoleList, unAuthRoleList);
+		return new AjaxResult(ResponseCode.success.getCode(), "", null);
+	}
+
+	/**
+	 * 修改登录用户资料
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/updateInfo.html", method = RequestMethod.GET)
+	@RequiresUser
+	@RequiresPermissions("sys:user:update")
+	public String toUpdateInfo(Model model, NativeWebRequest request) {
+		Integer userId = NumberUtils.toInt(request.getParameter("userId"));
+		UserModel userModel = userService.queryById(userId);
+		model.addAttribute("userId", userId);
+		model.addAttribute("userModel", userModel);
+		return "/system/user/update_info.html";
+	}
+
+	/**
+	 * 修改用户资料 暂不实现
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/updateInfo", method = RequestMethod.POST)
+	@ResponseBody
+	@RequiresUser
+	@RequiresPermissions("sys:user:update")
+	public AjaxResult updateInfo(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer userId,
+			@RequestParam(required = false, defaultValue = "") String userAccount,
+			@RequestParam(required = false, defaultValue = "") String userName,
+			@RequestParam(required = false, defaultValue = "") String userMobile,
+			@RequestParam(required = false, defaultValue = "") String userEmail,
+			@RequestParam(required = false, defaultValue = "") String userDesc)
+			throws BusinessException {
+		Integer createUser = this.getCurrentUserId();
+		// 修改
+		if (!NumberUtils.isNull(userId) && !NumberUtils.eqZero(userId)) {
+			UserModel userModel = userService.queryById(userId);
+			if (null != userModel) {
+				userModel.setUserAccount(userAccount);
+				userModel.setUserName(userName);
+				userModel.setUserEmail(userEmail);
+				userModel.setUserMobile(userMobile);
+				userModel.setCreateUser(createUser);
+				userModel.setUserDesc(userDesc);
+				userService.updateUser(userModel);
+			}
+		}
+		return new AjaxResult(ResponseCode.success.getCode(), "",
+				ResponseCode.success.getMsg());
+	}
+
+	/**
+	 * 角色权限预览
+	 * //TODO 添加方法功能描述
+	 * @param model
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/resourceQuery", method = RequestMethod.GET)
+	@RequiresUser
+	public String resourceQuery(Model model, NativeWebRequest request) {
+		return "/system/user/resource_query.html";
+	}
+
+	/**
+	 * 角色权限预览
+	 * //TODO 添加方法功能描述
+	 * @param model
+	 * @param request
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/resourceQuery", method = RequestMethod.POST)
+	@ResponseBody
+	@RequiresUser
+	public List<Map<String, Object>> resourceQueryData(Model model,
+			NativeWebRequest request) throws BusinessException {
+		Integer orgId = this.getCurrentUserOrgId();
+		Map<String, Object> map = new HashMap<>();
+		map.put("baseOrgId", orgId);
+		List<Map<String, Object>> varList = orgainService.queryTreelist(map);
+		return varList;
+	}
+}

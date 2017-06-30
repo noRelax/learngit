@@ -1,0 +1,325 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>
+			新建后台帐号
+		</title>
+		<meta name="renderer" content="webkit">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<link href="${ctxPath}/static/ui/layui/css/layui.css" rel="stylesheet">
+		<link rel="stylesheet" href="${ctxPath}/static/zTreev3/css/zTreeStyle/zTreeStyle.css" type="text/css" />
+        <link rel="stylesheet" href="${ctxPath}/static/web/system/orgain/css/list-css.css" type="text/css" />
+	</head>
+	<body>
+		<form class="layui-form" style="padding:15px" action="">
+		    <input type="hidden" name="id" value="${userModel.id}"></input>
+			<div class="layui-form-item">
+			    <label class="layui-form-label">帐号类型</label>
+			    <div class="layui-input-block" style="width:250px">
+			      <select name="userType" lay-filter="aihao">
+			        <option value=""></option>
+			      </select>
+			    </div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					登录帐号
+				</label>
+				<div class="layui-input-block">
+					<input type="text" name="userAccount" required lay-verify="required" placeholder="请输入登录名称"
+					autocomplete="off" class="layui-input" style="width:250px" value="${userModel.userAccount}">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					姓名
+				</label>
+				<div class="layui-input-block">
+					<input type="text" name="userName" required lay-verify="required" placeholder="请输入用户名称"
+					autocomplete="off" class="layui-input" style="width:250px" value="${userModel.userName}">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					手机号码
+				</label>
+				<div class="layui-input-block">
+					<input type="text" name="userMobile" required lay-verify="phone" placeholder="请输入手机号码"
+					autocomplete="off" class="layui-input" style="width:250px" value="${userModel.userMobile}">
+				</div>
+			</div>	
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					邮箱
+				</label>
+				<div class="layui-input-block">
+					<input type="email" name="userEmail" required lay-verify="email" placeholder="请输入邮箱"
+					autocomplete="off" class="layui-input" style="width:250px" value="${userModel.userEmail}">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					上级工会
+				</label>
+				<div class="layui-input-inline">
+				  <ul class="list">
+				     <input name="orgainName" type="text" readonly value="" class="layui-input"
+				      style="width:250px" placeholder="请选择上级工会"/>
+				      <input type="hidden" name="orgainId" value="${userModel.orgainId}"></input>
+				  </ul>
+				</div>
+				<div class="layui-form-mid layui-word-aux" style="padding-left:60px;">
+					<a id="menuBtn" href="#" onclick="showOrgMenu(); return false;">选择</a>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					部门
+				</label>
+				<div class="layui-input-inline">
+				  <ul class="list">
+				     <input name="deptName" type="text" readonly value="" class="layui-input"
+				      style="width:250px" placeholder="请选择部门" />
+				      <input type="hidden" name="deptId" value="${userModel.deptId}"></input>
+				  </ul>
+				</div>
+				<div class="layui-form-mid layui-word-aux" style="padding-left:60px;">
+					<a id="menuBtn" href="#" onclick="showDepMenu(); return false;">选择</a>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					基层工会
+				</label>
+				<div class="layui-input-inline">
+				  <ul class="list">
+				     <input name="baseUnionName" type="text" readonly value="" class="layui-input"
+				      style="width:250px" placeholder="请选择基层工会"/>
+				      <input type="hidden" name="baseUnionId" value="${userModel.baseUnionId}"></input>
+				  </ul>
+				</div>
+				<div class="layui-form-mid layui-word-aux" style="padding-left:60px;">
+					<a id="menuBtn" href="#" onclick="showBaseMenu(); return false;">选择</a>
+				</div>
+			</div>
+			<div class="layui-form-item layui-form-text">
+				<label class="layui-form-label">
+					备注
+				</label>
+				<div class="layui-input-block">
+					<textarea name="userDesc" placeholder="请输入备注" class="layui-textarea" style="width:400px" >${userModel.userDesc}
+					</textarea>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<div class="layui-input-block">
+					<button class="layui-btn" lay-submit lay-filter="formDemo">
+						立即提交
+					</button>
+					<button type="reset" class="layui-btn layui-btn-primary">
+						重置
+					</button>
+				</div>
+			</div>
+
+			<div id="menuContent" class="menuContent" style="display:none; position: absolute;opacity: 1;">
+				<ul id="treeDemo" class="ztree" style="margin-top:0; width:160px;"></ul>
+			</div>
+			<div id="menuContent2" class="menuContent" style="display:none; position: absolute;opacity: 1;">
+				<ul id="treeDemo2" class="ztree" style="margin-top:0; width:160px;"></ul>
+			</div>
+			<div id="menuContent3" class="menuContent" style="display:none; position: absolute;opacity: 1;">
+				<ul id="treeDemo3" class="ztree" style="margin-top:0; width:160px;"></ul>
+			</div>
+		</form>
+		<script src="${ctxPath}/static/system/olive/all/js/jquery-1.8.3.min.js"></script>
+		<script src="${ctxPath}/static/ui/layui/layui.js"></script>
+		<script src="${ctxPath}/static/zTreev3/js/jquery.ztree.core-3.5.js"></script>
+        <script src="${ctxPath}/static/web/system/orgain/js/treeCreate.js"></script>
+        <script type="text/javascript">
+        var userType = jQuery('select[name=userType]');
+        var dictList = '${dictList}';
+        if(dictList!=null){
+        	dictList = jQuery.parseJSON(dictList);
+        	for(var x in dictList)
+        	   userType.append("<option value='"+dictList[x].dictKey+"'>"+dictList[x].dictValue+"</option>"); 
+        }
+		var selectNode = 1;
+		var setting = {
+			view: {
+				dblClickExpand: false
+			},
+			data: {
+				simpleData: {
+					enable: true
+				}
+			},
+			callback: {
+				beforeClick: beforeClick,
+				onClick: onClick
+			}
+		};
+		var zNodes=[];
+		$.ajax({ 
+	          type : "post",  
+	          url : '../orgain/findTreeData',
+	          data : {},  
+	          async : false, 
+	          success : function(data){  
+		            data = eval("(" + data + ")");
+					if(data.status == 10000){
+						zNodes=data.data;
+					}
+	          }
+		});
+		function beforeClick(treeId, treeNode) {
+			var check = (treeNode && !treeNode.isParent);
+			//if (!check) alert("只能选择城市...");
+			return true;
+		}
+		
+		function onClick(e, treeId, treeNode) {
+			var zTree = $.fn.zTree.getZTreeObj("treeDemo"),
+			
+			nodes = zTree.getSelectedNodes(),
+			v = "";
+			nodes.sort(function compare(a,b){return a.id-b.id;});
+			for (var i=0, l=nodes.length; i<l; i++) {
+				v += nodes[i].name + ",";
+			}
+			if (v.length > 0 ) v = v.substring(0, v.length-1);
+			var cityObj,tarObj;
+			if(selectNode==1){
+				if(treeNode.orgainType!=0){
+					parent.layer.alert("必须选择上级工会", {title : '操作提示', icon : 2});
+					return false;
+				}else{
+					cityObj = jQuery("input[name=orgainName]");
+					tarObj=jQuery("input[name=orgainId]");
+					cityObj.attr("value", v);
+					tarObj.attr('value',treeNode.id);
+					$.ajax({
+				          type : "post",
+				          url : '../orgain/findTreeData',
+				          data : {nodeId:treeNode.id,isChild:1},
+				          async : false,
+				          success : function(data){
+					            data = eval("(" + data + ")");
+								if(data.status == 10000){
+									$.fn.zTree.init($("#treeDemo2"), setting, data.data);
+								}
+				          }
+					});
+				}
+
+			}else if(selectNode==2){
+				if(treeNode.orgainType!=1){
+					parent.layer.alert("必须选择部门", {title : '操作提示', icon : 2});
+					return false;
+				}else{
+					cityObj = jQuery("input[name=deptName]");
+					tarObj=jQuery("input[name=deptId]");
+					cityObj.attr("value", treeNode.name);
+					tarObj.attr('value',treeNode.id);
+					$.ajax({
+				          type : "post",
+				          url : '../orgain/findTreeData',
+				          data : {nodeId:treeNode.id,isChild:1},
+				          async : false,
+				          success : function(data){
+					            data = eval("(" + data + ")");
+								if(data.status == 10000){
+									$.fn.zTree.init($("#treeDemo3"), setting, data.data);
+								}
+				          }
+					});
+				}
+			}else{
+				if(treeNode.orgainType!=2){
+					parent.layer.alert("必须选择基层工会", {title : '操作提示', icon : 2});
+					return false;
+				}else{
+					cityObj = jQuery("input[name=baseUnionName]");
+					tarObj=jQuery("input[name=baseUnionId]");
+					cityObj.attr("value", treeNode.name);
+					tarObj.attr('value',treeNode.id);
+				}
+			}
+		}
+		function showOrgMenu() {
+			selectNode =1;
+			var cityObj = jQuery("input[name=orgainName]");
+			var cityOffset = jQuery("input[name=orgainName]").offset();
+			$("#menuContent").css({left:cityOffset.left + "px", top:cityOffset.top + cityObj.outerHeight() + "px"}).slideDown("fast");
+			$("body").bind("mousedown", onBodyDown);
+		}
+		function showDepMenu() {
+			selectNode=2;
+			var cityObj = jQuery("input[name=deptName]");
+			var cityOffset = jQuery("input[name=deptName]").offset();
+			$("#menuContent2").css({left:cityOffset.left + "px", top:cityOffset.top + cityObj.outerHeight() + "px"}).slideDown("fast");
+			$("body").bind("mousedown", onBodyDown);
+		}
+		function showBaseMenu() {
+			selectNode=3;
+			var cityObj = jQuery("input[name=baseUnionName]");
+			var cityOffset = jQuery("input[name=baseUnionName]").offset();
+			$("#menuContent3").css({left:cityOffset.left + "px", top:cityOffset.top + cityObj.outerHeight() + "px"}).slideDown("fast");
+			$("body").bind("mousedown", onBodyDown);
+		}
+		function hideMenu() {
+			$("#menuContent").fadeOut("fast");
+			$("#menuContent2").fadeOut("fast");
+			$("#menuContent3").fadeOut("fast");
+			$("body").unbind("mousedown", onBodyDown);
+		}
+		function onBodyDown(event) {
+			if (!(event.target.id == "menuBtn" || event.target.id == "menuContent" || $(event.target).parents("#menuContent").length>0
+					||event.target.id == "menuContent2" || $(event.target).parents("#menuContent2").length>0
+					||event.target.id == "menuContent3" || $(event.target).parents("#menuContent3").length>0
+				)) {
+				hideMenu();
+			}
+		}
+		$(document).ready(function(){
+			$.fn.zTree.init($("#treeDemo"), setting, zNodes);
+		});
+		
+	</script>
+		<script>
+		    var userType = '${userModel.userType}';
+		    var baseUnionName = '${userModel.baseUnionName}';
+		    var deptName = '${userModel.deptName}';
+		    var orgainName = '${userModel.orgainName}';
+		    jQuery('select[name=userType]').val(userType);
+		    jQuery('input[name=baseUnionName]').val(baseUnionName);
+		    jQuery('input[name=deptName]').val(deptName);
+		    jQuery('input[name=orgainName]').val(orgainName);
+			layui.use('form',function() {
+				var form = layui.form();
+				//监听提交
+				form.on('submit(formDemo)',function(data) {
+					if(data.field.orgainId==null || data.field.orgainId==''){
+						layer.msg('上级工会不能为空', {icon: 5});
+						return false;
+					}else{
+						$.post('../user/addUser',data.field,function(data){
+							if(data.status == 10000){
+								parent.layer.alert(data.data, {title : '操作提示', icon : 1, time:2000, end: function(){
+									window.parent.location.reload();  
+									parent.layer.closeAll();
+								}});
+							}else{
+								layer.alert(data.data,{title : '操作提示',icon: 2});
+							}
+						},'json');
+						return false;
+					}
+				}); 
+			});
+		</script>
+	</body>
+
+</html>

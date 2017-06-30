@@ -1,0 +1,105 @@
+<% include("/system/public/header.html",{title:'header'}){} %> <%
+layout("/system/public/aside.html",{title:'header'}){} %>
+
+
+<!-- BEGIN WRAPPER  -->
+<div class="editalbeWrap">
+	<section id="main-content">
+		<!-- BEGIN WRAPPER  -->
+		<section class="wrapper site-min-height">
+			<section class="panel">
+				<header class="panel-heading">
+					<span class="label label-primary">菜单节点管理</span> <span
+						class="tools pull-right"> <a href="javascript:;"
+						class="fa fa-chevron-down"></a> <a href="javascript:;"
+						class="fa fa-times"></a>
+					</span>
+				</header>
+
+				<div class="panel-body">
+					<div class="modal-body">
+						<form name="menuForm" action="addNode" method="post">
+								
+							<input
+							type="hidden" value="${obj.parent_id!}" id="parent_id" name="parent_id" /> 
+							
+							<input
+							type="hidden" value="${obj.id!}" id="id" name="id" /> 
+  
+							<div class="form-group">
+								<label for="menu_name">菜单名称:</label> <input type="text"
+									class="form-control" name="menu_name" placeholder=" 菜单名称"
+									value="${obj.menu_name!}">
+							</div>
+							
+							<div class="form-group">
+								<label for="menu_code">菜单code:</label> <input type="text"
+									class="form-control" name="menu_code" placeholder="菜单code"
+									value="${obj.menu_code!}">
+							</div>
+							
+							<div class="form-group">
+								<label for="sort">排序:</label> <input type="text"
+									class="form-control" name="sort" placeholder="排序从1开始"
+									value="${obj.sort!}">
+							</div>
+							
+							<div class="form-group">
+								<label for="menu_url">菜单url:</label> <input type="text"
+									class="form-control" name="menu_url" placeholder="菜单url"
+									value="${obj.menu_url!}">
+							</div>
+							
+							
+							<div class="form-group">
+								<label for="is_end_level">终节点</label> <select name="is_end_level"
+									class="form-control input-sm m-bot15">
+									<option value=1 ${obj.is_end_level== 1?"selected=\"selected\""}>是</option>
+									<option value=0 ${obj.is_end_level== 0?"selected=\"selected\""}>不是</option>
+								</select>
+							</div>
+
+							<!-- <div class="form-group">
+								<label for="level_num">层次</label> <input type="text"
+									class="form-control" name="level_num" placeholder="层次（从1开始）"
+									value="${obj.level_num!}">
+							</div> -->
+
+							<div class="form-group">
+								<label for="is_button">按钮类型</label> <select name="is_button"
+									class="form-control input-sm m-bot15">
+									<option value=0 ${obj.is_button== 0?"selected=\"selected\""}>是按钮</option>
+									<option value=1 ${obj.is_button== 1?"selected=\"selected\""}>不是按钮</option>
+								</select>
+							</div>
+							<!-- 
+							<div class="form-group">
+								<label for="status">状态</label> <select name="status"
+									class="form-control input-sm m-bot15">
+									<option value=0 ${obj.status== 0?"selected=\"selected\""}>正常</option>
+									<option value=1 ${obj.status== 1?"selected=\"selected\""}>冻结</option>
+								</select>
+							</div>
+							 -->
+							<div class="form-group">
+								<label for="remark">备注:</label> <input type="text"
+									class="form-control" name="remark" placeholder="备注"
+									value="${obj.remark!}">
+							</div>
+
+							<div
+								style="margin: 0 auto; width: 100px; height: 100px; border: 0px;">
+								<input type="submit" name="submitBtn" value="保存"
+									class="btn btn-info"></input>
+							</div>
+						</form>
+					</div>
+				</div>
+			</section>
+		</section>
+		<!-- END WRAPPER  -->
+	</section>
+</div>
+
+<!-- END MAIN CONTENT -->
+<% layout("/system/public/footer.html",{title:'header'}){} %>

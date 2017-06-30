@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+
+	<!-- 配置Activiti工作流引擎 -->
+
+	<!-- 创建流程引擎配置对象 -->
+	<bean id="processEngineConfiguration" class="org.activiti.spring.SpringProcessEngineConfiguration">
+		<property name="dataSource" ref="dataSource" />
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="databaseSchemaUpdate" value="true" />
+		<!-- 是否启动jobExecutor，定时任务 -->
+		<property name="jobExecutorActivate" value="false" />
+		<!-- 日志 -->
+		<property name="enableDatabaseEventLogging" value="true" />
+		<!-- UUID作为主键生成策略 ，缓解并发写入压力，还是有造成主键重复的概率 -->
+		<property name="idGenerator" ref="uuidGenerator" />
+		<!-- 指定字体，避免中文乱码 -->
+		<property name="activityFontName" value="宋体" />
+		<property name="labelFontName" value="宋体" />
+
+		
+
+	</bean>
+
+	<bean id="uuidGenerator"
+		class="org.activiti.engine.impl.persistence.StrongUuidGenerator" />
+
+
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" />
+
+	<!--配置流程引擎工厂bean 用于创建流程引擎对象 -->
+	<bean id="processEngine" class="org.activiti.spring.ProcessEngineFactoryBean"
+		destroy-method="destroy">
+		<property name="processEngineConfiguration" ref="processEngineConfiguration" />
+	</bean>
+
+	<!-- 工作流仓储服务 -->
+	<bean id="repositoryService" factory-bean="processEngine"
+		factory-method="getRepositoryService" />
+
+	<!-- 工作流运行服务 -->
+	<bean id="runtimeService" factory-bean="processEngine"
+		factory-method="getRuntimeService" />
+	<!-- 工作流任务服务 -->
+	<bean id="taskService" factory-bean="processEngine"
+		factory-method="getTaskService" />
+	<!-- 流程的表单服务 -->
+	<bean id="formService" factory-bean="processEngine"
+		factory-method="getFormService" />
+	<!-- 工作流历史数据服务 -->
+	<bean id="historyService" factory-bean="processEngine"
+		factory-method="getHistoryService" />
+	<!-- 工作流管理服务 -->
+	<bean id="managementService" factory-bean="processEngine"
+		factory-method="getManagementService" />
+	<!-- 工作流唯一服务 -->
+	<bean id="identityService" factory-bean="processEngine"
+		factory-method="getIdentityService" />
+	<!-- 配置Activiti工作流引擎 end -->
+
+</beans>

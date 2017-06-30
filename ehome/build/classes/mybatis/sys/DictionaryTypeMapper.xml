@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.sys.mapper.DictionaryTypeMapper">
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.sys.model.DictionaryType">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="type_code" property="typeCode" jdbcType="VARCHAR" />
+		<result column="type_name" property="typeName" jdbcType="VARCHAR" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<select id="queryForList" resultMap="BaseResultMap">
+		 SELECT id,type_code,type_name,remark FROM t_dictionary_type WHERE 1=1 
+	         <if test="typeName!=null and typeName!=''">
+	             and (type_name  LIKE CONCAT('%', #{typeName},'%') 
+	         </if>
+	</select>	
+</mapper>

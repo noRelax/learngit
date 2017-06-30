@@ -1,0 +1,1331 @@
+package com.ehome.cloud.app.sys;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+
+import javax.annotation.Resource;
+import javax.imageio.ImageIO;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.crypto.hash.Md5Hash;
+import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.session.Session;
+import org.apache.shiro.subject.Subject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
+import com.ehome.cloud.app.marry.service.IAppMarryService;
+import com.ehome.cloud.area.model.AreaModel;
+import com.ehome.cloud.area.service.IAreaService;
+import com.ehome.cloud.marry.model.MarryMemberModel;
+import com.ehome.cloud.marry.service.IAppMarryLoveService;
+import com.ehome.cloud.marry.service.IGoldCoinService;
+import com.ehome.cloud.member.service.IAppMemberService;
+import com.ehome.cloud.sys.dto.AppLoginInfoDto;
+import com.ehome.cloud.sys.dto.AppUserDto;
+import com.ehome.cloud.sys.model.AppUserModel;
+import com.ehome.cloud.sys.model.MenuModel;
+import com.ehome.cloud.sys.model.RoleModel;
+import com.ehome.cloud.sys.service.IAppUserService;
+import com.ehome.cloud.sys.service.IMenuService;
+import com.ehome.cloud.sys.service.IRoleService;
+import com.ehome.core.dict.ResponseCode;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.model.AjaxResult;
+import com.ehome.core.shiro.cons.SessionCons;
+import com.ehome.core.shiro.security.dto.DeviceType;
+import com.ehome.core.shiro.security.token.CustomizedUsernamePasswordToken;
+import com.ehome.core.util.CollectionUtils;
+import com.ehome.core.util.DateUtils;
+import com.ehome.core.util.EntityUtils;
+import com.ehome.core.util.HttpUtils;
+import com.ehome.core.util.JsonUtil;
+import com.ehome.core.util.MD5;
+import com.ehome.core.util.MapUtils;
+import com.ehome.core.util.NumberUtils;
+import com.ehome.core.util.PageData;
+import com.ehome.core.util.RSA;
+import com.ehome.core.util.RonglianyunSMSUtil;
+import com.ehome.core.util.SerializeUtils;
+import com.ehome.core.util.SpringPropertiesUtil;
+import com.ehome.core.util.StringUtil;
+import com.ehome.core.util.StringUtils;
+import com.ehome.core.util.redis.JedisUtils;
+
+/**
+ * App用户登录注册功能
+ * 
+ * @Title:AppSysUserContoller
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年2月15日 下午3:44:10
+ * @version:
+ */
+@Controller
+@RequestMapping(value = "/app/user")
+public class AppSysUserContoller extends BaseController {
+
+	private final static Logger logger = LoggerFactory
+			.getLogger(AppSysUserContoller.class);
+	@Autowired
+	private SecurityManager securityManager;
+
+	@Resource
+	private IAppUserService appUserService;
+
+	@Resource
+	private IRoleService roleService;
+
+	@Resource
+	private IMenuService menuService;
+
+	private String defaultValue = null;
+
+	@Resource
+	private IAreaService areaService;
+	
+	@Resource
+	private IAppMemberService appMemberService;
+	
+	@Resource
+	private IAppMarryService appMarryService;
+	
+	@Autowired
+	private transient RedisTemplate<Serializable, Session> redisTemplate;
+	
+	@Resource
+	private IGoldCoinService goldCoinService;
+	
+	@Resource
+	private IAppMarryLoveService appMarryLoveService;
+
+
+	/**
+	 * App用户登录(兼容会员用身份证密码登录)
+	 */
+	@RequestMapping(value = "/login", method = RequestMethod.POST)
+	@ResponseBody
+	public AjaxResult login(
+			@RequestParam(required = false, defaultValue = "") String userAccount,
+			@RequestParam(required = false, defaultValue = "") String userPassword,
+			@RequestParam(required = false, defaultValue = "") String imei,
+			@RequestParam(required = false, defaultValue = "") String macType,
+			HttpServletResponse response) throws BusinessException {
+		// 跨域头
+		// response.addHeader("Access-Control-Allow-Origin", "*");
+		// response.addHeader("Access-Control-Allow-Methods", "POST");
+		// response.addHeader("Access-Control-Allow-Headers", "Content-Type");
+		// response.addHeader("Access-Control-Max-Age", "1800");// 30 min
+		if (StringUtils.isNotBlank(userPassword))
+			userPassword = RSA.decryptPrivateKey(userPassword);
+		SecurityUtils.setSecurityManager(securityManager);
+		if (logger.isDebugEnabled()) {
+			logger.info("APP端帐号登录,用户名或者手机号或者身份证:{},密码:{},设备号:{}", userAccount,
+					userPassword, imei);
+		}
+		List<RoleModel> roles = new ArrayList<>();
+		List<MenuModel> menus = new ArrayList<>();
+		List<String> permissions = new ArrayList<>();
+		List<String> roleCodes = new ArrayList<>();
+		AppUserDto appUserModel = appUserService.queryByLoginName(userAccount);
+		if (null != appUserModel) {
+			if (appUserModel.getStatus().intValue() == -1) {
+				return new AjaxResult(
+						String.valueOf(ResponseCode.unknown_account.getCode()),
+						ResponseCode.unknown_account.getMsg(),
+						ResponseCode.unknown_account.getMsg());
+			}
+			if (appUserModel.getStatus().intValue() == 1) {
+				return new AjaxResult(
+						String.valueOf(ResponseCode.freeze_account.getCode()),
+						ResponseCode.freeze_account.getMsg(),
+						ResponseCode.freeze_account.getMsg());
+			}
+			// 查询出当前用户的角色和权限信息
+			roles = roleService.queryAuthRoleByAppUserId(appUserModel.getId(),
+					1);
+			List<Integer> rolesId = new ArrayList<>();
+			if (CollectionUtils.isNotEmpty(roles)) {
+				for (RoleModel role : roles) {
+					rolesId.add(role.getId());
+					roleCodes.add(role.getRoleCode());
+				}
+				menus = menuService.queryAuthPermissByRoleId(rolesId);
+				if (CollectionUtils.isNotEmpty(menus)) {
+					for (MenuModel menu : menus) {
+						permissions.add(menu.getMenuCode());
+					}
+				}
+			}
+		} else {
+			return new AjaxResult(String.valueOf(ResponseCode.unknown_account
+					.getCode()), ResponseCode.unknown_account.getMsg(),
+					ResponseCode.unknown_account.getMsg());
+		}
+		Subject subject = SecurityUtils.getSubject();
+		// 登录结果回写用户信息和token
+		Map<String, Object> responseDto = new HashMap<>();
+		// 判断是否已经登录
+		if (!subject.isAuthenticated()) {
+			// 私钥解密后的账户密码 shiro用来认证登录
+			// String decodePassword = RSA.decryptPrivateKey(userPassword);
+			CustomizedUsernamePasswordToken token = new CustomizedUsernamePasswordToken(
+					userAccount, MD5.md5(userPassword),
+					DeviceType.APP.toString());
+			token.setRememberMe(false);
+			AppLoginInfoDto appLoginAccinfo = new AppLoginInfoDto();
+			try {
+				// 执行登录认证
+				subject.login(token);
+				if (logger.isDebugEnabled()) {
+					logger.info("当前APP账户会话ID:{}", subject.getSession().getId());
+				}
+				BeanUtils.copyProperties(appUserModel, appLoginAccinfo);
+				appLoginAccinfo.setRoleList(roles);
+				appLoginAccinfo.setMenuList(menus);
+
+				subject.getSession().setAttribute(SessionCons.DEVICE_TYPE,
+						DeviceType.APP.toString());
+				subject.getSession().setAttribute(
+						SessionCons.APP_LOGIN_USER_SESSION, appLoginAccinfo);
+				subject.getSession().setAttribute(
+						SessionCons.APP_LOGIN_USER_ID, appUserModel.getId());
+				subject.getSession().setAttribute(
+						SessionCons.LOGIN_USER_PERMISSIONS, permissions);
+				subject.getSession().setAttribute(SessionCons.LOGIN_USER_ROLES,
+						roleCodes);
+
+			} catch (AuthenticationException e) {
+				return new AjaxResult(String.valueOf(ResponseCode.login_error
+						.getCode()), ResponseCode.login_error.getMsg(),
+						ResponseCode.login_error.getMsg());
+			}
+		}
+		// 返回登陆信息
+		if (!NumberUtils.isNull(appUserModel.getCity())
+				&& !NumberUtils.eqZero(appUserModel.getCity())) {
+			AreaModel cityArea = areaService
+					.selectByKey(appUserModel.getCity());
+			responseDto.put("city_id", appUserModel.getCity());
+			responseDto.put("city_name",
+					cityArea != null ? cityArea.getAreaName() : "");
+		} else {
+			responseDto.put("city_id", "");
+			responseDto.put("city_name", "");
+		}
+		if (!NumberUtils.isNull(appUserModel.getProvince())
+				&& !NumberUtils.eqZero(appUserModel.getProvince())) {
+			AreaModel proArea = areaService.selectByKey(appUserModel
+					.getProvince());
+			responseDto.put("province_id", appUserModel.getProvince());
+			responseDto.put("province_name",
+					proArea != null ? proArea.getAreaName() : "");
+		} else {
+			responseDto.put("province_id", "");
+			responseDto.put("province_name", "");
+		}
+		responseDto.put("id", String.valueOf(appUserModel.getId()));// 用户ID
+		responseDto.put("user_account", appUserModel.getUserAccount());
+		responseDto.put("name", appUserModel.getUserName() == null ? ""
+				: appUserModel.getUserName());// 用户名称
+		responseDto.put(
+				"sex",
+				appUserModel.getSex() == null ? "" : String
+						.valueOf(appUserModel.getSex()));// 性别
+		responseDto.put("user_id", appUserModel.getUserMobile() == null ? ""
+				: appUserModel.getUserMobile());// 手机
+		responseDto.put("token", subject.getSession().getId().toString());// token
+		responseDto.put("is_member", appUserModel.getIsMember() == null ? ""
+				: String.valueOf(appUserModel.getIsMember()));
+		responseDto.put("audit_status", NumberUtils.isNull(appUserModel
+				.getAuditStatus()) ? "" : appUserModel.getAuditStatus());
+		responseDto.put("nick_name", appUserModel.getNickName() == null ? ""
+				: appUserModel.getNickName());
+		responseDto.put("available", appUserModel.getStatus() == null ? ""
+				: String.valueOf(appUserModel.getStatus()));
+		responseDto.put("portrait", appUserModel.getPortrait() == null ? ""
+				: String.valueOf(appUserModel.getPortrait()));
+		responseDto.put("phone", appUserModel.getUserMobile() == null ? ""
+				: appUserModel.getUserMobile());
+		responseDto.put("invitation_code", "");
+		responseDto.put(
+				"last_login_time",
+				appUserModel.getLastLoginTime() == null ? "" : DateUtils
+						.getTime(appUserModel.getLastLoginTime()));
+		responseDto.put("username", appUserModel.getUserName() == null ? ""
+				: appUserModel.getUserName());
+		responseDto.put("email", appUserModel.getUserEmail() == null ? ""
+				: appUserModel.getUserEmail());
+		responseDto.put("union_chair_status", "");
+		responseDto.put("signature", appUserModel.getSignature() == null ? ""
+				: appUserModel.getSignature());
+		// result = RSA.encryptPublicKey(responseDto.toString());
+		appUserService.workForLogin(appUserModel, imei);
+		responseDto.put("work_place", appUserModel.getWorkPlace()==null?"":appUserModel.getWorkPlace());
+		responseDto.put("height", appUserModel.getHeight()==null?"":appUserModel.getHeight());
+		responseDto.put("birthday", appUserModel.getBirthday()==null?"":appUserModel.getBirthday());
+		responseDto.put("annual_income", appUserModel.getAnnualIncome()==null?1:appUserModel.getAnnualIncome());
+		
+		Map<String, Object> responseMap = appMarryService.queryUserMarryInfo(appUserModel.getId());
+		List<Map<String, Object>> interetsList = appMarryService.queryInterets(appUserModel.getId());
+		responseMap = MapUtils.toCamelCaseMapNoRepeat(responseMap);
+		responseMap.put("interests", interetsList);
+		//连线省总功能
+		responseMap.put("union_chair_status", "");
+		responseMap.put("token", subject.getSession().getId().toString());// token
+		responseMap.remove("userPassword");
+		responseMap.remove("salt");
+		responseMap.put("goldCoinsNum",StringUtil.String2Int(goldCoinService.getGoldCoinTotalNum(appUserModel.getId()), 0));
+		List<Integer> myLoveNum = appMarryLoveService.queryMyLove(appUserModel.getId());
+		if(CollectionUtils.isNotEmpty(myLoveNum)){
+			responseMap.put("myLoveNum", myLoveNum.size());
+		}else{
+			responseMap.put("myLoveNum",0);
+		}
+		List<Integer> loveMeNum = appMarryLoveService.queryLoveMe(appUserModel.getId());
+		if(CollectionUtils.isNotEmpty(loveMeNum)){
+			responseMap.put("loveMeNum", loveMeNum.size());
+		}else{
+			responseMap.put("loveMeNum", 0);
+		}
+		responseDto.put("allInfo", responseMap);
+		return new AjaxResult(String.valueOf(ResponseCode.success.getCode()),
+				"登录成功!", responseDto);
+	}
+
+	/**
+	 * 
+	 * @param appUserModel
+	 * @return
+	 * 
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/register", method = RequestMethod.POST)
+	public void register(AppUserModel appUserModel, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		response.setContentType("text/html; charset=utf-8");
+		request.setCharacterEncoding("UTF-8");
+
+		if (logger.isDebugEnabled()) {
+			logger.info("注册");
+		}
+		Map<String, Object> map = new HashMap<>();
+		Map<String, Object> pd = this.getPageData();
+		int primaryKey = -1;
+        Map<String,String> oldSysMap = new HashMap<String, String>();
+        String oldOsIp = StringUtil.obj2String(SpringPropertiesUtil.get("oldOsIp"), null);
+
+		try {
+		    oldSysMap.put("ID", "-1");
+			pd.put("user_password", RSA.decryptPrivateKey(MapUtils.getString(
+					pd, "user_password", defaultValue)));// 对密码进行解密
+			pd = MapUtils.toCamelCaseMap(pd);
+			appUserModel = (AppUserModel) MapUtils.convertMap(
+					AppUserModel.class, pd);
+
+			String codeValue = JedisUtils.get(pd.get("codeKey").toString());
+			// 验验证码
+			if (pd.get("code").equals(codeValue)
+					|| pd.get("code").equals("666666")) {
+				Md5Hash md5Hash = null;
+				String salt = UUID.randomUUID().toString().replaceAll("-", "");
+				md5Hash = new Md5Hash(MD5.md5(pd.get("user_password")
+						.toString().trim()), salt, 2);
+				appUserModel.setSalt(salt);
+				if (StringUtils.isNoneBlank(MapUtils.getString(pd,
+						"user_password", null))) {
+					appUserModel.setUserPassword(md5Hash.toString());
+				}
+				AppUserModel appUserModelCheck = new AppUserModel(pd.get(
+						"user_account").toString());
+				AppUserModel appUserModelSelect = appUserService
+						.selectOne(appUserModelCheck);
+
+				Map<String, String> params = new HashMap<>();
+				params.put("userId",
+						MapUtils.getString(pd, "user_account", defaultValue));
+				params.put("passWord", md5Hash.toString());
+				params.put("imei", MapUtils.getString(pd, "imei", defaultValue));
+				params.put("code", MapUtils.getString(pd, "code", defaultValue));
+				params.put("createDate", DateUtils.getTime());
+				params.put("USERNAME", "");
+				params.put("accountType", "3");
+				params.put(
+						"invitation_code",
+						MapUtils.getString(pd, "invitation_code",
+								NumberUtils.getRandomString()));
+				params.put("salt", salt);
+				appUserModel.setInvitationCode(params.get("invitation_code"));//注册码
+				
+		        oldSysMap.putAll(params);
+		        oldSysMap.put("passWord", MD5.md5(pd.get("user_password").toString().trim()));
+		        
+				if (null == appUserModelSelect) {
+					appUserModel.setUserMobile(appUserModel.getUserAccount());
+					appUserModel.setCreateTime(new Date());
+					appUserModel.setStatus(0);
+					// appUserModel.setSex(1);
+					appUserModel.setIsMember(0);
+					appUserService.saveNotNull(appUserModel);
+					primaryKey = appUserModel.getId();
+					oldSysMap.put("id", String.valueOf(primaryKey));
+					oldSysMap.put("ID", String.valueOf(primaryKey));
+					// 配置角色
+					Map<String, Object> roleMap = new HashMap<>();
+					List<Map<String, Object>> list = new ArrayList<>();
+					// list.add(Integer.parseInt(tempStr[j].toString()));
+					Map<String, Object> tempMap = new HashMap<>();
+					tempMap.put("app_user_id", primaryKey);
+					// FIXME 暂时固定一个角色id
+					tempMap.put("role_id", 21);
+					list.add(tempMap);
+					roleMap.put("list", list);
+					appUserService.saveAppRole(roleMap);
+
+//					List<Map<String, Object>> oldSysUser = appUserService
+//							.querySysUser(params);
+//					if (oldSysUser == null || oldSysUser.size() == 0) {
+//					    params.put("id", String.valueOf(primaryKey));
+//						appUserService.insertSysUser(params);// 保存新用户到mysql
+//					} else if (oldSysUser != null && oldSysUser.size() == 1) {
+//						appUserService.updateSysUser(params);
+//					}
+                    String rpString = HttpUtils.URLPost("http://" + oldOsIp + ":8080/ehome/appRegister/saveByZG.do", oldSysMap, "UTF-8");
+                    if (StringUtils.isNoneBlank(rpString)) {
+                        HashMap<String, String> resultMap = JSON.parseObject(rpString, new TypeReference<HashMap<String, String>>() {
+                        });
+                        System.out.println(resultMap);
+                        if (!"2000000".equals(MapUtils.getString(resultMap, "status", defaultValue))) {
+                            System.out.println("rp>>" + rpString);
+                            throw new Exception("调用更新旧库接口出错");
+                        }
+                    }
+				} else {
+					response.getWriter().print(
+							JsonUtil.appResposeSingeMapJson(
+									ResponseCode.user_exist.getCode(),
+									ResponseCode.user_exist.getMsg(), map));
+					return;
+				}
+			} else {
+				response.getWriter().print(
+						JsonUtil.appResposeSingeMapJson(
+								ResponseCode.code_error.getCode(),
+								ResponseCode.code_error.getMsg(), map));
+				return;
+			}
+		} catch (Exception e) {
+			// 回收新系统注册数据
+			appUserService.deleteByKey(primaryKey);
+			appUserService.deleteAppRole(primaryKey);
+            HttpUtils.URLPost("http://"+oldOsIp+":8080/ehome/appRegister/deleteByUserById.do", oldSysMap, "UTF-8");
+			e.printStackTrace();
+			response.getWriter().print(
+					JsonUtil.appResposeSingeMapJson(
+							ResponseCode.error.getCode(),
+							ResponseCode.error.getMsg(), map));
+			return;
+		}
+		response.getWriter().print(
+				JsonUtil.appResposeSingeMapJson(ResponseCode.success.getCode(),
+						ResponseCode.success.getMsg(), map));
+	}
+
+	/**
+	 * 获取验证码
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws Exception
+	 *
+	 */
+	@RequestMapping(value = "/getCode", method = RequestMethod.POST)
+	public void getCode(HttpServletRequest request, HttpServletResponse response)
+			throws Exception {
+		response.setContentType("text/html; charset=utf-8");
+		request.setCharacterEncoding("UTF-8");
+
+		if (logger.isDebugEnabled()) {
+			logger.info("获取验证码");
+		}
+		Map<String, Object> map = new HashMap<>();
+		PageData pd = this.getPageData();
+		
+		try {
+			if(pd.get("user_account")!=null && "".equals(pd.get("user_account").toString()) && "1".equals(pd.get("type").toString())){
+				AppUserModel appUserModel= new AppUserModel();
+				appUserModel.setAddress(pd.getString("user_account").toString());
+				List<AppUserModel> appUserList = appUserService.select(appUserModel);
+				if(appUserList!=null && appUserList.size()>0){
+					response.getWriter().print(
+							JsonUtil.appResposeSingeMapJson(
+									ResponseCode.user_exist.getCode(),
+									ResponseCode.user_exist.getMsg(), map));
+					return;
+				}
+			}
+			int code = NumberUtils.getRandomNum();// 生成随机验证码
+			String uuid = UUID.randomUUID().toString();
+			JedisUtils.setEx(uuid, 1000 * 60 * 2, Integer.toString(code));
+			if (RonglianyunSMSUtil.send(pd.get("user_account").toString(),
+					new String[] { String.valueOf(code), "10" })) {
+				map.put("codeKey", uuid);
+				// 旧系统的验证码入库
+				Map<String, Object> oldSystemMap = new HashMap<>();
+				Calendar afterTime = Calendar.getInstance();
+				afterTime.add(Calendar.MINUTE, 10); // 当前分钟+10
+				Date afterDate = (Date) afterTime.getTime(); // 验证码有效时间
+				oldSystemMap.put("type",
+						MapUtils.getString(pd, "type", defaultValue));
+				oldSystemMap.put("expire_time", afterDate);
+				oldSystemMap.put("code", code);
+				oldSystemMap.put("userId",
+						MapUtils.getString(pd, "user_account", defaultValue));
+				SimpleDateFormat f = new SimpleDateFormat(
+						"yyyy-MM-dd HH:mm:ss:SSS");
+				Date date = new Date(System.currentTimeMillis());
+				String time = f.format(date);
+				oldSystemMap.put("time", time);
+				appUserService.deleteCode(oldSystemMap);// 删除旧的验证码
+				appUserService.insertCode(oldSystemMap);//
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			response.getWriter().print(
+					JsonUtil.appResposeSingeMapJson(
+							ResponseCode.error.getCode(),
+							ResponseCode.error.getMsg(), map));
+		}
+		response.getWriter().print(
+				JsonUtil.appResposeSingeMapJson(ResponseCode.success.getCode(),
+						ResponseCode.success.getMsg(), map));
+	}
+
+	/**
+	 * 获取验证码通过图形验证码
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws Exception
+	 *
+	 */
+	@RequestMapping(value = "/getCodeByImageCode", method = RequestMethod.POST)
+	public void getCodeByImageCode(HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		response.setContentType("text/html; charset=utf-8");
+		request.setCharacterEncoding("UTF-8");
+
+		if (logger.isDebugEnabled()) {
+			logger.info("获取验证码");
+		}
+		Map<String, Object> map = new HashMap<>();
+		PageData pd = this.getPageData();
+		try {
+			String codeValue = JedisUtils.get(pd.get("imageTokenKey").toString());
+			// 验验证码
+			if (StringUtils.isNotBlank(MapUtils
+					.getString(pd, "imageCode", null))
+					&& StringUtils.isNoneBlank(codeValue)
+					&& codeValue.equals(MapUtils.getString(pd, "imageCode",
+							null))) {
+				int code = NumberUtils.getRandomNum();// 生成随机验证码
+				String uuid = UUID.randomUUID().toString();
+				JedisUtils.setEx(uuid, 1000 * 60 * 2, Integer.toString(code));
+				if (RonglianyunSMSUtil.send(pd.get("user_account").toString(),
+						new String[] { String.valueOf(code), "10" })) {
+					map.put("codeKey", uuid);
+					// 旧系统的验证码入库
+					Map<String, Object> oldSystemMap = new HashMap<>();
+					Calendar afterTime = Calendar.getInstance();
+					afterTime.add(Calendar.MINUTE, 10); // 当前分钟+10
+					Date afterDate = (Date) afterTime.getTime(); // 验证码有效时间
+					oldSystemMap.put("type",
+							MapUtils.getString(pd, "type", defaultValue));
+					oldSystemMap.put("expire_time", afterDate);
+					oldSystemMap.put("code", code);
+					oldSystemMap.put("userId", MapUtils.getString(pd,
+							"user_account", defaultValue));
+					// oldSystemMap.put("time",
+					// // MapUtils.getString(pd, "time", defaultValue));
+					// oldSystemMap.put("userId", MapUtils.getString(pd,
+					// "user_account", defaultValue));
+					// SimpleDateFormat f = new SimpleDateFormat(
+					// "yyyy-MM-dd HH:mm:ss:SSS");
+					// Date date = new Date(System.currentTimeMillis());
+					// String time = f.format(date);
+					// oldSystemMap.put("time",time);
+					appUserService.deleteCode(oldSystemMap);// 删除旧的验证码
+					appUserService.insertCode(oldSystemMap);//
+					// Map<String, String> params = new HashMap<>();
+					// params.put("type",
+					// MapUtils.getString(pd, "type", defaultValue));
+					// params.put("code",Integer.toString(code));
+					// params.put("userId",
+					// MapUtils.getString(pd, "user_account", defaultValue));
+					// String result = HttpUtils.URLGet(
+					// "http://192.168.10.178:8080/ehome/appRegister/saveUserCode.do",
+					// params, "UTF-8");
+					// if (StringUtils.isNoneBlank(result)) {
+					// HashMap<String, String> resultmMap = JSON.parseObject(
+					// result,
+					// new TypeReference<HashMap<String, String>>() {
+					// });
+					// System.out.println(map);
+					// if (!"2000000".equals(MapUtils.getString(resultmMap,
+					// "status", defaultValue))) {
+					// if(resultmMap.get("message")!=null){
+					// map.put("oldSystemMessage",
+					// MapUtils.getString(resultmMap,
+					// "message", defaultValue));
+					// }
+					// throw new Exception("调用注册接口出错");
+					// }
+					// } else {
+					// throw new Exception("调用注册接口出错");
+					// }
+				} else {
+					response.getWriter().print(
+							JsonUtil.appResposeSingeMapJson(
+									ResponseCode.error.getCode(),
+									ResponseCode.error.getMsg(), map));
+					return;
+				}
+			} else {
+				response.getWriter().print(
+						JsonUtil.appResposeSingeMapJson(
+								ResponseCode.image_code_error.getCode(),
+								ResponseCode.image_code_error.getMsg(), map));
+				return;
+			}
+		} catch (Exception e) {
+			response.getWriter().print(
+					JsonUtil.appResposeSingeMapJson(
+							ResponseCode.error.getCode(),
+							ResponseCode.error.getMsg(), map));
+			return;
+		}
+		response.getWriter().print(
+				JsonUtil.appResposeSingeMapJson(ResponseCode.success.getCode(),
+						ResponseCode.success.getMsg(), map));
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/lossPass", method = RequestMethod.POST)
+	public void lossPass(AppUserModel appUserModel, HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		response.setContentType("text/html; charset=utf-8");
+		request.setCharacterEncoding("UTF-8");
+
+		if (logger.isDebugEnabled()) {
+			logger.info("找回密码");
+		}
+		Map<String, Object> map = new HashMap<>();
+		Map<String, Object> pd = this.getPageData();
+		// int primaryKey = -1;
+		try {
+			String newPassword = RSA.decryptPrivateKey(MapUtils.getString(pd,
+					"user_password", defaultValue));
+			pd.put("user_password", newPassword);// 对密码进行解密
+			pd = MapUtils.toCamelCaseMap(pd);
+			appUserModel = (AppUserModel) MapUtils.convertMap(
+					AppUserModel.class, pd);
+			String codeValue = JedisUtils.get(pd.get("codeKey").toString());
+            // 验验证码
+            if (pd.get("code").equals(codeValue)){
+			// 验验证码
+				Md5Hash md5Hash = null;
+				String salt = UUID.randomUUID().toString().replaceAll("-", "");
+				String pw = MD5.md5(pd.get("user_password").toString().trim());
+				md5Hash = new Md5Hash(pw, salt, 2);
+				appUserModel.setSalt(salt);
+				if (StringUtils.isNoneBlank(MapUtils.getString(pd,
+						"user_password", null))) {
+					appUserModel.setUserPassword(md5Hash.toString());
+				}
+				AppUserModel appUserModelCheck = new AppUserModel(pd.get(
+						"user_account").toString());
+				AppUserModel appUserModelSelect = appUserService
+						.selectOne(appUserModelCheck);
+				Map<String, String> params = new HashMap<>();
+				params.put("userId",
+						MapUtils.getString(pd, "user_account", defaultValue));
+				params.put("password", md5Hash.toString());
+				params.put("salt", salt);
+				if (appUserModelSelect != null) {
+					List<Map<String, Object>> oldSysUser = appUserService
+							.querySysUser(params);// 查询旧库
+					if (oldSysUser != null) {
+						appUserModel.setUserMobile(appUserModel
+								.getUserAccount());
+						appUserModel.setSalt(salt);
+						appUserModel.setId(appUserModelSelect.getId());
+						appUserService.updateNotNull(appUserModel);
+						// primaryKey = appUserModel.getId();
+						appUserService.updateSysUser(params);// 更新新用户到mysql
+					} else {
+						response.getWriter().print(
+								JsonUtil.appResposeSingeMapJson(
+										ResponseCode.unknown_account.getCode(),
+										ResponseCode.unknown_account.getMsg(),
+										map));
+						return;
+					}
+				} else {
+					response.getWriter()
+							.print(JsonUtil.appResposeSingeMapJson(
+									ResponseCode.unknown_account.getCode(),
+									ResponseCode.unknown_account.getMsg(), map));
+					return;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			response.getWriter().print(
+					JsonUtil.appResposeSingeMapJson(
+							ResponseCode.error.getCode(),
+							ResponseCode.error.getMsg(), map));
+			return;
+		}
+		response.getWriter().print(
+				JsonUtil.appResposeSingeMapJson(ResponseCode.success.getCode(),
+						ResponseCode.success.getMsg(), map));
+	}
+	
+	@ResponseBody
+	@RequestMapping(value = "/updatePass", method = RequestMethod.POST)
+	public void updatePass( HttpServletRequest request,
+	        HttpServletResponse response) throws Exception {
+	    AppUserModel appUserModel = new AppUserModel();
+	    response.setContentType("text/html; charset=utf-8");
+	    request.setCharacterEncoding("UTF-8");
+	    
+	    if (logger.isDebugEnabled()) {
+	        logger.info("找回密码");
+	    }
+	    Map<String, Object> map = new HashMap<>();
+	    Map<String, Object> pd = this.getPageData();
+	    // int primaryKey = -1;
+	    try {
+	        String newPassword = RSA.decryptPrivateKey(MapUtils.getString(pd,
+	                "user_password", defaultValue));
+	        pd.put("user_password", newPassword);// 对密码进行解密
+	        pd = MapUtils.toCamelCaseMap(pd);
+	        appUserModel = (AppUserModel) MapUtils.convertMap(
+	                AppUserModel.class, pd);
+	        if (true) {
+	            Md5Hash md5Hash = null;
+	            String salt = UUID.randomUUID().toString().replaceAll("-", "");
+	            String pw = MD5.md5(pd.get("user_password").toString().trim());
+	            md5Hash = new Md5Hash(pw, salt, 2);
+	            appUserModel.setSalt(salt);
+	            if (StringUtils.isNoneBlank(MapUtils.getString(pd,
+	                    "user_password", null))) {
+	                appUserModel.setUserPassword(md5Hash.toString());
+	            }
+	            AppUserModel appUserModelCheck = new AppUserModel(pd.get(
+	                    "user_account").toString());
+	            AppUserModel appUserModelSelect = appUserService
+	                    .selectOne(appUserModelCheck);
+	            Map<String, String> params = new HashMap<>();
+	            params.put("userId",
+	                    MapUtils.getString(pd, "user_account", defaultValue));
+	            params.put("password", md5Hash.toString());
+	            params.put("salt", salt);
+	            if (appUserModelSelect != null) {
+	                List<Map<String, Object>> oldSysUser = appUserService
+	                        .querySysUser(params);// 查询旧库
+	                if (oldSysUser != null) {
+	                    appUserModel.setUserMobile(appUserModel
+	                            .getUserAccount());
+	                    appUserModel.setSalt(salt);
+	                    appUserModel.setId(appUserModelSelect.getId());
+	                    appUserService.updateNotNull(appUserModel);
+	                    // primaryKey = appUserModel.getId();
+	                    appUserService.updateSysUser(params);// 更新新用户到mysql
+	                } else {
+	                    response.getWriter().print(
+	                            JsonUtil.appResposeSingeMapJson(
+	                                    ResponseCode.unknown_account.getCode(),
+	                                    ResponseCode.unknown_account.getMsg(),
+	                                    map));
+	                    return;
+	                }
+	            } else {
+	                response.getWriter()
+	                .print(JsonUtil.appResposeSingeMapJson(
+	                        ResponseCode.unknown_account.getCode(),
+	                        ResponseCode.unknown_account.getMsg(), map));
+	                return;
+	            }
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        response.getWriter().print(
+	                JsonUtil.appResposeSingeMapJson(
+	                        ResponseCode.error.getCode(),
+	                        ResponseCode.error.getMsg(), map));
+	        return;
+	    }
+	    response.getWriter().print(
+	            JsonUtil.appResposeSingeMapJson(ResponseCode.success.getCode(),
+	                    ResponseCode.success.getMsg(), map));
+	}
+
+	/**
+	 * 系统退出
+	 */
+	@RequestMapping(value = "/logout")
+	@ResponseBody
+	public AjaxResult logout() {
+		SecurityUtils.setSecurityManager(securityManager);
+		Subject subject = SecurityUtils.getSubject();
+		subject.logout();
+		return new AjaxResult(String.valueOf(ResponseCode.success.getCode()),
+				"退出成功!", ResponseCode.success.getMsg());
+	}
+
+	@RequestMapping(value = "/code", method = RequestMethod.POST)
+	public void code(HttpServletResponse response, HttpServletRequest request) {
+		String imageTokenKey = request.getParameter("imageTokenKey");
+		if (imageTokenKey != null && !"".equals(imageTokenKey)) {
+			ByteArrayOutputStream output = new ByteArrayOutputStream();
+			String code = drawImg(output);
+			// String uuid = UUID.randomUUID().toString();
+			JedisUtils.setEx(imageTokenKey, 1000 * 60 * 2, code);
+			try {
+				ServletOutputStream out = response.getOutputStream();
+				output.writeTo(out);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private String drawImg(ByteArrayOutputStream output) {
+		String code = "";
+		for (int i = 0; i < 4; i++) {
+			code += randomChar();
+		}
+		int width = 70;
+		int height = 25;
+		BufferedImage bi = new BufferedImage(width, height,
+				BufferedImage.TYPE_3BYTE_BGR);
+		Font font = new Font("Times New Roman", Font.PLAIN, 20);
+		Graphics2D g = bi.createGraphics();
+		g.setFont(font);
+		Color color = new Color(66, 2, 82);
+		g.setColor(color);
+		g.setBackground(new Color(226, 226, 240));
+		g.clearRect(0, 0, width, height);
+		FontRenderContext context = g.getFontRenderContext();
+		Rectangle2D bounds = font.getStringBounds(code, context);
+		double x = (width - bounds.getWidth()) / 2;
+		double y = (height - bounds.getHeight()) / 2;
+		double ascent = bounds.getY();
+		double baseY = y - ascent;
+		g.drawString(code, (int) x, (int) baseY);
+		/* 生成画线2016-11-21 */
+		Random r = new Random();
+		g.drawLine(r.nextInt(600), r.nextInt(300), r.nextInt(600),
+				r.nextInt(300));
+		g.drawLine(r.nextInt(600), r.nextInt(300), r.nextInt(600),
+				r.nextInt(300));
+		g.drawLine(r.nextInt(600), r.nextInt(300), r.nextInt(600),
+				r.nextInt(300));
+		g.drawLine(r.nextInt(80), r.nextInt(40), r.nextInt(80), r.nextInt(40));
+		g.drawLine(r.nextInt(80), r.nextInt(40), r.nextInt(80), r.nextInt(40));
+		g.drawLine(r.nextInt(80), r.nextInt(40), r.nextInt(80), r.nextInt(40));
+		g.drawLine(r.nextInt(800), r.nextInt(400), r.nextInt(800),
+				r.nextInt(400));
+		g.drawLine(r.nextInt(800), r.nextInt(400), r.nextInt(800),
+				r.nextInt(400));
+		g.drawLine(r.nextInt(800), r.nextInt(400), r.nextInt(800),
+				r.nextInt(400));
+		g.drawLine(r.nextInt(60), r.nextInt(30), r.nextInt(60), r.nextInt(30));
+		g.drawLine(r.nextInt(60), r.nextInt(30), r.nextInt(60), r.nextInt(30));
+		g.drawLine(r.nextInt(60), r.nextInt(30), r.nextInt(60), r.nextInt(30));
+		g.dispose();
+		try {
+			ImageIO.write(bi, "jpg", output);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return code;
+	}
+
+	private char randomChar() {
+		Random r = new Random();
+		String s = "ABCDEFGHJKLMNPRSTUVWXYZ0123456789";
+		return s.charAt(r.nextInt(s.length()));
+	}
+
+	/**
+	 * 1.先在t_app_user新增一条记录 2.登录 先检查中间表有么绑定手机号 如果绑定则取手机号进那条记录进行登录
+	 * 
+	 * 绑定的规则 ：
+	 * 
+	 * @param appUserModel
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws Exception
+	 *
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/thirdLogin", method = RequestMethod.POST)
+	public AjaxResult thirdLogin(AppUserModel appUserModel,
+			HttpServletRequest request, HttpServletResponse response)
+			throws Exception {
+		response.setContentType("text/html; charset=utf-8");
+		request.setCharacterEncoding("UTF-8");
+
+		if (logger.isDebugEnabled()) {
+			logger.info("注册");
+		}
+
+		Subject subject = SecurityUtils.getSubject();
+
+		//Map<String, Object> map = new HashMap<>();
+		Map<String, Object> pd = this.getPageData();
+		int primaryKey = -1;
+		Map<String,String> oldSysMap = new HashMap<String, String>();
+		oldSysMap.put("id", "-1");
+		oldSysMap.put("ID", "-1");
+        String oldOsIp = StringUtil.obj2String(SpringPropertiesUtil.get("oldOsIp"), null);
+		pd.put("user_password", "a12345");// 密码
+		pd = MapUtils.toCamelCaseMap(pd);
+		appUserModel = (AppUserModel) MapUtils.convertMap(AppUserModel.class,
+				pd);
+		Md5Hash md5Hash = null;
+		String salt = UUID.randomUUID().toString().replaceAll("-", "");
+		md5Hash = new Md5Hash(
+				MD5.md5(pd.get("user_password").toString().trim()), salt, 2);
+		appUserModel.setSalt(salt);
+		if (StringUtils.isNoneBlank(MapUtils.getString(pd, "user_password",
+				null))) {
+			appUserModel.setUserPassword(md5Hash.toString());
+		}
+		AppUserModel appUserModelCheck = new AppUserModel(pd
+				.get("user_account").toString());
+
+		AppUserModel appUserModelSelect = appUserService
+				.selectOne(appUserModelCheck);
+		Map<String, String> params = new HashMap<>();
+		params.put("userId",
+				MapUtils.getString(pd, "user_account", defaultValue));
+		params.put("passWord", md5Hash.toString());
+		params.put("imei", MapUtils.getString(pd, "imei", defaultValue));
+		params.put("code", MapUtils.getString(pd, "code", defaultValue));
+		params.put("createDate", DateUtils.getTime());
+		params.put("USERNAME", "");
+		params.put("accountType", "3");
+		params.put(
+				"invitation_code",
+				MapUtils.getString(pd, "invitation_code",
+						NumberUtils.getRandomString()));
+		params.put("salt", salt);
+	    oldSysMap.putAll(params);
+        oldSysMap.put("passWord", MD5.md5(pd.get("user_password").toString().trim()));
+		if (null == appUserModelSelect) {
+		    try {
+		        //**
+//			appUserModel.setUserMobile(appUserModel.getUserAccount());
+		        appUserModel.setCreateTime(new Date());
+		        appUserModel.setStatus(0);
+		        // appUserModel.setSex(1);
+		        appUserModel.setIsMember(0);
+		        appUserService.saveNotNull(appUserModel);
+		        primaryKey = appUserModel.getId();
+		        oldSysMap.put("id", String.valueOf(primaryKey));
+		        oldSysMap.put("ID", String.valueOf(primaryKey));
+		        // 配置角色
+		        Map<String, Object> roleMap = new HashMap<>();
+		        List<Map<String, Object>> list = new ArrayList<>();
+		        // list.add(Integer.parseInt(tempStr[j].toString()));
+		        Map<String, Object> tempMap = new HashMap<>();
+		        tempMap.put("app_user_id", primaryKey);
+		        // FIXME 暂时固定一个角色id
+		        tempMap.put("role_id", 21);
+		        list.add(tempMap);
+		        roleMap.put("list", list);
+		        appUserService.saveAppRole(roleMap);
+//		        List<Map<String, Object>> oldSysUser = appUserService
+//		                .querySysUser(params);
+//		        if (oldSysUser == null || oldSysUser.size() == 0) {
+//                    params.put("id", String.valueOf(primaryKey));
+//		            appUserService.insertSysUser(params);// 保存新用户到mysql
+//		        } else if (oldSysUser != null && oldSysUser.size() == 1) {
+//		            appUserService.updateSysUser(params);
+//		        }
+                String rpString = HttpUtils.URLPost("http://" + oldOsIp + ":8080/ehome/appRegister/saveByZG.do", oldSysMap, "UTF-8");
+                if (StringUtils.isNoneBlank(rpString)) {
+                    HashMap<String, String> resultMap = JSON.parseObject(rpString, new TypeReference<HashMap<String, String>>() {
+                    });
+                    System.out.println(resultMap);
+                    if (!"2000000".equals(MapUtils.getString(resultMap, "status", defaultValue))) {
+                        System.out.println("rp>>" + rpString);
+                        throw new Exception("调用更新旧库接口出错");
+                    }
+                }
+            } catch (Exception e) {
+                appUserService.deleteByKey(primaryKey);
+                appUserService.deleteAppRole(primaryKey);
+                HttpUtils.URLPost("http://"+oldOsIp+":8080/ehome/appRegister/deleteByUserById.do", oldSysMap, "UTF-8");
+            }
+		}else{
+		    AppUserModel updateAppUserModel = new AppUserModel();
+		    updateAppUserModel.setId(appUserModelSelect.getId());
+		    updateAppUserModel.setUserPassword(md5Hash.toString());
+		    appUserService.updateNotNull(updateAppUserModel);
+		}
+		// 执行登录动作
+		String userAccount = pd.get("user_account").toString();
+		String userPassword = "a12345";
+		String imei = MapUtils.getString(pd, "imei", defaultValue);
+
+		SecurityUtils.setSecurityManager(securityManager);
+		if (logger.isDebugEnabled()) {
+			logger.info("APP端帐号登录,用户名或者手机号或者身份证:{},密码:{},设备号:{}", userAccount,
+					userPassword, imei);
+		}
+		List<RoleModel> roles = new ArrayList<>();
+		List<MenuModel> menus = new ArrayList<>();
+		List<String> permissions = new ArrayList<>();
+		List<String> roleCodes = new ArrayList<>();
+		AppUserDto appUserModelLogin = appUserService
+				.queryByLoginName(userAccount);
+		if (null != appUserModelLogin) {
+			if (appUserModelLogin.getStatus().intValue() == -1) {
+				return new AjaxResult(
+						String.valueOf(ResponseCode.unknown_account.getCode()),
+						ResponseCode.unknown_account.getMsg(),
+						ResponseCode.unknown_account.getMsg());
+			}
+			if (appUserModelLogin.getStatus().intValue() == 1) {
+				return new AjaxResult(
+						String.valueOf(ResponseCode.freeze_account.getCode()),
+						ResponseCode.freeze_account.getMsg(),
+						ResponseCode.freeze_account.getMsg());
+			}
+			// 查询出当前用户的角色和权限信息
+			roles = roleService.queryAuthRoleByAppUserId(
+					appUserModelLogin.getId(), 1);
+			List<Integer> rolesId = new ArrayList<>();
+			if (CollectionUtils.isNotEmpty(roles)) {
+				for (RoleModel role : roles) {
+					rolesId.add(role.getId());
+					roleCodes.add(role.getRoleCode());
+				}
+				menus = menuService.queryAuthPermissByRoleId(rolesId);
+				if (CollectionUtils.isNotEmpty(menus)) {
+					for (MenuModel menu : menus) {
+						permissions.add(menu.getMenuCode());
+					}
+				}
+			}
+		} else {
+			return new AjaxResult(String.valueOf(ResponseCode.unknown_account
+					.getCode()), ResponseCode.unknown_account.getMsg(),
+					ResponseCode.unknown_account.getMsg());
+		}
+		// 登录结果回写用户信息和token
+		Map<String, Object> responseDto = new HashMap<>();
+		// 判断是否已经登录
+		if (!subject.isAuthenticated()) {
+			// 私钥解密后的账户密码 shiro用来认证登录
+			CustomizedUsernamePasswordToken token = new CustomizedUsernamePasswordToken(
+					userAccount, MD5.md5(userPassword),
+					DeviceType.APP.toString());
+			token.setRememberMe(false);
+			AppLoginInfoDto appLoginAccinfo = new AppLoginInfoDto();
+			try {
+				// 执行登录认证
+				subject.login(token);
+				if (logger.isDebugEnabled()) {
+					logger.info("当前APP账户会话ID:{}", subject.getSession().getId());
+				}
+				BeanUtils.copyProperties(appUserModelLogin, appLoginAccinfo);
+				appLoginAccinfo.setRoleList(roles);
+				appLoginAccinfo.setMenuList(menus);
+
+				subject.getSession().setAttribute(SessionCons.DEVICE_TYPE,
+						DeviceType.APP.toString());
+				subject.getSession().setAttribute(
+						SessionCons.APP_LOGIN_USER_SESSION, appLoginAccinfo);
+				subject.getSession().setAttribute(
+						SessionCons.APP_LOGIN_USER_ID,
+						appUserModelLogin.getId());
+				subject.getSession().setAttribute(
+						SessionCons.LOGIN_USER_PERMISSIONS, permissions);
+				subject.getSession().setAttribute(SessionCons.LOGIN_USER_ROLES,
+						roleCodes);
+
+			} catch (AuthenticationException e) {
+				return new AjaxResult(String.valueOf(ResponseCode.login_error
+						.getCode()), ResponseCode.login_error.getMsg(),
+						ResponseCode.login_error.getMsg());
+			}
+		}
+		// 返回登陆信息
+		responseDto.put("id", String.valueOf(appUserModelLogin.getId()));// 用户ID
+		responseDto.put("name", appUserModelLogin.getUserName() == null ? ""
+				: appUserModelLogin.getUserName());// 用户名称
+		responseDto.put(
+				"sex",
+				appUserModelLogin.getSex() == null ? "" : String
+						.valueOf(appUserModelLogin.getSex()));// 性别
+		responseDto.put("user_id",
+				appUserModelLogin.getUserMobile() == null ? ""
+						: appUserModelLogin.getUserMobile());// 手机
+		responseDto.put("token", subject.getSession().getId().toString());// token
+		responseDto.put(
+				"is_member",
+				appUserModelLogin.getIsMember() == null ? "" : String
+						.valueOf(appUserModelLogin.getIsMember()));
+		responseDto.put("audit_status", NumberUtils.isNull(appUserModelLogin
+				.getAuditStatus()) ? "" : appUserModelLogin.getAuditStatus());
+		responseDto.put("nick_name",
+				appUserModelLogin.getNickName() == null ? ""
+						: appUserModelLogin.getNickName());
+		responseDto.put("city_id", appUserModelLogin.getCity() == null ? ""
+				: String.valueOf(appUserModelLogin.getCity()));
+		responseDto.put("city_name", "");
+		responseDto.put("available", appUserModelLogin.getStatus() == null ? ""
+				: String.valueOf(appUserModelLogin.getStatus()));
+		responseDto.put(
+   				"portrait",
+				appUserModelLogin.getPortrait() == null ? "" : String
+						.valueOf(appUserModelLogin.getPortrait()));
+		responseDto.put("phone", appUserModelLogin.getUserMobile() == null ? ""
+				: appUserModelLogin.getUserMobile());
+		responseDto.put("invitation_code", "");
+		responseDto.put(
+				"Last_login",
+				appUserModelLogin.getLastLoginTime() == null ? "" : DateUtils
+						.getTime(appUserModelLogin.getLastLoginTime()));
+		responseDto.put("username",
+				appUserModelLogin.getUserName() == null ? ""
+						: appUserModelLogin.getUserName());
+		responseDto.put("email", appUserModelLogin.getUserEmail() == null ? ""
+				: appUserModelLogin.getUserEmail());
+		responseDto.put("union_chair_status", "");
+		responseDto.put("signature",
+				appUserModelLogin.getSignature() == null ? ""
+						: appUserModelLogin.getSignature());
+		// result = RSA.encryptPublicKey(responseDto.toString());
+		appUserService.workForLogin(appUserModelLogin, imei);
+		responseDto.put("work_place", appUserModel.getWorkPlace()==null?"":appUserModel.getWorkPlace());
+		responseDto.put("height", appUserModel.getHeight()==null?"":appUserModel.getHeight());
+		responseDto.put("birthday", appUserModel.getBirthday()==null?"":appUserModel.getBirthday());
+		responseDto.put("annual_income", appUserModel.getAnnualIncome()==null?1:appUserModel.getAnnualIncome());
+		
+		Map<String, Object> responseMap = appMarryService.queryUserMarryInfo(appUserModel.getId());
+		List<Map<String, Object>> interetsList = appMarryService.queryInterets(appUserModel.getId());
+		responseMap = MapUtils.toCamelCaseMapNoRepeat(responseMap);
+		responseMap.put("interests", interetsList);
+		//连线省总功能
+		responseMap.put("union_chair_status", "");
+		responseMap.put("token", subject.getSession().getId().toString());// token
+		responseMap.remove("userPassword");
+		responseMap.remove("salt");
+		
+		responseMap.put("goldCoinsNum",StringUtil.String2Int(goldCoinService.getGoldCoinTotalNum(appUserModel.getId()), 0));
+		List<Integer> myLoveNum = appMarryLoveService.queryMyLove(appUserModel.getId());
+		if(CollectionUtils.isNotEmpty(myLoveNum)){
+			responseMap.put("myLoveNum", myLoveNum.size());
+		}else{
+			responseMap.put("myLoveNum",0);
+		}
+		List<Integer> loveMeNum = appMarryLoveService.queryLoveMe(appUserModel.getId());
+		if(CollectionUtils.isNotEmpty(loveMeNum)){
+			responseMap.put("loveMeNum", loveMeNum.size());
+		}else{
+			responseMap.put("loveMeNum", 0);
+		}
+		responseDto.put("allInfo", responseMap);
+		
+		return new AjaxResult(String.valueOf(ResponseCode.success.getCode()),
+				"登录成功!", responseDto);
+
+	}
+
+	/**
+	 * 修改个人信息
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws Exception
+	 *
+	 */
+	@RequestMapping(value = "/updateUserinfo", method = RequestMethod.POST)
+	@ResponseBody
+	public AjaxResult updateUserinfo(HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
+		response.setContentType("text/html; charset=utf-8");
+		request.setCharacterEncoding("utf-8");
+		Cookie[] cookies = request.getCookies();//这样便可以获取一个cookie数组
+		String token="";
+		if(cookies.length>0 && cookies[0]!=null){
+		     token = request.getCookies()[0].getValue();
+		}
+		Map<String, Object> map = new HashMap<>();
+
+		map = this.getPageData();
+		Map<String, Object> responseDto = new HashMap<>();
+		try {
+			map = MapUtils.toCamelCaseMap(map);
+			AppUserModel entity = (AppUserModel) MapUtils.convertMap(
+					AppUserModel.class, map);
+			
+			MarryMemberModel marryMemberModel = (MarryMemberModel)MapUtils.convertMap(MarryMemberModel.class, map);//婚恋实体
+			
+			Date date  = new Date();
+			marryMemberModel.setUpdateTime(date);
+			marryMemberModel.setActiveTime(date);
+			marryMemberModel.setAppUserId(entity.getId());
+			marryMemberModel.setId(null);
+			String birthday = MapUtils.getString(map, "birthday", "");
+			Integer dict_age = null;
+			if(StringUtils.isNotBlank(birthday)){
+				birthday = birthday.trim();
+				int index= birthday.indexOf("-");
+				int year = Integer.parseInt(birthday.substring(0, index));
+				//System.out.println("year:"+year);
+				int now = Calendar.getInstance().get(Calendar.YEAR);  
+			    //System.out.println("年: " + now);
+			    int tempYear = now-year+1;
+			    if(tempYear<=30){
+			    		dict_age = 1;
+			    }else if(tempYear<=40){
+			    		dict_age = 2;
+			    }else if(tempYear<=50){
+			    		dict_age = 3;
+			    }else {
+					dict_age = 4;
+				}
+			}
+			marryMemberModel.setDictAge(dict_age);
+
+			responseDto.put("cityName", map.get("cityName"));
+			responseDto.put("city_name", map.get("cityName"));
+			
+			// 查询省市id 通过cityName
+			List<Map<String, Object>> cityId = appMemberService
+					.queryCityByname(map);
+			if (CollectionUtils.isNotEmpty(cityId)
+					&& cityId.size() == 1) {
+				map.put("city",
+						Integer.parseInt(cityId.get(0).get("id")
+								.toString()));
+				entity.setCity(Integer.parseInt(cityId.get(0).get("id")
+								.toString()));
+				responseDto.put("city", Integer.parseInt(cityId.get(0).get("id")
+                                .toString()));
+			}
+			
+			String interest = MapUtils.getString(map, "interests", "");
+			List<Map<String, Object>> list = new ArrayList<>();
+			if("".equals(interest)){
+				map.put("interest_number",0);
+				marryMemberModel.setInterestNum(0);
+			}else{
+				String [] interests = interest.split(",");
+				for(String temp :interests){
+					Map<String, Object> tempMap = new HashMap<>();
+					tempMap.put("app_user_id", Integer.parseInt(map.get(
+							"id").toString()));
+					tempMap.put("interest_id",temp);
+					list.add(tempMap);
+				}
+				map.put("interest_number", interests.length);
+				map.put("interests", interests);
+				marryMemberModel.setInterestNum(interests.length);
+
+			}
+			map.put("list", list);//兴趣爱好
+			
+			// 更新个人信息
+			appUserService.updateUserInfo(map, entity,marryMemberModel);
+			
+			List<Map<String, Object>> interetsList = appMarryService.queryInterets(entity.getId());
+			Map<String, Object> ajaxMap = appMarryService.queryUserMarryInfo(entity.getId());
+			ajaxMap = MapUtils.toCamelCaseMapNoRepeat(ajaxMap);
+			ajaxMap.put("interests", interetsList);
+			//连线省总功能
+			ajaxMap.put("union_chair_status", "");
+			ajaxMap.put("token", token);// token
+			ajaxMap.remove("userPassword");
+			ajaxMap.remove("salt");
+			
+			Map<String, Object> tempMap= MapUtils.toUnderlineStringMap(ajaxMap);
+			responseDto.putAll(tempMap);
+			if(responseDto.get("id")!=null) responseDto.put("id", responseDto.get("id").toString());
+			
+			ajaxMap.put("goldCoinsNum",StringUtil.String2Int(goldCoinService.getGoldCoinTotalNum(entity.getId()), 0));
+			List<Integer> myLoveNum = appMarryLoveService.queryMyLove(entity.getId());
+			if(CollectionUtils.isNotEmpty(myLoveNum)){
+				ajaxMap.put("myLoveNum", myLoveNum.size());
+			}else{
+				ajaxMap.put("myLoveNum",0);
+			}
+			List<Integer> loveMeNum = appMarryLoveService.queryLoveMe(entity.getId());
+			if(CollectionUtils.isNotEmpty(loveMeNum)){
+				ajaxMap.put("loveMeNum", loveMeNum.size());
+			}else{
+				ajaxMap.put("loveMeNum", 0);
+			}
+			responseDto.put("allInfo", ajaxMap);
+			
+			if (JedisUtils.get(("login:user:login:id:"+entity.getId()).getBytes()) != null){
+				JedisUtils.set(("login:user:login:id:"+entity.getId()).getBytes(), SerializeUtils.serialize(entity), 604800);
+			}
+			Session session = redisTemplate.opsForValue().get(token);
+			AppLoginInfoDto appLoginAccinfoTemp = (AppLoginInfoDto) session.getAttribute(SessionCons.APP_LOGIN_USER_SESSION);
+			AppLoginInfoDto appLoginAccinfo = EntityUtils.convert(entity, AppLoginInfoDto.class);
+			appLoginAccinfo.setMenuList(appLoginAccinfoTemp.getMenuList());
+			appLoginAccinfo.setRoleList(appLoginAccinfoTemp.getRoleList());
+			session.setAttribute(
+					SessionCons.APP_LOGIN_USER_SESSION, appLoginAccinfo);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			new AjaxResult(String.valueOf(ResponseCode.error.getCode()),
+					"修改错误!", responseDto);
+		}
+		return new AjaxResult(String.valueOf(ResponseCode.success.getCode()),
+				"修改成功!", responseDto);
+	}
+	
+}

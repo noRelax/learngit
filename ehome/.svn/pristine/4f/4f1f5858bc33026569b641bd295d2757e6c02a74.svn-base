@@ -1,0 +1,462 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.marry.mapper.MarryMemberMapper">
+
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.marry.dto.MarryMemberDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="app_user_id" property="appUserId" jdbcType="INTEGER" />
+		<result column="member_id" property="memberId" jdbcType="INTEGER" />
+		<result column="gold_coins" property="goldCoins" jdbcType="INTEGER" />
+		<result column="photo_num" property="photoNum" jdbcType="INTEGER" />
+		<result column="comment_num" property="commentNum" jdbcType="INTEGER" />
+		<result column="thumb_up_num" property="thumbUpNum" jdbcType="VARCHAR" />
+		<result column="report_num" property="reportNum" jdbcType="INTEGER" />
+		<result column="is_blacklist" property="isBlacklist" jdbcType="INTEGER" />
+		<result column="hometown" property="hometown" jdbcType="VARCHAR" />
+		<result column="interest_number" property="interestNumber"
+			jdbcType="INTEGER" />
+		<result column="dating_statu" property="datingStatu" jdbcType="VARCHAR" />
+		<result column="marry_demand" property="marryDemand" jdbcType="INTEGER" />
+		<result column="weixing" property="weixing" jdbcType="VARCHAR" />
+		<result column="self_introduction" property="selfIntroduction"
+			jdbcType="VARCHAR" />
+		<result column="star" property="star" jdbcType="INTEGER" />
+		<result column="nick_name" property="nickName" jdbcType="VARCHAR" />
+		<result column="portrait" property="portrait" jdbcType="VARCHAR" />
+		<result column="sex" property="sex" jdbcType="INTEGER" />
+		<result column="height" property="height" jdbcType="VARCHAR" />
+		<result column="birthday" property="birthday" jdbcType="VARCHAR" />
+		<result column="work_place" property="workPlace" jdbcType="VARCHAR" />
+		<result column="annual_income" property="annualIncome"
+			jdbcType="VARCHAR" />
+		<result column="last_login_time" property="lastLoginTime"/>
+		<result column="marital_status" property="maritalStatus"
+			jdbcType="INTEGER" />
+		<result column="event" property="event" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="uid" property="uid" jdbcType="INTEGER" />
+		<result column="active_time" property="activeTime" jdbcType="TIMESTAMP" />
+		<result column="operator_time" property="operatorTime"
+			jdbcType="TIMESTAMP" />
+		<result column="marry_user_id" property="marryUserId" jdbcType="INTEGER" />
+		<result column="operator_type" property="operatorType"
+			jdbcType="INTEGER" />
+		<result column="create_user_id" property="createUserId"
+			jdbcType="INTEGER" />
+	</resultMap>
+
+
+	<sql id="commonSQL">
+		SELECT
+			t.id,
+			t.app_user_id,
+			t.member_id,
+			t.gold_coins,
+			t.photo_num,
+			t.comment_num,
+			t.thumb_up_num,
+			t.report_num,
+			t.is_blacklist,
+			t.hometown,
+			t.interest_number,
+			t.dating_statu,
+			t.marry_demand,
+			t.weixing,
+			t.self_introduction,
+			t.star
+		FROM
+			t_marry_member t
+	</sql>
+
+	<select id="queryForList" resultMap="BaseResultMap">
+		SELECT
+			t.id,
+			t.app_user_id,
+			t.member_id,
+			t.gold_coins,
+			t.photo_num,
+			t.comment_num,
+			t.thumb_up_num,
+			t.report_num,
+			t.is_blacklist,
+			t.hometown,
+			t.interest_number,
+			t.active_time,
+			t.dating_statu,
+			t.marry_demand,
+			t.weixing,
+			t.self_introduction,
+			t.star,
+			t.nick_name,
+			t.portrait
+		FROM
+			t_marry_member t
+		<where>	
+			<choose>  
+	            <when test="selectName==1">
+	                <if test="keyword!=null and keyword!=''">
+	                    AND t.app_user_id = #{keyword} 
+	                </if>  
+	            </when> 
+	            <otherwise>  
+	                <if test="keyword!=null and keyword!=''">
+	                    AND t.nick_name LIKE CONCAT('%', #{keyword},'%')
+	                </if> 
+	            </otherwise>  
+            </choose>
+			<if test="isBlacklist==0">
+				AND t.is_blacklist is not null
+			</if>
+			<if test="isBlacklist==1">
+				AND t.is_blacklist is null
+			</if>
+			<if test="startTime!=null and startTime!=''">
+				AND t.active_time >= #{startTime}
+			</if>
+			<if test="endTime!=null and endTime!=''">
+				AND t.active_time <![CDATA[ <= ]]> #{endTime}
+			</if>
+		</where>
+		ORDER BY ${fieldName} ${fieldSort}
+	</select>
+
+	<select id="queryStatistics" resultMap="BaseResultMap">
+		SELECT
+		u.*, t.*
+		FROM
+		t_marry_member t
+		JOIN t_app_user u ON t.app_user_id =
+		u.id
+		<where>
+			<if test="deviceType!=null and deviceType!=0">
+				AND u.source_device = #{deviceType}
+			</if>
+		</where>
+	</select>
+
+<select id="queryForEditList" resultMap="BaseResultMap">
+		SELECT
+			u.nick_name,
+			t.app_user_id,
+			t.id,
+			t.report_num,
+			t.is_blacklist,
+			t.gold_coins,
+			t.photo_num,
+			t.comment_num,
+			t.thumb_up_num,
+			t.star,
+			t.hometown,
+			t.dating_statu,
+			t.self_introduction,
+			t.active_time,
+			u.sex,
+			u.height,
+			u.birthday,
+			u.work_place,
+			u.annual_income,
+			u.last_login_time,
+			u.portrait,
+			m.marital_status
+		FROM
+			t_marry_member t
+		LEFT JOIN t_app_user u ON t.app_user_id = u.id
+		LEFT JOIN t_member m ON t.member_id = m.id
+		WHERE
+			t.id = #{id}
+	</select>
+
+	<select id="queryForEditBlackList" resultMap="BaseResultMap">
+		SELECT
+			t1.`event` EVENT,
+			t1.uid createUserId,
+			t1.create_time operatorTime
+		FROM
+			t_marry_member_log t1
+		WHERE
+			t1.marry_member_id = #{id}
+		UNION ALL
+			SELECT
+				'用户被举报' EVENT,
+				t2.create_user_id createUserId,
+				t2.operator_time operatorTime
+			FROM
+				t_marry_shielding t2
+			WHERE
+				t2.operator_type = 1
+			AND t2.marry_user_id = #{uid}
+	</select>
+
+	<update id="updateIsBlacklist">
+		UPDATE t_marry_member SET is_blacklist =
+		#{isBlacklist} WHERE id= #{id}
+	</update>
+
+	<select id="queryById" resultMap="BaseResultMap">
+		SELECT
+			t.id,
+			t.app_user_id,
+			t.member_id,
+			t.gold_coins,
+			t.photo_num,
+			t.comment_num,
+			t.thumb_up_num,
+			t.report_num,
+			t.is_blacklist,
+			t.hometown,
+			t.interest_number,
+			t.dating_statu,
+			t.marry_demand,
+			t.weixing,
+			t.self_introduction,
+			t.star,
+			t.nick_name,
+			t.portrait,
+			t.active_time
+		FROM
+			t_marry_member t
+		<where>
+			<if test="marryMoldelList != null and marryMoldelList.size() != 0">
+				AND t.id in
+				<foreach collection="marryMoldelList" item="item" index="index"
+					open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			</if>
+		</where>
+	</select>
+
+	<select id="queryNearAge" resultType="java.lang.Integer">
+		SELECT f.id
+		FROM(select
+		a.app_user_id from (select m.app_user_id from
+		t_marry_member m where
+		(m.dating_statu is null or m.dating_statu=1)
+		and m.is_blacklist=0 and
+		m.app_user_id !=#{appUserId})
+		a LEFT JOIN
+		(select b.id from t_app_user b
+		where
+		CONVERT(LEFT(b.birthday,4) ,
+		SIGNED)&gt;= #{lowerLimit} and
+		CONVERT(LEFT(b.birthday,4) ,
+		SIGNED)&lt;= #{topLimit}) c on
+		a.app_user_id =
+		c.id ) d
+		LEFT JOIN
+		(select e.* from
+		t_marry_photo e where
+		e.is_shielding=0 and
+		e.is_new =
+		1)
+		f ON
+		d.app_user_id = f.app_user_id
+		ORDER BY
+		f.public_time DESC, f.id
+		DESC limit 50
+	</select>
+
+	<select id="querySamePlace" resultType="java.lang.Integer">
+		SELECT f.id FROM
+		(select
+		m.app_user_id from t_marry_member m where (m.dating_statu is
+		null or
+		m.dating_statu=1 ) and m.is_blacklist=0 and m.app_user_id
+		!=#{appUserId}
+		and (
+		m.work_place = #{workPlace} or m.hometown =
+		#{homeTown} )) a LEFT JOIN (select e.* from
+		t_marry_photo e where
+		e.is_shielding=0 and e.is_new = 1) f ON
+		a.app_user_id = f.app_user_id
+		ORDER BY f.public_time DESC, f.id DESC limit 50
+	</select>
+
+
+	<select id="querySameInterests" resultType="java.lang.Integer">
+		SELECT f.id from (SELECT a.app_user_id from (select m.app_user_id from
+		t_marry_member m where (m.dating_statu is null or m.dating_statu=1)
+		and m.is_blacklist=0 and m.app_user_id !=#{appUserId}) a
+
+		INNER JOIN
+		(select DISTINCT t.app_user_id from t_marry_interest t where
+		t.interest_id in
+		<foreach item="item" index="index" collection="list" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		) b on a.app_user_id = b.app_user_id ) c LEFT JOIN (select e.* from
+		t_marry_photo e where e.is_shielding=0 and e.is_new = 1) f ON
+		c.app_user_id = f.app_user_id ORDER BY f.public_time DESC, f.id DESC
+		limit 50
+	</select>
+
+	<select id="queryByAnuualIncome" resultType="java.lang.Integer">
+		SELECT f.id from
+		(select a.app_user_id FROM (select m.app_user_id from t_marry_member m
+		where (m.dating_statu is null or m.dating_statu=1) and
+		m.is_blacklist=0 and m.app_user_id !=#{appUserId}) a
+		LEFT JOIN (select
+		b.id from t_app_user b where b.annual_income= #{annualIncome}) c ON
+		a.app_user_id = c.id ) d
+		LEFT JOIN (select e.* from t_marry_photo e
+		where e.is_shielding=0 and
+		e.is_new = 1) f ON d.app_user_id =
+		f.app_user_id ORDER BY
+		f.public_time DESC, f.id DESC limit 50
+	</select>
+
+	<select id="queryByEductionAndDegree" resultType="java.lang.Integer">
+		SELECT f.id from (select a.app_user_id, a.id FROM (select m.id,m.app_user_id
+		from
+		t_marry_member m where (m.dating_statu is null or
+		m.dating_statu=1) and
+		m.is_blacklist=0 and m.app_user_id
+		!=#{appUserId}) a
+		LEFT JOIN (select
+		b.* from t_member b
+		<where>
+			<if test="degree!=null and degree!='' and degree!=0">
+				b.degree=#{degree}
+			</if>
+			or b.education = #{education}
+		</where>
+		) ON a.id = b.id) c LEFT JOIN (select e.* from t_marry_photo e
+		where e.is_shielding=0 and e.is_new = 1) f ON c.app_user_id =
+		f.app_user_id ORDER BY f.public_time DESC, f.id DESC limit 50
+	</select>
+
+
+	<select id="queryManage" resultType="java.lang.Integer">
+		SELECT f.id
+		FROM (select a.id, a.app_user_id from (select m.id, m.app_user_id from
+		t_marry_member m where (m.dating_statu is null or m.dating_statu=1)
+		and m.is_blacklist=0 and m.app_user_id !=#{appUserId})
+		a
+		LEFT JOIN
+		(select b.* from t_member b
+		where b.job like
+		CONCAT('%','董事','%') or
+		b.job like
+		CONCAT('%','经理','%') or b.job like
+		CONCAT('%','主管','%') or
+		b.job like
+		CONCAT('%','总监','%') or b.job like
+		CONCAT('%','主席','%') or
+		b.job like
+		CONCAT('%','部长','%')
+		or b.job like CONCAT('%','科长','%') or
+		b.job like
+		CONCAT('%','主任','%') or
+		b.job like CONCAT('%','课长','%') or
+		b.job like
+		CONCAT('%','首席','%') or
+		b.job like CONCAT('%','书记','%') or
+		b.job like
+		CONCAT('%','会长','%')
+		or b.job like CONCAT('%','CEO','%') or
+		b.job like
+		CONCAT('%','COO','%')
+		or b.job like CONCAT('%','CFO','%') or
+		b.job like
+		CONCAT('%','CTO','%') or b.job like CONCAT('%','CIO','%') or
+		b.job
+		like CONCAT('%','CSO','%')
+		or b.job like CONCAT('%','CKO','%') or
+		b.job
+		like CONCAT('%','CMO','%')
+		or b.job like CONCAT('%','CCO','%') or
+		b.job
+		like
+		CONCAT('%','CHO','%') or b.job like CONCAT('%','CPO','%') or
+		b.job
+		like CONCAT('%','CBO','%')
+		or b.job like CONCAT('%','CAO','%') or
+		b.job
+		like CONCAT('%','CGO','%')
+		or b.job like CONCAT('%','CRO','%') or
+		b.job
+		like
+		CONCAT('%','CQO','%') ) b ON a.id = b.id) c LEFT JOIN
+		(select
+		e.* from t_marry_photo e where e.is_shielding=0 and e.is_new =
+		1) f ON
+		c.app_user_id = f.app_user_id ORDER BY f.public_time DESC, f.id
+		DESC
+		limit 50
+	</select>
+
+	<select id="queryIdentificationMember" resultType="java.lang.Integer">
+		SELECT
+		f.id from
+		(select a.id, a.app_user_id FROM (select m.id, m.app_user_id from
+		t_marry_member m
+		where (m.dating_statu is null or m.dating_statu=1)
+		and m.is_blacklist=0
+		and m.app_user_id !=#{appUserId}) a
+		LEFT JOIN
+		(select b.*
+		from t_member b
+		where b.audit_status = 1 AND
+		b.status=1 ) b ON
+		a.id = b.id) c LEFT
+		JOIN
+		(select e.* from t_marry_photo e where
+		e.is_shielding=0 and
+		e.is_new = 1) f ON
+		c.app_user_id = f.app_user_id
+		ORDER BY f.public_time
+		DESC, f.id DESC limit 50
+	</select>
+
+
+	<select id="queryCarrerStabilization" resultType="java.lang.Integer">
+
+	</select>
+
+	<select id="queryMatchByStars" resultType="java.lang.Integer">
+		SELECT f.id FROM (select m.app_user_id from t_marry_member m
+		where
+		(m.dating_statu is null or m.dating_statu=1 ) and
+		m.is_blacklist=0 and
+		m.app_user_id !=#{appUserId} and m.star in
+		<foreach item="item" index="index" collection="list" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		)
+		a LEFT JOIN (select e.* from t_marry_photo e where e.is_shielding=0
+		and
+		e.is_new = 1) f ON a.app_user_id = f.app_user_id ORDER BY
+		f.public_time DESC, f.id DESC limit 50
+	</select>
+
+	<select id="querySuiYuan" resultType="java.lang.Integer">
+		SELECT f.id from (select
+		m.app_user_id from t_marry_member m where (m.dating_statu is null or
+		m.dating_statu=1) and m.is_blacklist=0 and m.app_user_id
+		!=#{appUserId}) d
+		LEFT JOIN (select e.* from t_marry_photo e where
+		e.is_shielding=0) f ON
+		d.app_user_id = f.app_user_id ORDER BY
+		f.public_time DESC, f.id DESC
+		limit 50
+	</select>
+
+	<select id="querySelectedQuality" resultType="java.lang.Integer">
+		SELECT f.id from (select
+		m.app_user_id from t_marry_member m where (m.dating_statu is null or
+		m.dating_statu=1) and m.is_blacklist=0 and m.app_user_id
+		!=#{appUserId}) d
+		LEFT JOIN (select e.* from t_marry_photo e where
+		e.is_shielding=0 And e.is_recommended=1) f ON
+		d.app_user_id =
+		f.app_user_id ORDER BY f.public_time DESC, f.id DESC
+		limit 50
+	</select>
+
+	<update id="updateEvent">
+		UPDATE t_marry_member_log SET event =
+		#{event} WHERE id= #{id}
+	</update>
+</mapper>

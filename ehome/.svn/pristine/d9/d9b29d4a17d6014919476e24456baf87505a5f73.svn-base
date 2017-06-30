@@ -1,0 +1,36 @@
+package com.ehome.cloud.help.mapper;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Param;
+
+import com.ehome.cloud.help.dto.HelpApplyDto;
+import com.ehome.cloud.help.dto.HelpApplyUserDto;
+import com.ehome.cloud.help.model.HelpApplyModel;
+import com.ehome.core.frame.MyMapper;
+
+/**
+ * 
+ * @Title:HelpApplyMapper
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年3月22日 下午3:02:53
+ * @version:
+ */
+public interface HelpApplyMapper extends MyMapper<HelpApplyModel> {
+
+	void updateApplyFileStatus(@Param("id") Integer id);
+
+	List<HelpApplyDto> selectByApplyFileList(@Param("id")List<Integer> id,@Param("name") String name,@Param("startTime") String startTime,
+			@Param("endTime") String endTime);
+
+	void insertProcessInstanceId(@Param("id") Integer id,@Param("processInstanceId") String processInstanceId);
+
+	void updateUserId(@Param("helpApplyId") Integer helpApplyId,@Param("userId") Integer userId);
+
+	List<HelpApplyDto> selectByApplyFileSuperList(@Param("name") String name,@Param("startTime") String startTime,
+			@Param("endTime") String endTime);
+
+	List<HelpApplyUserDto> selectHelpApplyId(@Param("userId") Integer userId);
+
+}

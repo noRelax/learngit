@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd  
+    http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+
+	<context:component-scan base-package="com.ehome.cloud.*">
+		<context:include-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+		<!-- prevented Service injected twice -->
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Service" />
+	</context:component-scan>
+
+	<!-- 扫描activiti 控制器 -->
+	<context:component-scan base-package="com.ehome.activiti" />
+	<!-- 扫描activiti 控制器 end -->
+
+
+	<mvc:annotation-driven>
+		<mvc:message-converters>
+			<ref bean="stringHttpMessageConverter" />
+			<ref bean="mappingJacksonHttpMessageConverter" />
+		</mvc:message-converters>
+		<mvc:async-support default-timeout="30000" />
+	</mvc:annotation-driven>
+
+    <bean id="mappingJacksonHttpMessageConverter"
+        class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+        <property name="supportedMediaTypes">
+            <list>
+                <value>text/plain;charset=UTF-8</value>
+                <value>text/html;charset=UTF-8</value>
+                <value>text/json;charset=UTF-8</value>
+                <value>application/json;charset=UTF-8</value>
+            </list>
+        </property>
+    </bean>
+    
+    <bean id="stringHttpMessageConverter" class="org.springframework.http.converter.StringHttpMessageConverter">
+	      <property name="supportedMediaTypes">
+              <list>
+                  <value>text/plain;charset=UTF-8</value>
+                  <value>text/html;charset=UTF-8</value>
+                  <value>text/json;charset=UTF-8</value>
+                  <value>application/json;charset=UTF-8</value>
+             </list>
+        </property>         
+    </bean>
+    
+    <!-- 用MyRequestMappingHandlerMapping 增强默认的  mvc:annotation-driven -->
+	<bean name="handlerMapping" class="com.ehome.core.frame.MyRequestMappingHandlerMapping"/>
+	
+	<!--<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+		<property name="messageConverters">
+			<list>
+				 
+				<bean class="org.springframework.http.converter.StringHttpMessageConverter">
+					<property name="supportedMediaTypes">
+						<list>
+							<value>text/plain;charset=UTF-8</value>
+							<value>text/html;charset=UTF-8</value>
+							<value>text/json;charset=UTF-8</value>
+							<value>application/json;charset=UTF-8</value>
+						</list>
+					</property>
+				</bean>
+				
+				<bean id="jsonHttpMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+					<property name="supportedMediaTypes">
+						<list>
+							<value>text/plain;charset=UTF-8</value>
+							<value>text/html;charset=UTF-8</value>
+							<value>text/json;charset=UTF-8</value>
+							<value>application/json;charset=UTF-8</value>
+						</list>
+					</property>
+				</bean>
+			</list>
+		</property>
+	</bean>-->
+	
+	
+	<!-- 上传拦截，如最大上传值及最小上传值 -->
+      <bean id="multipartResolver"   class="org.springframework.web.multipart.commons.CommonsMultipartResolver" >   
+          <property name="maxUploadSize">    
+              <value>12626375</value>    
+           </property>   
+            <property name="maxInMemorySize">    
+                <value>40960</value>    
+            </property>   
+             <property name="defaultEncoding">    
+                <value>utf-8</value>    
+            </property> 
+    </bean>
+    
+	<!-- 开启Shiro注解 -->
+    <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
+          depends-on="lifecycleBeanPostProcessor"/>
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+        <property name="securityManager" ref="securityManager"/>
+    </bean>
+    
+<!--     <bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">   -->
+<!-- 	    <property name="exceptionMappings">   -->
+<!-- 	        <props>   -->
+<!-- 	            <prop key="org.apache.shiro.authz.UnauthorizedException"> -->
+<!-- 	                redirect:/exception/unauthorized  捕获该异常时跳转的路径  -->
+<!-- 	            </prop>   -->
+<!-- 	            <prop key="org.apache.shiro.authz.UnauthenticatedException"> -->
+<!-- 	                /login.html  捕获该异常时跳转的路径  -->
+<!-- 	            </prop>   -->
+<!-- 	        </props>   -->
+<!-- 	    </property>   -->
+<!--     </bean> -->
+	
+<!-- 	<mvc:interceptors> -->
+<!-- 		<mvc:interceptor> -->
+<!-- 			<mvc:mapping path="/**" /> -->
+<!-- 			<mvc:exclude-mapping path="/statics/**" /> -->
+<!-- 			<bean class="com.ehome.core.interceptor.WebAuthorizing" /> -->
+<!-- 		</mvc:interceptor> -->
+<!-- 	</mvc:interceptors> -->
+
+	<!-- <bean class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping" 
+		/> <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter" 
+		/> -->
+
+    <mvc:interceptors>
+	    <mvc:interceptor>  
+	        <mvc:mapping path="/upload/*" />  
+	        <bean class="com.ehome.core.interceptor.UploadFileInterceptor"></bean>  
+	    </mvc:interceptor>  
+<!-- 	    <mvc:interceptor> -->
+<!-- 	        <mvc:mapping path="/app/**"/> -->
+<!-- 	        <bean class="com.ehome.core.interceptor.AppAuthorizing"/> -->
+<!-- 	    </mvc:interceptor> -->
+    </mvc:interceptors>
+
+	<mvc:default-servlet-handler />
+	<!-- 对静态资源文件的访问 restful -->
+	<mvc:resources mapping="/static/**" location="/static/" />
+
+	<bean id="beetlConfig" class="org.beetl.ext.spring.BeetlGroupUtilConfiguration"
+		init-method="init">
+		<property name="root" value="/template/" />
+	</bean>
+	<bean id="viewResolver" class="org.beetl.ext.spring.BeetlSpringViewResolver">
+	    <property name="order" value="0"></property>
+		<property name="contentType" value="text/html;charset=UTF-8" />
+	</bean>
+	
+	<bean id="jspViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">  
+	  <!--  <property name="viewClass" value="com.ehome.core.frame.JspResourceView"></property>  -->
+	    <property name="contentType" value="text/html;charset=UTF-8"></property>   
+	    <property name="order" value="1"></property>
+        <property name="prefix" value="/view/"/>  
+        <property name="suffix" value=".jsp"/>  
+    </bean> 
+
+	<bean name="springContextHolder" class="com.ehome.core.frame.SpringContextHolder"
+		scope="singleton"></bean>
+		
+	<bean id="initSysService" class="com.ehome.core.service.impl.InitSysServiceImpl" />
+</beans>

@@ -1,0 +1,408 @@
+package com.ehome.cloud.sys.controller;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.apache.shiro.authz.annotation.RequiresUser;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.NativeWebRequest;
+
+import com.alibaba.fastjson.JSON;
+import com.ehome.cloud.sys.model.Dictionary;
+import com.ehome.cloud.sys.model.UserGroupModel;
+import com.ehome.cloud.sys.model.UserModel;
+import com.ehome.cloud.sys.service.IDictionaryService;
+import com.ehome.cloud.sys.service.IRoleService;
+import com.ehome.cloud.sys.service.IUserGroupService;
+import com.ehome.cloud.sys.service.IUserService;
+import com.ehome.core.dict.ResponseCode;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.frame.Pagination;
+import com.ehome.core.model.AjaxResult;
+import com.ehome.core.util.CollectionUtils;
+import com.ehome.core.util.DictoryCodeUtils;
+import com.ehome.core.util.NumberUtils;
+import com.github.pagehelper.PageInfo;
+
+/**
+ *
+ * @Title:UserGroupController
+ * @Description:用户分组管理入口
+ * @author:tcr
+ * @date:2017年2月7日
+ * @version 1.0,2017年2月7日
+ * @{tags
+ */
+@Controller
+@RequestMapping(value = "/UserGroup")
+public class UserGroupController extends BaseController {
+
+	@Resource
+	private IUserGroupService userGroupService;
+
+	@Resource
+	private IUserService userService;
+
+	@Resource
+	private IRoleService roleService;
+
+	@Resource
+	private IDictionaryService dictionaryService;
+
+	@RequestMapping(value = "list")
+	@RequiresUser
+	@RequiresPermissions("sys:group:list")
+	public String toGroupList(Model model, NativeWebRequest request) {
+		return "/system/UserGroup/onelist.html";
+	}
+
+	@RequestMapping(value = "queryHTlist", method = RequestMethod.POST)
+	@RequiresUser
+	@RequiresPermissions("sys:group:list")
+	@ResponseBody
+	public AjaxResult getHTList(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer groupType,
+			@RequestParam(required = false, defaultValue = "") Integer sEcho,
+			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false, defaultValue = "10") int rows)
+			throws BusinessException {
+		List<UserGroupModel> HTList = userGroupService.queryHTByList(groupType,
+				page, rows);
+		if (CollectionUtils.isNotEmpty(HTList)) {
+			UserGroupModel memberNum = null;
+			for (int i = 0; i < HTList.size(); i++) {
+				Integer ugId;
+				ugId = HTList.get(i).getId();
+				memberNum = userGroupService.queryMemberNum(ugId);
+				HTList.get(i).setMemberNum(memberNum.getMemberNum());
+			}
+		}
+		DictoryCodeUtils.renderList(HTList);
+		PageInfo<UserGroupModel> pageInfo = new PageInfo<>(HTList);
+		Pagination<UserGroupModel> pagination = new Pagination<>();
+		pagination.setData(pageInfo.getList());
+		pagination.setsEcho(sEcho);
+		pagination.setiTotalDisplayRecords((int) pageInfo.getTotal());
+		pagination.setiTotalRecords((int) pageInfo.getTotal());
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+	}
+
+	@RequestMapping(value = "queryQTlist", method = RequestMethod.POST)
+	@RequiresUser
+	@ResponseBody
+	public AjaxResult getQTList(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer groupType,
+			@RequestParam(required = false, defaultValue = "") Integer sEcho,
+			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false, defaultValue = "10") int rows)
+			throws BusinessException {
+		List<UserGroupModel> HTList = userGroupService.queryQTByList(groupType,
+				page, rows);
+		if (HTList != null) {
+			UserGroupModel memberNum = null;
+			for (int i = 0; i < HTList.size(); i++) {
+				Integer ugId;
+				ugId = HTList.get(i).getId();
+				memberNum = userGroupService.queryQTMemberNum(ugId);
+				HTList.get(i).setMemberNum(memberNum.getMemberNum());
+			}
+		}
+		DictoryCodeUtils.renderList(HTList);
+		PageInfo<UserGroupModel> pageInfo = new PageInfo<>(HTList);
+		Pagination<UserGroupModel> pagination = new Pagination<>();
+		pagination.setData(pageInfo.getList());
+		pagination.setsEcho(sEcho);
+		pagination.setiTotalDisplayRecords((int) pageInfo.getTotal());
+		pagination.setiTotalRecords((int) pageInfo.getTotal());
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+	}
+
+	@RequestMapping(value = "onehoutai")
+	@RequiresUser
+	public String toHoutalList(Model model, NativeWebRequest request) {
+		Integer groupId = NumberUtils.toInt(request.getParameter("groupId"));
+		model.addAttribute("groupId", groupId);
+		return "/system/UserGroup/onehoutai.html";
+	}
+
+	@RequestMapping(value = "/queryUserMember", method = RequestMethod.POST)
+	@ResponseBody
+	public AjaxResult queryUserMemberList(Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") String userName,
+			@RequestParam(required = false, defaultValue = "") Integer groupId,
+			@RequestParam(required = false, defaultValue = "") Integer sEcho,
+			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false, defaultValue = "10") int rows)
+			throws BusinessException {
+		// 当前登录者ID
+		Integer groupType = userGroupService.queryByType(groupId);
+		List<UserModel> userGroupList = new ArrayList<>();
+		if (groupType == 1) {
+			List<Integer> userIdList = userGroupService.queryUserId(groupId);
+			userGroupList = userService.queryHTMemberList(userIdList, userName,
+					groupId, page, rows);
+		} else {
+			List<Integer> userIdList = userGroupService.queryAppUserId(groupId);
+			userGroupList = userService.queryQTMemberList(userIdList, userName,
+					groupId, page, rows);
+		}
+		JSON.DEFFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
+		PageInfo<UserModel> pageInfo = new PageInfo<>(userGroupList);
+		Pagination<UserModel> pagination = new Pagination<>();
+		pagination.setData(pageInfo.getList());
+		pagination.setsEcho(sEcho);
+		pagination.setiTotalDisplayRecords((int) pageInfo.getTotal());
+		pagination.setiTotalRecords((int) pageInfo.getTotal());
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+	}
+
+	@RequestMapping(value = "addUserGroup", method = RequestMethod.GET)
+	@RequiresUser
+	public String addUserGroupPage(Model model, NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer groupId) {
+		model.addAttribute("groupId", groupId);
+		return "/system/UserGroup/addUserGroup.html";
+	}
+
+	@RequestMapping(value = "goAddGroupPage", method = RequestMethod.GET)
+	public String addGroupPage(Model model, NativeWebRequest request) {
+		return "/system/UserGroup/addG.html";
+	}
+
+	@RequestMapping(value = "goEditGroupPage", method = RequestMethod.GET)
+	public String editGroupPage(Model model, NativeWebRequest request)
+			throws BusinessException {
+		Integer id = NumberUtils.toInt(request.getParameter("id"));
+		UserGroupModel userGrouModel = userGroupService.queryEditById(id);
+		List<Dictionary> dictGroupType = dictionaryService
+				.queryByCode("CODE_GROUP_TYPE");
+		if (CollectionUtils.isNotEmpty(dictGroupType)) {
+			model.addAttribute("dictGroupType", JSON.toJSON(dictGroupType));
+		}
+		model.addAttribute("userGrouModel", userGrouModel);
+		return "/system/UserGroup/editG.html";
+	}
+
+	/**
+	 * 用户分组新增列表
+	 *
+	 */
+	@RequestMapping(value = "addGroup", method = RequestMethod.POST)
+	@ResponseBody
+	public AjaxResult addGroup(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer id,
+			@RequestParam(required = false, defaultValue = "") String groupName,
+			@RequestParam(required = false, defaultValue = "") Integer memberNum,
+			@RequestParam(required = false, defaultValue = "") Integer groupType)
+			throws BusinessException {
+		UserGroupModel groupModel = new UserGroupModel();
+		if (NumberUtils.isNull(id) || NumberUtils.eqZero(id)) {
+			groupModel.setGroupName(groupName);
+			groupModel.setGroupType(groupType);
+			userGroupService.insertGroup(groupModel);
+		} else {
+			groupModel.setId(id);
+			groupModel.setGroupName(groupName);
+			groupModel.setMemberNum(memberNum);
+			groupModel.setGroupType(groupType);
+			userGroupService.updateGroup(groupModel);
+		}
+		return new AjaxResult(ResponseCode.success.getCode(),
+				ResponseCode.success.getMsg(), ResponseCode.success.getMsg());
+	}
+
+	/**
+	 * 用户分组删除成员列表
+	 *
+	 */
+	@RequestMapping(value = "/deleteGroup", method = RequestMethod.POST)
+	@ResponseBody
+	public AjaxResult delete(Model model, NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer userId,
+			@RequestParam(required = false, defaultValue = "") Integer groupId) {
+		try {
+			Integer groupType = userGroupService.queryByType(groupId);
+			if (groupId != 0 && userId != 0) {
+				if (groupType == 1) {
+					userGroupService.deleteGroupById(groupId, userId);
+				} else {
+					userGroupService.deleteAppGroupById(groupId, userId);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new AjaxResult(ResponseCode.success.getCode(),
+				ResponseCode.success.getMsg(), ResponseCode.success.getMsg());
+	}
+
+	/**
+	 * 用户成员查询列表
+	 *
+	 * @param model
+	 * @param request
+	 * @param keyword
+	 * @param start
+	 * @param pageSize
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/queryUserGroup", method = RequestMethod.POST)
+	@ResponseBody
+	// @RequiresUser
+	// @RequiresRoles("roles")
+	// @RequiresPermissions("permissions")
+	public AjaxResult queryUserList(Model model, NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") String userName,
+			@RequestParam(required = false, defaultValue = "") String roleName,
+			@RequestParam(required = false, defaultValue = "") String orgName,
+			@RequestParam(required = false, defaultValue = "") Integer deptId,
+			@RequestParam(required = false, defaultValue = "") Integer sEcho,
+			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false, defaultValue = "10") int rows)
+			throws BusinessException {
+		List<UserModel> userGroupList = userService.queryForUserGroupList(
+				userName, page, rows);
+		JSON.DEFFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
+		PageInfo<UserModel> pageInfo = new PageInfo<>(userGroupList);
+		Pagination<UserModel> pagination = new Pagination<>();
+		pagination.setData(pageInfo.getList());
+		pagination.setsEcho(sEcho);
+		pagination.setiTotalDisplayRecords((int) pageInfo.getTotal());
+		pagination.setiTotalRecords((int) pageInfo.getTotal());
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+	}
+
+	/**
+	 * 成员加入分组列表
+	 *
+	 */
+	@RequestMapping(value = "/addMember", method = RequestMethod.POST)
+	@ResponseBody
+	// @RequiresUser
+	// @RequiresRoles("roles")
+	// @RequiresPermissions("permissions")
+	public AjaxResult addMember(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(name = "USER_IDS[]", required = false) Integer[] USER_IDS,
+			@RequestParam(required = false, defaultValue = "") Integer groupId) {
+		try {
+			if (null != USER_IDS) {
+				Integer groupType = userGroupService.queryByType(groupId);
+				if (groupType == 1) {
+					if (USER_IDS.length > 0) {
+						List<Integer> userIdList = userGroupService
+								.queryUserId(groupId);
+						Integer[] arryList = new Integer[userIdList.size()];
+						for (int i = 0; i < userIdList.size(); i++) {
+							arryList[i] = userIdList.get(i);
+						}
+						Integer[] List = CollectionUtils.substract(USER_IDS,
+								arryList);
+						if (userIdList.size() == 0) {
+							userService.insertMembers(groupId, USER_IDS);
+						} else {
+							userService.insertMember(groupId, List);
+						}
+					}
+				} else {
+					if (USER_IDS.length > 0) {
+						List<Integer> appUserIdList = userGroupService
+								.queryAppUserId(groupId);
+						Integer[] arryList = new Integer[appUserIdList.size()];
+						for (int i = 0; i < appUserIdList.size(); i++) {
+							arryList[i] = appUserIdList.get(i);
+						}
+						Integer[] List = CollectionUtils.substract(USER_IDS,
+								arryList);
+						if (appUserIdList.size() == 0) {
+							userService.insertAppMembers(groupId, USER_IDS);
+						} else {
+							userService.insertAppMember(groupId, List);
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new AjaxResult(ResponseCode.success.getCode(), "", groupId);
+	}
+
+	@RequestMapping(value = "add-group-page", method = RequestMethod.GET)
+	@RequiresUser
+	public String addUserPage(Model model, NativeWebRequest request) {
+		return "/UserGroup/addGroup.html";
+	}
+
+	/**
+	 * 删除
+	 *
+	 * @param model
+	 * @param request
+	 * @param id
+	 * @return
+	 */
+	@RequestMapping(value = "/delete", method = RequestMethod.POST)
+	@ResponseBody
+	public AjaxResult del(Model model, NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer id) {
+		try {
+			if (id != 0) {
+				userGroupService.deleteById(id);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new AjaxResult(ResponseCode.success.getCode(),
+				ResponseCode.success.getMsg(), ResponseCode.success.getMsg());
+	}
+
+	/**
+	 * 批量删除成员
+	 *
+	 */
+	@RequestMapping(value = "/deleteAll", method = RequestMethod.POST)
+	@ResponseBody
+	public AjaxResult delAll(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(name = "USER_IDS[]", required = false) Integer[] USER_IDS,
+			@RequestParam(required = false, defaultValue = "") Integer groupId) {
+		try {
+			if (null != USER_IDS) {
+				Integer groupType = userGroupService.queryByType(groupId);
+				if (groupType == 1) {
+					if (USER_IDS.length > 0) {
+						userGroupService.deleteAllUserGroup(groupId, USER_IDS);
+					}
+				} else {
+					if (USER_IDS.length > 0) {
+						userGroupService.deleteAppAllUserGroup(groupId,
+								USER_IDS);
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new AjaxResult(ResponseCode.success.getCode(), "", groupId);
+	}
+}

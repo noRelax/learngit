@@ -1,0 +1,581 @@
+﻿<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="renderer" content="webkit">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<link href="${ctxPath}/static/ui/layui/css/layui.css" rel="stylesheet">
+		<link rel="stylesheet" href="${ctxPath}/static/zTreev3/css/zTreeStyle/zTreeStyle.css" type="text/css" />
+        <link rel="stylesheet" href="${ctxPath}/static/web/system/orgain/css/list-css.css" type="text/css" />
+        <link rel="stylesheet" href="${ctxPath}/static/system/olive/all/css/mobiscroll.css" type="text/css" />
+        <link rel="stylesheet" href="${ctxPath}/static/system/olive/all/css/mobiscroll_date.css" type="text/css" />
+		<style>
+		.lxl-time{
+			padding-top: 15px;
+			font-size:0;
+		}
+		.lxl-time div{
+			font-size:14px;
+		}
+		.lxl-time .layui-inline{
+			margin-bottom: 0;
+		}
+		.layui-form-label{
+			padding: 9px 0;
+			width: 110px;
+			max-width: auto;
+		}
+		.layui-form-select dl{
+			z-index: 9999;
+		}
+		</style>
+	</head>
+	<body>
+		<form id="app" class="layui-form" style="padding:15px" action="" method="post" enctype="multipart/form-data">
+			<input type="hidden" name="id" value="${rightExplainDto.id}">
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					<span style="color:red">*</span>
+					标题：
+				</label>
+				<div class="layui-input-block">
+					<input type="text" name="title" lay-verify="name" value="${rightExplainDto.title}"
+					autocomplete="off" class="layui-input" style="width:250px">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					<span style="color:red">*</span>
+					类型：
+				</label>
+				<div class="layui-input-block" style="width:250px">
+					<select name="explainType"  id="explainType" lay-filter="explainType" lay-verify="notZero" >
+				        <option value="0">--请选择--</option>
+			      	</select>
+				</div>
+			</div>
+			
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					<span style="color:red">*</span>
+					省份选择：
+				</label>
+				<div class="layui-input-block" style="width:250px">
+					<select name="provinceId"  id="province" lay-filter="province" lay-verify="notZero" >
+				        <option value="0">不限</option>
+			      	</select>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					<span style="color:red">*</span>
+					城市选择：
+				</label>
+				<div class="layui-input-block" style="width:250px">
+					<select name="cityId" name="city" id="city" lay-filter="city"  lay-verify="notZero" >
+				        <option value="0">不限</option>
+			      	</select>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					<span style="color:red">*</span>
+					县区选择：
+				</label>
+				<div class="layui-input-block" style="width:250px">
+					<select name="county"  id="county"  >
+				        <option value="0">不限</option>
+			      	</select>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					<span style="color:red">*</span>
+					最高收入限制：
+				</label>
+				<div class="layui-input-block">
+					<input type="text" name="incomeLimit" lay-verify="account" value="${rightExplainDto.incomeLimit}"
+					autocomplete="off" class="layui-input" style="width:250px" >
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					<span style="color:red">*</span>
+					帮扶或维权说明类型：
+				</label>
+				<div class="layui-input-block" style="width:250px">
+					<select name="rightOrHelpType"  id="rightOrHelpType"  lay-verify="notZero" >
+				        <option value="0">请选择</option>
+			      	</select>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					<span style="color:red">*</span>
+					服务按钮名称：
+				</label>
+				<div class="layui-input-block" style="width:250px">
+					<select name="serviceButtunType"  id="serviceButtunType"  lay-verify="notZero" >
+				        <option value="0">请选择</option>
+			      	</select>
+				</div>
+			</div>
+            <div class="layui-form-item">
+				<label class="layui-form-label">
+					<span style="color:red">*</span>
+					电话号码：
+				</label>
+				<div class="layui-input-block">
+					<input type="text" name="phone" maxlength="15" lay-verify="merphone" value="${rightExplainDto.phone}"
+					autocomplete="off" class="layui-input" style="width:250px" >
+				</div>
+			</div>
+		 
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					<span style="color:red">*</span>
+					内容：
+				</label>
+				<div class="layui-input-block">
+					<textarea id="editor" name="content" type="text/plain" lay-verify="content"  style="width:660px;height:320px;" maxlength="1000"></textarea>
+				</div>
+			</div>
+
+			<div class="layui-form-item">
+				<div class="layui-input-block">
+					<button class="layui-btn lxl-confirm lxl-btn-submit" lay-submit lay-filter="formDemo">
+						发布
+					</button>
+					<button type="reset" class="layui-btn layui-btn-danger" >
+						重置
+					</button>
+				</div>
+			</div>
+
+
+		</form>
+		<script src="${ctxPath}/static/system/olive/all/js/jquery-1.8.3.min.js"></script>
+		<script src="${ctxPath}/static/system/olive/all/js/vue.min.js"></script>
+		<script src="${ctxPath}/static/system/olive/all/js/mobiscroll_date.js"></script>
+		<script src="${ctxPath}/static/system/olive/all/js/mobiscroll.js"></script>
+		<script src="${ctxPath}/static/ui/layui/layui.js"></script>
+		<script src="${ctxPath}/static/zTreev3/js/jquery.ztree.core-3.5.js"></script>
+        <script src="${ctxPath}/static/web/system/orgain/js/treeCreate.js"></script>
+        <script src="${ctxPath}/static/ueditor/ueditor.config.js"></script>
+    	<script src="${ctxPath}/static/ueditor/ueditor.all.min.js"> </script>
+    	<script src="${ctxPath}/static/ueditor/lang/zh-cn/zh-cn.js"></script>
+
+		<script>
+		
+		var province = ${rightExplainDto.provinceId!(-1)};
+		var city = ${rightExplainDto.cityId!(-1)};
+		var right_or_helpType = '${rightExplainDto.rightOrHelpType}';
+		var serviceBotton = '${rightExplainDto.serviceButtunType}';
+		
+		jQuery(document).ready(function() {
+			$(document).keydown(function(event){
+				  switch(event.keyCode){
+				     case 13:return false;
+				     }
+			});
+			
+			var distExplain = '${distExplain}';
+			if (distExplain != null) {
+				distExplain = jQuery.parseJSON(distExplain);
+				for ( var x in distExplain)
+					$('select[name=explainType]')
+							.append("<option value='"+distExplain[x].dictKey+"'>"
+									+ distExplain[x].dictValue
+									+ "</option>");
+			}
+			
+			
+			var explainType = '${rightExplainDto.explainType}'
+			$('select[name=explainType]').val(explainType);
+			
+			/* var rightOrHelpType = '${rightExplainDto.rightOrHelpType}';
+			var serviceButtunType = '${rightExplainDto.serviceButtunType}'
+			$('select[name=rightOrHelpType]').find("option:selected").text(rightOrHelpType);
+			$('select[name=serviceButtunType]').find("option:selected").text(serviceButtunType); */
+			$.ajax({
+	    		url : '${ctxPath}/area/getByPid?pid='+province,
+	    		type : 'POST',
+	    		dataType : 'json',
+	    		success : function(data) {
+	    			var obj = data.data;
+	    			$('#city').empty();
+	    			var tabDataHtml = "";
+	    			tabDataHtml = tabDataHtml
+	    			+ "<option value='0'>--请选择城市--</option>";
+	    			for (var k = 0; k < obj.length; k++) {
+	    				tabDataHtml = tabDataHtml
+			  			+ "<option value="+obj[k].id
+			  			if (obj[k].id == city)
+			  				tabDataHtml = tabDataHtml+" selected"
+			  			
+			  			tabDataHtml = tabDataHtml+">"+ obj[k].areaName + "</option>";
+	    			}
+	    			$('#city').append(tabDataHtml);
+	    			$('#county').empty();
+	    			$('#county').append("<option value='0'>--请选择区/县--</option>");
+	    		}
+	    	});
+			
+			var id = $('select[name=explainType]').find("option:selected").val();
+			if(id == "0") {
+				$('#rightOrHelpType').empty();
+				$('#serviceButtunType').empty();
+				$('#rightOrHelpType').append("<option value='0'>--请选择--</option>");
+				$('#serviceButtunType').append("<option value='0'>--请选择--</option>");
+				return;
+			}
+			
+			$.ajax({
+	    		url : '../helpRightExplain/getRightOrHelpType?pid='+id,
+	    		type : 'POST',
+	    		dataType : 'json',
+	    		success : function(data) {
+	    			var obj1 = data.status;
+	    			var obj2 = data.data
+	    			$('#rightOrHelpType').empty();
+	    			$('#serviceButtunType').empty();
+	    			/* for ( var x in obj1)
+						$('select[name=rightOrHelpType]')
+								.append("<option value='"+obj1[x].dictValue+"'>"
+										+ obj1[x].dictValue
+										+ "</option>"); */
+	    			var tabDataHtml = ""; 
+	    			for (var k = 0; k < obj1.length; k++) {
+	    				tabDataHtml = tabDataHtml
+			  			+ "<option value="+obj1[k].dictValue
+			  			if (obj1[k].dictValue == right_or_helpType)
+			  				tabDataHtml = tabDataHtml+" selected"
+			  			
+			  			tabDataHtml = tabDataHtml+">"+ obj1[k].dictValue + "</option>";
+	    			}
+	    			$('#rightOrHelpType').append(tabDataHtml);
+	    			
+	    	
+	    			
+	    			var tabDataHtmls = ""; 
+	    			for (var k = 0; k < obj2.length; k++) {
+	    				tabDataHtmls = tabDataHtmls
+			  			+ "<option value="+obj2[k].dictValue
+			  			if (obj2[k].dictValue == serviceBotton)
+			  				tabDataHtmls = tabDataHtmls+" selected"
+			  			
+			  			tabDataHtmls = tabDataHtmls+">"+ obj2[k].dictValue + "</option>";
+	    			}
+	    			$('#serviceButtunType').append(tabDataHtmls);
+	    			
+	    			
+	    			
+	    		}
+	    	});
+		});
+		
+		
+		
+		
+		layui.use(['element','form', 'laydate'],function() {
+			var form = layui.form();
+
+			//监听提交
+			form.on('submit(formDemo)',function(data) {
+				alert(1);
+				$('.lxl-btn-submit').attr('disabled','true');
+				$.post('../helpRightExplain/updateExplain',data.field,function(data){
+					$('.lxl-btn-submit').attr('disabled','true');
+					if(data.status == 10000){
+						parent.layer.alert('保存成功', {title : '操作提示', icon : 1, time:2000, end: function(){
+							window.parent.location.reload();
+							parent.layer.closeAll();
+						}});
+					}else{
+						layer.alert('保存失败请重试或联系管理员',{title : '操作提示',icon: 2});
+					}
+				},'json');
+				return false;
+			});
+
+		//加载省
+		  $.ajax({
+		  	url : '${ctxPath}/area/getProvince',
+		  	type : 'POST',
+		  	dataType : 'json',
+		  	success : function(data) {
+		  		var obj = data.data;
+		  		$('#province').empty();
+		  		var tabDataHtml = "";
+		  		tabDataHtml = tabDataHtml
+		  		+ "<option value='0'>--请选择省份--</option>";
+		  		for (var k = 0; k < obj.length; k++) {
+		  			tabDataHtml = tabDataHtml
+		  			+ "<option value="+obj[k].id
+		  			if (obj[k].id == province)
+		  				tabDataHtml = tabDataHtml+" selected"
+		  			
+		  			tabDataHtml = tabDataHtml+">"+ obj[k].areaName + "</option>";
+		  		}
+		  		$('#province').append(tabDataHtml);
+		  		form.render();
+		  	}
+		  });
+
+		  //根据省加载市
+		  form.on("select(province)", function(data){
+			  var id = data.value;
+				if(id == "0") {
+					$('#city').empty();
+					$('#county').empty();
+					$('#city').append("<option value='0'>--请选择城市--</option>");
+					$('#county').append("<option value='0'>--请选择区/县--</option>");
+					return;
+				}
+				$.ajax({
+		    		url : '${ctxPath}/area/getByPid?pid='+id,
+		    		type : 'POST',
+		    		dataType : 'json',
+		    		success : function(data) {
+		    			var obj = data.data;
+		    			$('#city').empty();
+		    			var tabDataHtml = "";
+		    			tabDataHtml = tabDataHtml
+		    			+ "<option value='0'>--请选择城市--</option>";
+		    			for (var k = 0; k < obj.length; k++) {
+		    				tabDataHtml = tabDataHtml
+				  			+ "<option value="+obj[k].id
+				  			if (obj[k].id == city)
+				  				tabDataHtml = tabDataHtml+" selected"
+				  			
+				  			tabDataHtml = tabDataHtml+">"+ obj[k].areaName + "</option>";
+		    			}
+		    			$('#city').append(tabDataHtml);
+		    			$('#county').empty();
+		    			$('#county').append("<option value='0'>--请选择区/县--</option>");
+		    			form.render();
+		    		}
+		    	});
+			});
+
+		  //根据市加载区县
+		  form.on("select(city)", function(data){
+			var id = data.value;
+			if(id == "0") {
+				$('#county').empty();
+				$('#county').append("<option value='0'>--请选择区/县--</option>");
+				return;
+			}
+			$.ajax({
+	    		url : '${ctxPath}/area/getByPid?pid='+id,
+	    		type : 'POST',
+	    		dataType : 'json',
+	    		success : function(data) {
+	    			var obj = data.data;
+	    			$('#county').empty();
+	    			var tabDataHtml = "";
+	    			tabDataHtml = tabDataHtml
+	    			+ "<option value='0'>--请选择区/县--</option>";
+	    			for (var k = 0; k < obj.length; k++) {
+	    				tabDataHtml = tabDataHtml
+	    				+ "<option value="+obj[k].id+">"
+	    				+ obj[k].areaName + "</option>";
+	    			}
+	    			$('#county').append(tabDataHtml);
+	    			form.render();
+	    		}
+	    	});
+		  });
+		  
+		  //根据类型显示维权或帮扶说明类型
+		   form.on("select(explainType)", function(data){
+				var id = data.value;
+				if(id == "0") {
+					$('#rightOrHelpType').empty();
+					$('#serviceButtunType').empty();
+					$('#rightOrHelpType').append("<option value='0'>--请选择--</option>");
+					$('#serviceButtunType').append("<option value='0'>--请选择--</option>");
+					return;
+				}
+				$.ajax({
+		    		url : '../helpRightExplain/getRightOrHelpType?pid='+id,
+		    		type : 'POST',
+		    		dataType : 'json',
+		    		success : function(data) {
+		    			var obj1 = data.status;
+		    			var obj2 = data.data
+		    			$('#rightOrHelpType').empty();
+		    			$('#serviceButtunType').empty();
+		    			for ( var x in obj1)
+							$('select[name=rightOrHelpType]')
+									.append("<option value='"+obj1[x].dictValue+"'>"
+											+ obj1[x].dictValue
+											+ "</option>"); 
+		    			for ( var x in obj2)
+							$('select[name=serviceButtunType]')
+									.append("<option value='"+obj2[x].dictValue+"'>"
+											+ obj2[x].dictValue
+											+ "</option>"); 
+		    			form.render();
+		    		}
+		    	}); 
+			  }); 
+
+
+		
+
+
+		    form.verify({
+		    	  notZero: function(value){
+		    	   
+		    		if($('select[name="provinceId"]').find("option:selected").val() == 0){
+		    	      return '请选择省市、类型、';
+		    	    }
+		    	    
+		    	    if($('select[name=cityId]').find("option:selected").val() == 0){
+			    	   return '请选择省市、类型、';
+			    	}
+		    	  },
+
+			    	merphone: function(value){
+				    	var patten = /(^13\d{9}$)|(^14)[5,7]\d{8}$|(^15[0,1,2,3,5,6,7,8,9]\d{8}$)|(^17)[6,7,8]\d{8}$|(^18\d{9}$)/g;
+			    		  if(!patten.test(value)){
+			    		 	 return '电话号码格式不正确';
+			    		  }
+			    	},
+
+
+				name: function(value){
+					  if(1 > value.trim().length || value.trim().length > 30){
+						  return "标题为1-30个字";
+					  }
+				},
+				
+				content: function(value){
+					  if(1 > value.trim().length || value.trim().length > 10000){
+						  return "标题为1-1000个字";
+					  }
+				},
+
+				account: function(value){
+					  var patten = /^[0-9]*$/;
+					  if(value.length > 0){
+						  if(!patten.test(value)){
+				    		 	 return '请输入数字';
+				    		}
+					  }
+				},
+
+
+		    	});
+
+		
+		});
+
+
+		 //实例化编辑器
+	    //建议使用工厂方法getEditor创建和引用编辑器实例，如果在某个闭包下引用该编辑器，直接调用UE.getEditor('editor')就能拿到相关的实例
+	   // UE.getEditor('editor');
+	    var ue = UE.getEditor('editor');
+	    ue.ready(function() {//编辑器初始化完成再赋值
+            ue.setContent('${rightExplainDto.content}');  //赋值给UEditor
+        });
+	    //////////////////////////////
+
+	    function isNumberVal(obj) {
+	    	var val = obj.value.replace(/[^\-?\d]/g,'');
+	    	if (val > 100000) {
+	    		obj.value = 100000;
+	    	} else {
+	    		obj.value = val;
+	    	}
+	    }
+
+	    function isKeyWord(obj) {
+	    	var val = obj.value;
+	    	//if(val.length > 45) obj.value = obj.value.substring(0,val.length-1);
+	    	var arr = val.split(' ');
+	    	if(arr.length > 6) {
+	    		obj.value = obj.value.substring(0,val.length-1)
+	    	}
+	    }
+
+	    function isNumber(obj) {
+	    	var reg = new RegExp("^[0-9]{1}[0-9\.]*$");
+	    	if (!reg.test(obj.value)) {
+	    		obj.value = '';
+	    	}
+	    }
+
+	  
+
+
+	</script>
+
+
+	<script>
+		/************************************************************刘小龙*********************************************************/
+		/**
+		 * 2017-03-03 15:00:00
+		 */
+		(function(Vue){
+			var vm = new Vue({
+				el: '#app',
+				data: {
+					labelInput: '',
+					labelHiddenInput: '',// 隐藏域
+					labelList: []// 商家标签数据
+				},
+				methods: {
+					// enter 添加标签
+					addLabel: function(event) {
+						// 输入的值不为空时才可以创建标签
+						if(this.labelInput.trim() !== '') {
+							if (this.labelInput.trim().length <= 5) {
+								var index = this.labelInput.indexOf(' ');
+								if( index == 0) {
+									this.labelInput = this.labelInput.trim();
+								}
+								if (index > 0) {
+									if (this.labelList.length < 5)
+									// push一个标签
+									this.labelList.push(this.labelInput.trim());
+									// 清空
+									this.labelHiddenInput = '';
+									// 保存到隐藏域
+									for (var i in this.labelList) {
+										if(!this.labelHiddenInput){
+											this.labelHiddenInput += this.labelList[i]
+										}else{
+											this.labelHiddenInput += ' '  + this.labelList[i]
+										}
+									}
+									// 清空文本框内容
+									this.labelInput = '';
+								}
+
+							} else {
+								this.labelInput = this.labelInput.trim().substring(0,5)
+							}
+
+						}
+					},
+					// 删除标签
+					delLabel: function(index) {
+						this.labelList.splice(index,1)
+						// 清空
+						this.labelHiddenInput = '';
+						// 保存到隐藏域
+						for (var i in this.labelList) {
+							this.labelHiddenInput += this.labelList[i] + ' '
+						}
+					}
+				}
+			});
+
+		})(Vue);
+	</script>
+	</body>
+
+</html>

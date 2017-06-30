@@ -1,0 +1,21 @@
+
+<aside>
+	<div id="sidebar" class="nav-collapse" style="overflow: hidden;" tabindex="5000">
+		<ul class="sidebar-menu" id="nav-accordion">
+		</ul>
+	</div>
+</aside>
+
+<script src="${ctxPath}/static/system/olive/all/js/jquery-1.8.3.min.js"></script>
+<script src="${ctxPath}/static/system/olive/all/js/bootstrap.min.js"></script>
+<script src="${ctxPath}/static/system/olive/all/js/jquery.dcjqaccordion.2.7.js"></script>
+<script src="${ctxPath}/static/system/olive/all/js/jquery.scrollTo.min.js"></script>
+<script src="${ctxPath}/static/system/olive/all/js/jquery.nicescroll.js"></script>
+<script src="${ctxPath}/static/ui/layui/layui.js"></script>
+<script src="${ctxPath}/static/web/admin/login/js/aside.js"></script>
+<script type="text/javascript">
+	var path = "${ctxPath}";
+	MenuComponent.init(path);//初始化表格
+</script>
+
+

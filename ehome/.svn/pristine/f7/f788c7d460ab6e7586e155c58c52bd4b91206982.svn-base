@@ -1,0 +1,116 @@
+/**
+ * @Project:ZGHome-Common
+ * @FileName:ServletUtil.java
+ */
+package com.ehome.core.util;
+
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+/**
+ * @Title:ServletUtil
+ * @Description:TODO
+ * @author:ddl
+ * @date:2017年1月8日
+ * @version:
+ */
+public class ServletUtil {
+
+	// 静态文件后缀
+	private final static String[] staticFiles = StringUtils
+			.split(".css,.js,.png,.jpg,.gif,.jpeg,.bmp,.ico,.swf,.psd,.htc,.htm,.html,.crx,.xpi,.exe,.ipa,.apk",
+					",");
+
+	// 动态映射URL后缀
+	private final static String urlSuffix = ".html";
+
+	public static String getBasePath(HttpServletRequest requset) {
+		String path = requset.getContextPath();
+		String basePath = requset.getScheme() + "://" + requset.getServerName()
+				+ ":" + requset.getServerPort() + path + "/";
+		return basePath;
+	}
+
+	private String getUrl(HttpServletRequest request) {
+		String contextPath = request.getContextPath();// 项目名
+		String servletPath = request.getServletPath();// servlet路径
+		String queryString = request.getQueryString();// 参数字符串
+		return contextPath + servletPath + "?" + queryString;
+	}
+
+	/**
+	 * 获取所有参数放到Map
+	 * 
+	 * @return
+	 */
+	public static Map getRequestParams(HttpServletRequest request) {
+		Map map = new HashMap();
+		Enumeration paramNames = request.getParameterNames();
+		while (paramNames.hasMoreElements()) {
+			String paramName = (String) paramNames.nextElement();
+
+			String[] paramValues = request.getParameterValues(paramName);
+			if (paramValues.length == 1) {
+				String paramValue = paramValues[0];
+				if (paramValue.length() != 0) {
+					map.put(paramName, paramValue);
+				}
+			}
+		}
+
+		return map;
+	}
+
+	public static String getPageUrl(HttpServletRequest request) {
+		String contextPath = request.getContextPath();// 项目名
+		String servletPath = request.getServletPath();// servlet路径
+		Map params = getRequestParams(request);
+		String queryString = "";
+		for (Object k : params.keySet()) {
+			String key = StringUtils.obj2String(k, "");
+			if (key.equals("page"))
+				continue;
+			if (!queryString.equals(""))
+				queryString += "&";
+			queryString += key + "=" + StringUtils.getString(params, key);
+		}
+		if (queryString.equals(""))
+			queryString = "rows=10";
+		return contextPath + servletPath + "?" + queryString;
+	}
+
+	/**
+	 * 获取当前请求对象
+	 * 
+	 * @return
+	 */
+	public static HttpServletRequest getRequest() {
+		try {
+			return ((ServletRequestAttributes) RequestContextHolder
+					.getRequestAttributes()).getRequest();
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	/**
+	 * 判断访问URI是否是静态文件请求
+	 * 
+	 * @throws Exception
+	 */
+	public static boolean isStaticFile(String uri) {
+		if (StringUtils.endsWithAny(uri, staticFiles)
+				&& !StringUtils.endsWithAny(uri, urlSuffix)
+				&& !StringUtils.endsWithAny(uri, ".jsp")
+				&& !StringUtils.endsWithAny(uri, ".java")) {
+			return true;
+		}
+		return false;
+	}
+}

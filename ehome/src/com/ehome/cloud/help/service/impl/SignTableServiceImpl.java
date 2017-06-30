@@ -1,0 +1,35 @@
+package com.ehome.cloud.help.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.stereotype.Service;
+
+import com.ehome.cloud.help.dto.SignTableDto;
+import com.ehome.cloud.help.mapper.SignTableMapper;
+import com.ehome.cloud.help.model.SignTableModel;
+import com.ehome.cloud.help.service.ISignTableService;
+import com.ehome.core.frame.BaseService;
+import com.github.pagehelper.PageHelper;
+
+/**
+ * @Title: SignTableServiceImpl 
+ * @Description: TODO 
+ * @author hl@diandianwifi.com   
+ * @date 2017年3月22日 上午11:55:59 
+ * @version 
+ */
+@Service("signTableService")
+public class SignTableServiceImpl extends BaseService<SignTableModel> implements ISignTableService{
+	
+	@Resource
+	private SignTableMapper signTableMapper;
+
+	@Override
+	public List<SignTableDto> queryPage(int page, int rows) {
+		// TODO Auto-generated method stub
+		PageHelper.startPage(page, rows, true);
+		return signTableMapper.queryPage();
+	}
+}

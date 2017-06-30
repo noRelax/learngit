@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.sys.mapper.ConfigModuleMapper">
+	<resultMap id="configMap" type="com.ehome.cloud.sys.dto.ConfigModuleDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="module_name" property="moduleName" jdbcType="VARCHAR" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="icon" property="icon" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="unload_id" property="unloadId" jdbcType="INTEGER"/>
+		<result column="cityName" property="cityName" jdbcType="VARCHAR"/>
+		<result column="module_code" property="moduleCode" jdbcType="VARCHAR"/>
+		<result column="module_type" property="moduleType" jdbcType="INTEGER" />
+		<result column="channel_id" property="channelId" jdbcType="INTEGER" />
+	</resultMap>
+	<resultMap type="com.ehome.cloud.sys.model.ConfigModuleCity"
+		id="moduleCityMap">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="province_id" property="provinceId" jdbcType="INTEGER" />
+		<result column="city_id" property="cityId" jdbcType="INTEGER" />
+		<result column="module_id" property="moduleId" jdbcType="INTEGER" />
+	</resultMap>
+	<select id="queryConfigList" resultMap="configMap">
+		SELECT m.*,GROUP_CONCAT(c.city_name) cityName 
+		FROM t_module m 
+		LEFT JOIN t_module_city c
+        ON m.id=c.module_id 
+		<where>
+		<if test="moduleName!=null and moduleName!=''">
+			AND module_name LIKE CONCAT('%', #{moduleName},'%')
+		</if>
+		</where>
+		GROUP BY c.module_id
+	</select>
+	
+		<select id="queryByCityId" resultMap="moduleCityMap">
+		SELECT * FROM t_module_city WHERE module_id=#{moduleId}
+	</select>
+	
+	<select id="queryMaxSort" resultMap="configMap">
+	    SELECT MAX(sort)+1 as sort FROM t_module 
+	</select>
+	
+	<delete id="deleteUnloadId">
+        DELETE from t_uploadfile WHERE id = #{unloadId}
+	</delete>
+	<select id="queryModuleByCityId" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		SELECT
+			c.city_id,
+			a.area_name AS city_name,
+			t.id,t.module_name,t.remark,t.status,t.icon,t.sort,t.unload_id,t.create_time,t.module_code,
+			t.channel_id,t.module_type
+		FROM
+			t_module t
+		INNER JOIN t_module_city c ON t.id = c.module_id
+		INNER JOIN t_area a ON a.id = c.city_id
+		WHERE
+			c.city_id = #{city_id} AND t.status = 1
+     	order by t.sort 
+    	limit #{page},#{rows}
+	</select>
+	
+	<select id="queryModuleByZJ" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		SELECT
+			 440800 city_id,
+			'湛江市' city_name,
+			t.id,t.module_name,t.remark,t.status,t.icon,t.sort,t.unload_id,t.create_time,t.module_code,
+			t.channel_id,t.module_type
+		FROM
+			t_module t where id in(15,27,23,32)
+     	order by t.sort 
+	</select>
+	
+	<select id="queryCityInfo"  parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		SELECT
+			id as city_id
+		FROM
+			t_area  where area_name LIKE CONCAT('%', #{city_name},'%')  and level=2
+	</select>
+	
+	
+	<!--查询入门城市-->
+	<select id="queryHotCitys"  parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		SELECT
+			id,module_id,city_id,city_name,create_time,province_id,province_name from t_module_city  group by city_name order by id desc
+	    	limit #{page},#{rows}
+	</select>
+</mapper>

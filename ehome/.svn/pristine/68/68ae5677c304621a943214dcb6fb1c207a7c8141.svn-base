@@ -1,0 +1,196 @@
+<%
+include("/system/public/header.html",{title:'header'}){} 
+%>
+
+<%
+layout("/system/public/aside.html",{title:'header'}){} 
+%>
+      <!-- BEGIN MAIN CONTENT -->
+  ${content!}    
+      
+      <section id="main-content">
+	  <!-- BEGIN WRAPPER  -->
+        <section class="wrapper site-min-height">
+		  <!-- BEGIN ROW  -->
+          <div class="row state-overview">
+            <div class="col-lg-3 col-sm-6">
+              <section class="panel">
+                <div class="symbol">
+                  <i class="fa fa-tags blue">
+                  </i>
+                </div>
+                <div class="value">
+                  <h1 class="count">
+                    0
+                  </h1>
+                  <p>
+                    Total Sale
+                  </p>
+                </div>
+              </section>
+            </div>
+            <div class="col-lg-3 col-sm-6">
+              <section class="panel">
+                <div class="symbol">
+                  <i class="fa fa-money red">
+                  </i>
+                </div>
+                <div class="value">
+                  <h1 class=" count2">
+                    0
+                  </h1>
+                  <p>
+                    Total Profit
+                  </p>
+                </div>
+              </section>
+            </div>
+            <div class="col-lg-3 col-sm-6">
+              <section class="panel">
+                <div class="symbol">
+                  <i class="fa fa-user yellow">
+                  </i>
+                </div>
+                <div class="value">
+                  <h1 class=" count3">
+                    0
+                  </h1>
+                  <p>
+                    New Users
+                  </p>
+                </div>
+              </section>
+            </div>
+            <div class="col-lg-3 col-sm-6">
+              <section class="panel">
+                <div class="symbol">
+                  <i class="fa fa-shopping-cart purple">
+                  </i>
+                </div>
+                <div class="value">
+                  <h1 class=" count4">
+                    0
+                  </h1>
+                  <p>
+                    New Orders
+                  </p>
+                </div>
+              </section>
+            </div>
+          </div>
+		   <!-- END ROW  -->
+          </div>
+		   
+		    <!-- BEGIN ROW  -->
+          <div class="row">
+            <div class="col-lg-6">
+             <section class="panel">
+                        <header class="panel-heading">
+                           <span class="label label-primary">系统信息</span>
+                           <span class="tools pull-right">
+                           <a class="fa fa-chevron-down" href="javascript:;"></a>
+                           <a class="fa fa-times" href="javascript:;"></a>
+                           </span>
+                        </header>
+                        <div class="panel-body">
+                           <ul>
+                           		<li>后台模板：${template_admin!}</li>
+                           		<li>系统名称：${website_name!}</li>
+                           		
+                           	</ul>
+                        </div>
+                     </section>
+            </div>
+            <div class="col-lg-6">
+              <section class="panel">
+                        <header class="panel-heading">
+                           <span class="label label-primary">Prograss Bars</span>
+                           <span class="tools pull-right">
+                           <a class="fa fa-chevron-down" href="javascript:;"></a>
+                           <a class="fa fa-times" href="javascript:;"></a>
+                           </span>
+                        </header>
+                        <div class="panel-body">
+                           <div class="progress progress-xs">
+                              <div class="progress-bar set-60" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100">
+                                 <span class="sr-only">60% Complete</span>
+                              </div>
+                           </div>
+                           <div class="progress progress-xs">
+                              <div class="progress-bar progress-bar-pink set-40" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100">
+                                 <span class="sr-only">40% Complete (success)</span>
+                              </div>
+                           </div>
+                           <div class="progress progress-xs">
+                              <div class="progress-bar progress-bar-yellow set-55" role="progressbar" aria-valuenow="55" aria-valuemin="0" aria-valuemax="100">
+                                 <span class="sr-only">55% Complete (success)</span>
+                              </div>
+                           </div>
+                           <div class="progress progress-xs">
+                              <div class="progress-bar progress-bar-orange set-60" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100">
+                                 <span class="sr-only">60% Complete (success)</span>
+                              </div>
+                           </div>
+                           <div class="progress progress-xs">
+                              <div class="progress-bar progress-bar-green set-35" role="progressbar" aria-valuenow="35" aria-valuemin="0" aria-valuemax="100">
+                                 <span class="sr-only">35% Complete (success)</span>
+                              </div>
+                           </div>
+                           <div class="progress progress-xs">
+                              <div class="progress-bar progress-bar-pink-new set-70" role="progressbar" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100">
+                                 <span class="sr-only">35% Complete (success)</span>
+                              </div>
+                           </div>
+                           <div class="progress progress-xs">
+                              <div class="progress-bar progress-bar-valvet set-75" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
+                                 <span class="sr-only">35% Complete (success)</span>
+                              </div>
+                           </div>
+                        </div>
+                     </section>
+            </div>
+          </div>
+		   <!-- END ROW  -->
+        </section>
+		<!-- END WRAPPER  -->
+      </section>
+      <!-- END MAIN CONTENT -->
+     
+
+
+    </section>
+    <!-- END SECTION -->
+    <!-- BEGIN JS -->
+    <script src="${ctxPath}/static/system/olive/all/js/jquery-1.8.3.min.js" ></script><!-- BASIC JQUERY 1.8.3 LIB. JS -->
+    <script src="${ctxPath}/static/system/olive/all/js/bootstrap.min.js" ></script><!-- BOOTSTRAP JS -->
+    <script src="${ctxPath}/static/system/olive/all/js/jquery.dcjqaccordion.2.7.js"></script><!-- ACCORDIN JS -->
+    <script src="${ctxPath}/static/system/olive/all/js/jquery.scrollTo.min.js" ></script><!-- SCROLLTO JS -->
+    <script src="${ctxPath}/static/system/olive/all/js/jquery.nicescroll.js" ></script><!-- NICESCROLL JS -->
+    <script src="${ctxPath}/static/system/olive/all/js/respond.min.js" ></script><!-- RESPOND JS -->
+    <script src="${ctxPath}/static/system/olive/all/js/jquery.sparkline.js"></script><!-- SPARKLINE JS -->
+    <script src="${ctxPath}/static/system/olive/all/js/sparkline-chart.js"></script><!-- SPARKLINE CHART JS -->
+    <script src="${ctxPath}/static/system/olive/all/js/common-scripts.js"></script><!-- BASIC COMMON JS -->
+    <script src="${ctxPath}/static/system/olive/all/js/count.js"></script><!-- COUNT JS -->
+    <!--Morris-->
+    <script src="${ctxPath}/static/system/olive/all/assets/morris.js-0.4.3/morris.min.js" ></script><!-- MORRIS JS -->
+    <script src="${ctxPath}/static/system/olive/all/assets/morris.js-0.4.3/raphael-min.js" ></script><!-- MORRIS  JS -->
+    <script src="${ctxPath}/static/system/olive/all/js/chart.js" ></script><!-- CHART JS -->
+    <!--Calendar-->
+    <script src="${ctxPath}/static/system/olive/all/js/calendar/clndr.js"></script><!-- CALENDER JS -->
+    <script src="${ctxPath}/static/system/olive/all/js/calendar/evnt.calendar.init.js"></script><!-- CALENDER EVENT JS -->
+    <script src="${ctxPath}/static/system/olive/all/js/calendar/moment-2.2.1.js"></script><!-- CALENDER MOMENT JS -->
+    <script src="/http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script><!-- UNDERSCORE JS -->
+    <script src="${ctxPath}/static/system/olive/all/assets/jquery-knob/js/jquery.knob.js" ></script><!-- JQUERY KNOB JS -->
+    <script >
+      //knob
+      $(".knob").knob();
+      
+    </script>
+    <!-- END JS -->
+    
+    <%
+include("/system/public/footer.html",{title:'header'}){} 
+%>
+
+
+

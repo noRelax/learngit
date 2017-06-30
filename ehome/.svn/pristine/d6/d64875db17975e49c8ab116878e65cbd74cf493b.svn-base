@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.help.mapper.SignTableMapper">
+	
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.help.dto.SignTableDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="signtable_name" property="signTableName" jdbcType="VARCHAR" />
+		<result column="total_amount" property="totalAmount" jdbcType="DECIMAL"/>
+		<result column="total_employer" property="totalEmployer" jdbcType="INTEGER"/>
+		<result column="amount_source" property="amountSource" jdbcType="INTEGER"/>
+		<result column="help_project" property="helpProject" jdbcType="INTEGER"/>
+		<result column="create_date" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="city_id" property="cityId" jdbcType="INTEGER" />
+	</resultMap>
+
+	<sql id="commonSQL">
+		SELECT
+		t.id,t.signtable_name,t.total_amount,t.total_employer,t.amount_source,t.help_project,t.create_date,t.city_id
+		FROM
+		t_signledtable t
+	</sql>
+
+	<select id="queryPage" resultMap="BaseResultMap" >
+		<include refid="commonSQL"></include>
+		ORDER BY t.create_date DESC
+	</select>
+
+</mapper>

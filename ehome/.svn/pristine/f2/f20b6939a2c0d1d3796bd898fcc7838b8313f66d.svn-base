@@ -1,0 +1,347 @@
+package com.ehome.cloud.marry.service.impl;
+
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+
+import org.apache.commons.beanutils.BeanUtils;
+import org.springframework.stereotype.Service;
+
+import tk.mybatis.mapper.entity.Condition;
+import tk.mybatis.mapper.entity.Example.Criteria;
+
+import com.ehome.cloud.app.marry.dto.AppMarryCommentDto;
+import com.ehome.cloud.app.marry.dto.AppMarryPhotoDto;
+import com.ehome.cloud.app.marry.dto.AppMarryReplyDto;
+import com.ehome.cloud.marry.mapper.MarryPhotoMapper;
+import com.ehome.cloud.marry.model.MarryCommentModel;
+import com.ehome.cloud.marry.model.MarryLoveModel;
+import com.ehome.cloud.marry.model.MarryMemberModel;
+import com.ehome.cloud.marry.model.MarryPhoto;
+import com.ehome.cloud.marry.model.MarryReplyModel;
+import com.ehome.cloud.marry.model.MarryThumpUpModel;
+import com.ehome.cloud.marry.service.IAppMarryCommentService;
+import com.ehome.cloud.marry.service.IAppMarryLoveService;
+import com.ehome.cloud.marry.service.IAppMarryMemmberService;
+import com.ehome.cloud.marry.service.IAppMarryPhotoService;
+import com.ehome.cloud.marry.service.IAppMarryReplyService;
+import com.ehome.cloud.marry.service.IAppMarryThumpUpService;
+import com.ehome.cloud.marry.service.IGoldCoinService;
+import com.ehome.cloud.member.model.Member;
+import com.ehome.cloud.member.service.IMemberService;
+import com.ehome.cloud.sys.model.AppUserModel;
+import com.ehome.cloud.sys.service.IAppUserService;
+import com.ehome.core.frame.BaseService;
+import com.ehome.core.util.CollectionUtils;
+import com.ehome.core.util.DateUtils;
+import com.ehome.core.util.DictoryCodeUtils;
+import com.ehome.core.util.NumberUtils;
+
+/**照片服务层
+ * @Title: IAppMarryPhotoServiceImpl.java
+ * @Description: TODO
+ * @author hl@diandianwifi.com
+ * @date 2017年4月18日 下午3:57:01
+ * @version
+ */
+@Service("appMarryPhotoService")
+public class AppMarryPhotoServiceImpl extends BaseService<MarryPhoto> implements IAppMarryPhotoService {
+
+    @Resource
+    private MarryPhotoMapper marryPhotoMapper;
+
+    @Resource
+    private IAppMarryThumpUpService appMarryThumpUpService;
+
+    @Resource
+    private IAppMarryMemmberService appMarryMemmberService;
+
+    @Resource
+    private IAppUserService appUserService;
+
+    @Resource
+    private IMemberService memberService;
+
+    @Resource
+    private IAppMarryCommentService appMarryCommentService;
+
+    @Resource
+    private IAppMarryReplyService appMarryReplyService;
+
+    @Resource
+    private IAppMarryLoveService appMarryLoveService;
+
+    @Resource
+    private IGoldCoinService goldCoinService;
+
+    @Override
+    public AppMarryPhotoDto getPhotoDetail(Integer appUserId, Integer photoId) throws Exception {
+
+        AppMarryPhotoDto appMarryPhotoDto = new AppMarryPhotoDto();
+        MarryPhoto photoModel = this.selectByKey(photoId);
+        BeanUtils.copyProperties(appMarryPhotoDto, photoModel); // 照片的基本信息
+
+        Condition condition = new Condition(MarryThumpUpModel.class);
+        Criteria criteria = condition.createCriteria();
+        criteria.andEqualTo("photoId", photoId);
+        List<MarryThumpUpModel> MarryThumpUpModelList = appMarryThumpUpService.selectByCondition(condition);
+        if (CollectionUtils.isNotEmpty(MarryThumpUpModelList)) {
+            List<Map<String, Object>> thumpUpPersonPortrait = new ArrayList<Map<String, Object>>(MarryThumpUpModelList.size());
+            for (MarryThumpUpModel model : MarryThumpUpModelList) {
+                Map<String, Object> mapForList = new HashMap<String, Object>(2);
+                MarryMemberModel entity = new MarryMemberModel();
+                entity.setAppUserId(model.getAppUserId());
+                MarryMemberModel memberModel = appMarryMemmberService.selectOne(entity);
+                mapForList.put("appUserId", memberModel.getAppUserId());
+                mapForList.put("portrait", memberModel.getPortrait());
+                thumpUpPersonPortrait.add(mapForList);
+            }
+            appMarryPhotoDto.setThumpUpList(thumpUpPersonPortrait); // 点赞人头像
+            appMarryPhotoDto.setThumbUpNum(thumpUpPersonPortrait.size());
+        }
+        // 相等表示自己看自己的照片
+
+        if (photoModel.getAppUserId().intValue() == appUserId.intValue()) {
+            AppUserModel appUserModel = appUserService.selectByKey(appUserId);
+            MarryMemberModel marryMemberModel = new MarryMemberModel();
+            marryMemberModel.setAppUserId(appUserId);
+
+            appMarryPhotoDto.setStar(appMarryMemmberService.selectOne(marryMemberModel).getStar());
+            appMarryPhotoDto.setPortrait(appUserModel.getPortrait());
+            appMarryPhotoDto.setNickName(appUserModel.getNickName());
+            appMarryPhotoDto.setWorkPlace(appUserModel.getWorkPlace());
+            appMarryPhotoDto.setHeight(appUserModel.getHeight());
+            appMarryPhotoDto.setAnnualIncome(appUserModel.getAnnualIncome());
+            try {
+                appMarryPhotoDto.setAge(DateUtils.getPersonAgeByBirthDate(appUserModel.getBirthday()));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            AppUserModel appUserModel = appUserService.selectByKey(photoModel.getAppUserId());
+            MarryMemberModel marryMemberModel = new MarryMemberModel();
+            marryMemberModel.setAppUserId(photoModel.getAppUserId());
+
+            MarryLoveModel marryLoveModel = new MarryLoveModel();
+            marryLoveModel.setAppUserId(appUserId);
+            marryLoveModel.setLoveAppUserId(photoModel.getAppUserId());
+            marryLoveModel.setStatu(1);
+            MarryLoveModel loveModel = appMarryLoveService.selectOne(marryLoveModel); //查看是否喜欢
+            if (loveModel != null) {
+                appMarryPhotoDto.setIsLoved(1);
+            }
+
+            appMarryPhotoDto.setStar(appMarryMemmberService.selectOne(marryMemberModel).getStar());
+            appMarryPhotoDto.setPortrait(appUserModel.getPortrait());
+            appMarryPhotoDto.setNickName(appUserModel.getNickName());
+            appMarryPhotoDto.setWorkPlace(appUserModel.getWorkPlace());
+            appMarryPhotoDto.setHeight(appUserModel.getHeight());
+            appMarryPhotoDto.setAnnualIncome(appUserModel.getAnnualIncome());
+            try {
+                appMarryPhotoDto.setAge(DateUtils.getPersonAgeByBirthDate(appUserModel.getBirthday()));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            MarryThumpUpModel thumpUpModel = new MarryThumpUpModel();
+            thumpUpModel.setAppUserId(appUserId);
+            thumpUpModel.setPhotoId(photoId);
+            MarryThumpUpModel model = appMarryThumpUpService.selectOne(thumpUpModel);
+            if (model != null) {
+                appMarryPhotoDto.setIsThumpUp(1);
+            } else {
+                appMarryPhotoDto.setIsThumpUp(0);
+            }
+        }
+
+        Member member = memberService.queryMemberByAppUserId(photoModel.getAppUserId());
+        if (member != null) {
+            appMarryPhotoDto.setJob(member.getJob());
+            appMarryPhotoDto.setEducation(member.getEducation());
+            appMarryPhotoDto.setMemberStatus(member.getStatus());
+        }
+        DictoryCodeUtils.renderCode(appMarryPhotoDto);
+        return appMarryPhotoDto;
+    }
+
+    @Override
+    public List<AppMarryCommentDto> getComment(Integer photoId, Integer page, Integer rows) throws Exception {
+
+        List<AppMarryCommentDto> appMarryCommentDtoList = null;
+        if (!NumberUtils.isNull(photoId) && NumberUtils.neZero(photoId)) {
+            appMarryCommentDtoList = appMarryCommentService.selectPageByPhotoId(photoId, page, rows);
+        } else {
+            return null;
+        }
+        for (AppMarryCommentDto appMarryCommentDto : appMarryCommentDtoList) {
+            List<AppMarryReplyDto> appMarryReplyDtoList = appMarryReplyService.selectReplyListDtoByCommentId(appMarryCommentDto.getId());
+            appMarryCommentDto.setList(appMarryReplyDtoList);
+        }
+        return appMarryCommentDtoList;
+    }
+
+    /**
+     * //TODO 发布照片
+     * @see com.ehome.cloud.marry.service.IAppMarryPhotoService#publishPhoto(com.ehome.cloud.marry.model.MarryPhoto)
+     **/
+    @Override
+    public void publishPhoto(Integer appUserId, Integer pictureId, Integer sourceDevice, String pictureUrl, String idea, String location,
+            String publicTime) throws Exception {
+        //把旧照片改成不是最新的
+        MarryPhoto photo = new MarryPhoto();
+        photo.setAppUserId(appUserId);
+        photo.setIsNew(1);
+        MarryPhoto one = this.selectOne(photo);
+        if (one != null) {
+            one.setIsNew(0);
+            this.updateNotNull(one);
+        }
+
+        MarryMemberModel model = new MarryMemberModel();
+        model.setAppUserId(appUserId);
+        MarryMemberModel entity = appMarryMemmberService.selectOne(model);
+        MarryPhoto marryPhoto = new MarryPhoto();
+        marryPhoto.setSelectRequire(entity.getMarryDemand() == null ? 10 : entity.getMarryDemand());
+        marryPhoto.setAppUserId(appUserId);
+        marryPhoto.setPictureId(pictureId);
+        marryPhoto.setPictureUrl(pictureUrl);
+        marryPhoto.setIdea(idea);
+        marryPhoto.setLocation(location);
+        marryPhoto.setPublicTime(new Date());
+        marryPhoto.setIsRecommended(0);
+        marryPhoto.setIsShielding(0);
+        marryPhoto.setSourceDevice(sourceDevice);
+        marryPhoto.setIsNew(1);
+        this.saveNotNull(marryPhoto);
+    }
+
+    /**
+     * //TODO 删除照片
+     * @see com.ehome.cloud.marry.service.IAppMarryPhotoService#deletePhoto(java.lang.Integer)
+     **/
+    @Override
+    public void deletePhoto(Integer photoId) throws Exception {
+        //判断是否要更新照片最新状态
+        MarryPhoto marryPhoto = this.selectByKey(photoId);
+        //删除照片
+        this.deleteByKey(photoId);
+        if(marryPhoto.getIsNew().intValue()==1){
+            
+            Condition condition = new Condition(MarryPhoto.class);
+            Criteria createCriteria = condition.createCriteria();
+            createCriteria.andEqualTo("appUserId", marryPhoto.getAppUserId());
+            condition.orderBy("publicTime").desc();
+            
+            List<MarryPhoto> list = this.selectByCondition(condition);
+            if(CollectionUtils.isNotEmpty(list)){
+                marryPhoto = list.get(0);
+                marryPhoto.setIsNew(1);
+                this.updateNotNull(marryPhoto);
+            }
+        }
+        
+        //删除照片评论与回复记录
+        MarryCommentModel commentEntity = new MarryCommentModel();
+        commentEntity.setPhotoId(photoId);
+        List<MarryCommentModel> commentList = appMarryCommentService.select(commentEntity);
+
+        for (MarryCommentModel marryCommentModel : commentList) {
+            Condition condition = new Condition(MarryReplyModel.class);
+            condition.createCriteria().andEqualTo("commentId", marryCommentModel.getId());
+            appMarryReplyService.deleteByCondition(condition);
+            appMarryCommentService.deleteByKey(marryCommentModel.getId());
+        }
+        //删除点赞记录
+        Condition condition = new Condition(MarryThumpUpModel.class);
+        condition.createCriteria().andEqualTo("photoId", photoId);
+        appMarryThumpUpService.deleteByCondition(condition);
+        
+    }
+
+    /**
+     * //TODO添加评论
+     * @see com.ehome.cloud.marry.service.IAppMarryPhotoService#addComment(java.lang.Integer, java.lang.Integer, java.lang.String, java.lang.Integer)
+     **/
+    @Override
+    public Integer addComment(Integer appUserId, Integer photoId, String comment, Integer sourceDevice) throws Exception {
+        MarryCommentModel marryCommentModel = new MarryCommentModel();
+        MarryPhoto marryPhoto = null;
+        marryCommentModel.setPublicTime(new Date());
+        marryCommentModel.setIsShielding(0);
+        marryCommentModel.setComment(comment);
+        marryCommentModel.setAppUserId(appUserId);
+        marryCommentModel.setPhotoId(photoId);
+        marryCommentModel.setSourceDevice(sourceDevice);
+        marryPhoto = this.selectByKey(photoId);
+        //更新照片评论数
+        Integer commentNum = marryPhoto.getCommentNum() == null ? 0 : marryPhoto.getCommentNum();
+        commentNum++;
+        marryPhoto.setCommentNum(commentNum);
+        this.updateByKey(marryPhoto);
+
+        Map<String, Integer> map = null;
+        Integer goldCoins = 0;
+        Condition condition = new Condition(MarryCommentModel.class);
+        Criteria criteria = condition.createCriteria();
+        criteria.andEqualTo("appUserId", appUserId);
+        criteria.andEqualTo("photoId", photoId);
+        List<MarryCommentModel> commentlist = appMarryCommentService.selectByCondition(condition);
+        if (CollectionUtils.isEmpty(commentlist)) {
+            map = goldCoinService.commentAddGoldCoins(appUserId, photoId);
+            goldCoins = map.get("commentAppUserAddNum");
+        }
+        marryCommentModel.setGoldCoin(goldCoins);
+        appMarryCommentService.saveNotNull(marryCommentModel);
+        return goldCoins;
+    }
+
+    /**
+     * //TODO 增加回复
+     * @see com.ehome.cloud.marry.service.IAppMarryPhotoService#addReply(java.lang.Integer, java.lang.Integer, java.lang.Integer, java.lang.String)
+     **/
+    @Override
+    public void addReply(Integer commentId, Integer fromUserId, Integer toUserId, String replyMsg) throws Exception {
+        
+        MarryReplyModel marryReplyModel = new MarryReplyModel();
+        marryReplyModel.setCommentId(commentId);
+        marryReplyModel.setCreateDate(new Date());
+        marryReplyModel.setReplyMsg(replyMsg);
+        marryReplyModel.setFromUserID(fromUserId);
+        marryReplyModel.setToUserId(toUserId);
+        appMarryReplyService.saveNotNull(marryReplyModel);
+    
+    }
+
+    /**
+     * //TODO 点赞
+     * @see com.ehome.cloud.marry.service.IAppMarryPhotoService#thumpUp(java.lang.Integer, java.lang.Integer, java.lang.Integer)
+     **/
+    @Override
+    public Map<String, Integer> thumpUp(Integer photoId, Integer appUserId, Integer sourceDevice) throws Exception {
+        
+        MarryThumpUpModel marryThumpUpModel = new MarryThumpUpModel();
+        marryThumpUpModel.setSourceDevice(sourceDevice);
+        marryThumpUpModel.setAppUserId(appUserId);
+        marryThumpUpModel.setPhotoId(photoId);
+        marryThumpUpModel.setCreateTime(new Date());
+        marryThumpUpModel.setSourceDevice(sourceDevice);
+        
+        //更新点赞数
+        MarryPhoto marryPhoto = this.selectByKey(photoId);
+        Integer thumpUpNum = marryPhoto.getThumbUpNum()== null? 0 : marryPhoto.getThumbUpNum();
+        thumpUpNum++;
+        marryPhoto.setThumbUpNum(thumpUpNum);
+        this.updateNotNull(marryPhoto);
+        
+        Map<String, Integer> map = goldCoinService.thumpUpAddGoldCoins(appUserId, photoId);
+        marryThumpUpModel.setGoldCoin(map.get("thumpUpAppUserAddNum"));
+        appMarryThumpUpService.save(marryThumpUpModel);
+        return map;
+    }
+
+}

@@ -1,0 +1,175 @@
+package com.ehome.cloud.sys.controller;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.subject.Subject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.NativeWebRequest;
+
+import com.ehome.cloud.sys.dto.LoginInfoDto;
+import com.ehome.cloud.sys.model.MenuModel;
+import com.ehome.cloud.sys.model.RoleModel;
+import com.ehome.cloud.sys.model.UserModel;
+import com.ehome.cloud.sys.service.IMenuService;
+import com.ehome.cloud.sys.service.IRoleService;
+import com.ehome.cloud.sys.service.IUserService;
+import com.ehome.core.dict.ResponseCode;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.model.AjaxResult;
+import com.ehome.core.shiro.cons.SessionCons;
+import com.ehome.core.shiro.security.dto.DeviceType;
+import com.ehome.core.shiro.security.token.CustomizedUsernamePasswordToken;
+import com.ehome.core.util.CollectionUtils;
+
+/**
+ * 系统登录控制器入口
+ * @Title:LoginController
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年2月9日 上午11:41:29
+ * @version:
+ */
+@Controller
+public class LoginController extends BaseController {
+
+	private final static Logger logger = LoggerFactory
+			.getLogger(LoginController.class);
+
+	@Autowired
+	private SecurityManager securityManager;
+
+	@Resource
+	private IUserService userService;
+
+	@Resource
+	private IRoleService roleService;
+
+	@Resource
+	private IMenuService menuService;
+
+	/**
+	 * 跳转到登录页面
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "login", produces = { "text/html",
+			"application/xhtml+xml", "application/xml" })
+	public String toLogin(Model model, NativeWebRequest request) {
+		return "/system/admin/login.html";
+	}
+
+	/**
+	 * 执行登录操作
+	 * 
+	 * @param model
+	 * @param request
+	 * @param loginName
+	 * @param password
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/toLogin", method = RequestMethod.POST, produces = {
+			"application/json", "text/javascript" })
+	@ResponseBody
+	public AjaxResult login(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") String loginName,
+			@RequestParam(required = false, defaultValue = "") String password)
+			throws BusinessException {
+
+		if (logger.isDebugEnabled()) {
+			logger.info("PC端帐号登录,用户名:{},密码:{}", loginName, password);
+		}
+		/**
+		 * 1.先注入securityManager对象 2.校验登录信息 获取帐号权限信息 3.向shiro session中添加数据
+		 */
+		SecurityUtils.setSecurityManager(securityManager);
+		UserModel userModel = userService.queryByLoginName(loginName);
+		List<RoleModel> roles = new ArrayList<>();
+		List<MenuModel> menus = new ArrayList<>();
+		List<String> permissions = new ArrayList<>();
+		List<String> roleCodes = new ArrayList<>();
+		if (null == userModel) {
+			return new AjaxResult(ResponseCode.unknown_account.getCode(), "",
+					ResponseCode.unknown_account.getMsg());
+		} else {
+			if (userModel.getActiveFlag().intValue() == 1) {
+				return new AjaxResult(ResponseCode.lock_account.getCode(), "",
+						ResponseCode.lock_account.getMsg());
+			}
+			if (userModel.getStatus().intValue() == -1) {
+				return new AjaxResult(ResponseCode.unknown_account.getCode(),
+						"", ResponseCode.unknown_account.getMsg());
+			}
+			if (userModel.getStatus().intValue() == 1) {
+				return new AjaxResult(ResponseCode.freeze_account.getCode(),
+						"", ResponseCode.freeze_account.getMsg());
+			}
+			// 查询出当前用户的角色和权限信息
+			roles = roleService.queryAuthRoleByUserId(userModel.getId(), 0);
+			List<Integer> rolesId = new ArrayList<>();
+			if (CollectionUtils.isNotEmpty(roles)) {
+				for (RoleModel role : roles) {
+					rolesId.add(role.getId());
+					roleCodes.add(role.getRoleCode());
+				}
+				menus = menuService.queryAuthPermissByRoleId(rolesId);
+				if (CollectionUtils.isNotEmpty(menus)) {
+					for (MenuModel menu : menus) {
+						permissions.add(menu.getMenuCode());
+					}
+				}
+			}
+		}
+		Subject subject = SecurityUtils.getSubject();
+		// 判断是否已经登录
+		if (!subject.isAuthenticated()) {
+			CustomizedUsernamePasswordToken token = new CustomizedUsernamePasswordToken(
+					loginName, password, DeviceType.PC.toString());
+			token.setRememberMe(false);
+			LoginInfoDto loginAccinfo = new LoginInfoDto();
+			try {
+				// 执行登录认证
+				subject.login(token);
+				if (logger.isDebugEnabled()) {
+					logger.info("当前PC账户会话ID:{}", subject.getSession().getId());
+				}
+				BeanUtils.copyProperties(userModel, loginAccinfo);
+				loginAccinfo.setRoleList(roles);
+				loginAccinfo.setMenuList(menus);
+				subject.getSession().setAttribute(SessionCons.DEVICE_TYPE,
+						DeviceType.PC.toString());
+				subject.getSession().setAttribute(
+						SessionCons.LOGIN_USER_SESSION, loginAccinfo);
+				subject.getSession().setAttribute(SessionCons.LOGIN_USER_ID,
+						userModel.getId());
+				subject.getSession().setAttribute(
+						SessionCons.LOGIN_USER_PERMISSIONS, permissions);
+				subject.getSession().setAttribute(SessionCons.LOGIN_USER_ROLES,
+						roleCodes);
+			} catch (AuthenticationException e) {
+				//e.printStackTrace();
+				return new AjaxResult(ResponseCode.login_error.getCode(), "",
+						ResponseCode.login_error.getMsg());
+			}
+		}
+		return new AjaxResult(ResponseCode.success.getCode(), "",
+				ResponseCode.success.getMsg());
+	}
+}

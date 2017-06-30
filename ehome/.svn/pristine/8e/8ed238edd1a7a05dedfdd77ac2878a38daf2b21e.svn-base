@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ehome.cloud.guangchang.mapper.CommentMapper">
+  <resultMap id="BaseResultMap" type="com.ehome.cloud.guangchang.model.CommentModel">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="discussion_id" jdbcType="INTEGER" property="discussionId" />
+    <result column="user_id" jdbcType="INTEGER" property="userId" />
+    <result column="isanonymous" jdbcType="TINYINT" property="isanonymous" />
+    <result column="content" jdbcType="VARCHAR" property="content" />
+    <result column="commenttime" jdbcType="TIMESTAMP" property="commenttime" />
+    <result column="replyuser_id" jdbcType="INTEGER" property="replyuserId" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, discussion_id, user_id, isanonymous, content, commenttime, replyuser_id
+  </sql>
+  <select id="selectListByDiscussion" parameterType="com.ehome.core.util.PageData" resultType="com.ehome.core.util.PageData">
+    select 
+		gc.id,
+		gc.discussion_id discussionId,
+		gc.user_id userId,
+		gc.content,
+		gc.isanonymous,
+		gc.commenttime,
+		gc.replyuser_id replyUserId
+	from t_gc_comment gc
+	where 1=1 
+	<if test="discussionId != null">
+		and gc.discussion_id = #{discussionId}
+	</if>
+	ORDER BY gc.commenttime DESC
+  </select>
+  <!-- 
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_gc_comment
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.ehome.cloud.guangchang.model.CommentModel">
+    insert into t_gc_comment (id, reply_id, user_id, 
+      isanonymous, user_name, content, 
+      commenttime)
+    values (#{id,jdbcType=INTEGER}, #{replyId,jdbcType=INTEGER}, #{userId,jdbcType=INTEGER}, 
+      #{isanonymous,jdbcType=TINYINT}, #{userName,jdbcType=VARCHAR}, #{content,jdbcType=VARCHAR}, 
+      #{commenttime,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="com.ehome.cloud.guangchang.model.CommentModel">
+    insert into t_gc_comment
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="replyId != null">
+        reply_id,
+      </if>
+      <if test="userId != null">
+        user_id,
+      </if>
+      <if test="isanonymous != null">
+        isanonymous,
+      </if>
+      <if test="userName != null">
+        user_name,
+      </if>
+      <if test="content != null">
+        content,
+      </if>
+      <if test="commenttime != null">
+        commenttime,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="replyId != null">
+        #{replyId,jdbcType=INTEGER},
+      </if>
+      <if test="userId != null">
+        #{userId,jdbcType=INTEGER},
+      </if>
+      <if test="isanonymous != null">
+        #{isanonymous,jdbcType=TINYINT},
+      </if>
+      <if test="userName != null">
+        #{userName,jdbcType=VARCHAR},
+      </if>
+      <if test="content != null">
+        #{content,jdbcType=VARCHAR},
+      </if>
+      <if test="commenttime != null">
+        #{commenttime,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.ehome.cloud.guangchang.model.CommentModel">
+    update t_gc_comment
+    <set>
+      <if test="replyId != null">
+        reply_id = #{replyId,jdbcType=INTEGER},
+      </if>
+      <if test="userId != null">
+        user_id = #{userId,jdbcType=INTEGER},
+      </if>
+      <if test="isanonymous != null">
+        isanonymous = #{isanonymous,jdbcType=TINYINT},
+      </if>
+      <if test="userName != null">
+        user_name = #{userName,jdbcType=VARCHAR},
+      </if>
+      <if test="content != null">
+        content = #{content,jdbcType=VARCHAR},
+      </if>
+      <if test="commenttime != null">
+        commenttime = #{commenttime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.ehome.cloud.guangchang.model.CommentModel">
+    update t_gc_comment
+    set reply_id = #{replyId,jdbcType=INTEGER},
+      user_id = #{userId,jdbcType=INTEGER},
+      isanonymous = #{isanonymous,jdbcType=TINYINT},
+      user_name = #{userName,jdbcType=VARCHAR},
+      content = #{content,jdbcType=VARCHAR},
+      commenttime = #{commenttime,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+   -->
+</mapper>

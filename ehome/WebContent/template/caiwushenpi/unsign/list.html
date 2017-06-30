@@ -1,0 +1,381 @@
+<% include("/system/public/header.html",{title:'header'}){} %> <%
+layout("/system/public/aside.html",{title:'header'}){} %>
+
+<script type="text/javascript"></script>
+
+<!-- BEGIN WRAPPER  -->
+<div class="editalbeWrap">
+	<section id="main-content">
+		<!-- BEGIN WRAPPER  -->
+		<section class="wrapper site-min-height">
+			<section class="panel">
+				<header class="panel-heading">
+					<span class="label label-primary">申请个案</span> <span
+						class="tools pull-right"> <a href="javascript:;"
+						class="fa fa-chevron-down"></a> <a href="javascript:;"
+						class="fa fa-times"></a>
+					</span>
+				</header>
+				<div class="panel-body">
+					<div class="adv-table editable-table ">
+						<div class="clearfix">
+							<div class="panel-body">
+								<form class="form-inline" role="form" name="searchForm">
+									<div class="layui-input-inline" style="padding: 0 10px;">
+										<span>&nbsp;帮扶项目</span>
+									</div>
+									<div class="form-group">
+										<select class="form-control " id="help_project"
+											name="help_project">
+										</select>
+									</div>
+									
+									<div class="layui-input-inline" style="padding: 0 0px;">
+										<font size="3px" color="red">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+										
+										</font>
+									</div>
+									
+									<div class="layui-input-inline" style="padding: 0 10px;">
+										<span>&nbsp;资金来源</span>
+									</div>
+
+									<div class="form-group">
+										<select class="form-control " id="amount_source"
+											name="amount_source">
+										</select>
+									</div>
+
+									<button type="button" name="search" class="btn btn-success">筛选</button>
+
+									<div class="btn-group">
+										<a href="javascript:;" name="batchAdd"
+											class="btn btn-success green">批量添加签领个案 <i
+											class="fa fa-plus"></i>
+										</a>
+									</div>
+
+									<div class="layui-input-inline" style="padding: 0 0px;">
+										<font size="3px" color="red">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;！每次只能按一个资金来源及帮扶项目来选择生成签领表</font>
+									</div>
+								</form>
+							</div>
+						</div>
+						<div class="clearfix">
+							<div class="panel-body">
+								<div class="layui-input-inline" style="padding: 0 10px;">
+									<font  size="2px" >待生成签领表资金来源: </font>
+									<span id="sourceSpan" name="sourceSpan">
+									        中央资金
+								    </span>
+								</div>
+								
+								<div class="layui-input-inline" style="padding: 0 40px;">
+									<span>待生成签领表帮扶项目：</span>
+									<span id="projectSpan" name="projectSpan">
+									        救助
+								    </span>
+								</div>
+								
+								<div class="layui-input-inline" style="padding: 0 40px;">
+									<span>待生成个案数</span>
+									<span id ="numberSpan" name="numberSpan">
+									        0
+								    </span>
+								</div>
+								
+								<div class="btn-group">
+									<a href="javascript:;" name="clearTemp"
+										class="btn btn-success green" name="clearTemp"> 清空 <i class="fa fa-plus"></i>
+									</a>
+								</div>
+								
+								<div class="btn-group">
+									<a href="javascript:;" 
+										class="btn btn-success green" name="createSignTable"> 生成签领表 <i class="fa fa-plus"></i>
+									</a>
+								</div>
+								
+							</div>
+						</div>
+						<div class="space15"></div>
+						<table class="table table-striped table-hover table-bordered"
+							id="member-list">
+							<thead>
+								<tr>
+									<th width="5%" class="center"><input type="checkbox"
+										class="checkall" />全选</th>
+									<th width="3%" class="hidden-phone">ID</th>
+									<th width="6%" class="hidden-phone">姓名</th>
+									<th width="5%" class="hidden-phone">性别</th>
+									<th width="6%" class="hidden-phone">年龄</th>
+									<th width="11%" class="hidden-phone">身份证号</th>
+									<th width="11%" class="hidden-phone">银行账号</th>
+									<th width="13%" class="hidden-phone">工作单位或家庭地址</th>
+									<th width="6%" class="hidden-phone">金额</th>
+									<th width="7%" class="hidden-phone">资金来源</th>
+									<th width="9%" class="hidden-phone">联系电话</th>
+									<th width="7%" class="hidden-phone">帮扶项目</th>
+									<th width="7%" class="hidden-phone">职工编号</th>
+									<th width="9%" class="hidden-phone">档案编号</th>
+									<th width="7%" class="hidden-phone">备注</th>
+									<th width="15%" class="hidden-phone">操作</th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</section>
+		</section>
+		<!-- END WRAPPER  -->
+	</section>
+</div>
+</div>
+
+<script src="${ctxPath}/static/system/olive/all/js/jquery.form.js"></script>
+<script
+	src="${ctxPath}/static/system/olive/all/js/jquery.validate.min.js"></script>
+<script
+	src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script>
+<!-- DATATABLE JS  -->
+<script
+	src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script>
+<!-- DATATABLE JS  -->
+<script src="${ctxPath}/static/web/caiwushenpi/unsign/js/unsignTable.js"></script>
+<script type="text/javascript">
+	jQuery(document)
+			.ready(
+					function() {
+						
+						//$('select[name=help_project]')
+						//$('select[name="amount_source"]')
+						
+						var helpType = '${helpType}', distAmountSource = '${distAmountSource}';
+						if (helpType != null) {
+							helpType = jQuery.parseJSON(helpType);
+							for ( var x in helpType)
+								$('select[name=help_project]')
+										.append("<option value='"+helpType[x].dictKey+"'>"
+												+ helpType[x].dictValue
+												+ "</option>");
+						}
+						if (distAmountSource != null) {
+							distAmountSource = jQuery
+									.parseJSON(distAmountSource);
+							for ( var x in distAmountSource)
+								$('select[name="amount_source"]')
+										.append("<option value='"+distAmountSource[x].dictKey+"'>"
+												+ distAmountSource[x].dictValue
+												+ "</option>");
+						}
+						
+						var clearBtn = jQuery('a[name=clearTemp]');
+						var createBtn = jQuery('a[name=createSignTable]');
+						
+						
+						//缓存待生成表
+						var selected = sessionStorage.getItem("cache-choose-record");
+						selected = selected == null ? '[]' : selected;
+						selected = jQuery.parseJSON(selected);
+						
+						 if (jQuery.isArray(selected)) {
+							var _c=0;
+							for(var x=0; x<selected.length; x++){
+								if(selected[x]!=null && selected[x]!='' && selected[x]!='null')
+									_c++;
+							}
+							jQuery('span[name=numberSpan]').html(_c);
+							if(_c>0){
+								$('select[name=help_project]').attr("disabled",true); 
+								$('select[name="amount_source"]').attr("disabled",true); 
+								var conditon = jQuery.parseJSON(sessionStorage.getItem('cache-choose-rel-record'));
+								
+								jQuery('span[name=projectSpan]').html(conditon.helpProject)
+								jQuery('span[name=sourceSpan]').html(conditon.amountSource)
+							}else{
+								$('select[name="amount_source"]').attr("disabled",false); 
+								$('select[name=help_project]').attr("disabled",false);
+							}
+						} else {
+							selected = [];
+							jQuery('span[name=numberSpan]').html(0);
+						} 
+						
+						//生成缓存
+						function saveCache(total){
+							var json = {};
+							json.helpProject = $("#help_project").find("option:selected").text();
+							json.amountSource = $("#amount_source").find("option:selected").text();
+							sessionStorage.setItem('cache-choose-rel-record', JSON
+									.stringify(json));
+							sessionStorage.setItem('cache-choose-record', JSON
+									.stringify(selected));
+							if(total == 0){
+								alert('保存成功');
+							}else{
+								var str = total + '条'+ $("#amount_source").find("option:selected").text() + '资金来源' + ','
+								+ $("#help_project").find("option:selected").text()+ '项目的申请个案成功加入待生成签领列表';
+						        //alert(str);
+								layer.msg(str, {
+									  time: 8000, //2s后自动关闭
+									  btn: ['确定']
+								});
+							}
+							//search();
+						}
+						
+						
+						//清空待生成表
+						clearBtn.on('click',function(){
+							/*  if(layer.confirm('确定要清空吗?')){
+								jQuery('span[name=numberSpan]').html('0');
+								sessionStorage.setItem('cache-choose-record',[]);
+								sessionStorage.setItem('cache-choose-rel-record',[]);
+							
+								$('select[name=help_project]').attr("disabled",false); 
+								$('select[name="amount_source"]').attr("disabled",false);
+								window.parent.location.reload();
+							}  */
+							
+							layer.confirm('确定要清空吗?', {
+								  btn: ['清空','不清空'] //按钮
+								}, function(){
+									jQuery('span[name=numberSpan]').html('0');
+									sessionStorage.setItem('cache-choose-record',[]);
+									sessionStorage.setItem('cache-choose-rel-record',[]);
+								
+									$('select[name=help_project]').attr("disabled",false); 
+									$('select[name="amount_source"]').attr("disabled",false);
+									window.parent.location.reload();
+								}, function(){
+								  
+								});
+						});
+						
+						
+						createBtn.on('click',function(e){
+							var number=Number(jQuery('span[name=numberSpan]').html());
+							 if(number>0){
+								 
+								 var pkIds =jQuery.parseJSON(sessionStorage.getItem('cache-choose-record'));
+								 sessionStorage.setItem("helpType", document.getElementById("projectSpan").innerHTML);
+								 sessionStorage.setItem("aountSource", document.getElementById("sourceSpan").innerHTML);
+								 sessionStorage.setItem("member",document.getElementById("numberSpan").innerHTML)
+	
+								 //var url= '../signTable/findSignTemp?id='+sessionStorage.getItem('cache-choose-rel-record');
+								 parent.layer.open({
+				                		type:2,
+				                		title:'生成签领表',
+				                		area: ['80%', '80%'],
+				                		content:'../signTable/findSignTemp?id='+pkIds,
+				                		end:function(){
+
+				                		}
+				                	});
+							 }else{
+								 layer.alert("请先添加签领个案");
+							 }
+						});
+						
+						
+						
+					
+
+						
+						//查看详细信息
+
+						/*
+						//导出excel
+						jQuery('a[name=export-data]').on('click',function(e){
+							e.preventDefault();
+							var form = jQuery('form[name=searchForm]');
+							 form.attr("action", '../member/export');  
+							    //触发submit事件，提交表单   
+							 form.submit();  
+						});
+						//批量转出
+						jQuery('a[name=batch-transfer]').on('click',function(e){
+							e.preventDefault();
+							var idList=new Array();
+							jQuery('input[class=checkchild]').each(function(index, element) {
+								if (jQuery(this).is(':checked')) {
+									var pkId = Number(jQuery(this).val());
+									idList.push(pkId);
+								}
+							});
+							if(idList.length<=0){
+								layer.alert('请先选择会员记录',{title : '操作提示',icon: 2});
+							}else{
+						    	parent.layer.open({
+						    		type:2,
+						    		title:'批量转出',
+						    		area:['500px','500px'],
+						    		content:'../member/transfer.html?memberIds='+idList,
+						    		end:function(){
+
+						    		}
+						    	});
+							}
+						});
+						//批量审核
+						jQuery('a[name=batch-approval]').on('click',function(e){
+							e.preventDefault();
+							var idList=new Array();
+							jQuery('input[class=checkchild]').each(function(index, element) {
+								if (jQuery(this).is(':checked')) {
+									var pkId = Number(jQuery(this).val());
+									idList.push(pkId);
+								}
+							});
+							if(idList.length<=0){
+								layer.alert('请先选择会员记录',{title : '操作提示',icon: 2});
+							}else{
+								parent.layer.open({
+								    content: '请选择审核结果?'
+									  ,btn: ['通过', '不通过']
+									  ,yes: function(index, layero){
+										  jQuery.post('../member/updateStatus',{'memberIds':idList,"auditStatus":1},function(data){
+											if(data.status == 10000){
+												parent.layer.alert(data.data, {title : '操作提示', icon : 1, time:2000, end: function(){
+													parent.layer.closeAll();
+												}});
+											}else{
+												layer.alert(data.data,{title : '操作提示',icon: 2});
+											}
+									      },'json');
+									  },btn2: function(index, layero){
+										  parent.layer.open({
+						    				    type: 2,
+						    				    title: '审核不通过',
+						    				    area: ['300px', '300px'],
+						    				    content:'../member/unApproval.html?memberIds='+idList,
+						    				    end:function(){
+						    				    	window.parent.location.reload();
+						    				    }
+						    				});
+									  }
+									  ,cancel: function(){
+									  }
+									});
+							}
+						});
+
+						});*/
+						unsignTable.init();//初始化表格
+						$('input[class=checkall]').click(
+								function() {
+									if ($(this).is(':checked')) {
+										$('input[class=checkchild]').attr(
+												"checked", "true");
+									} else {
+										$('input[class=checkchild]').attr(
+												"checked", null);
+									}
+								});
+
+					});
+</script>
+<!-- END MAIN CONTENT -->
+<% layout("/system/public/footer.html",{title:'header'}){} %>

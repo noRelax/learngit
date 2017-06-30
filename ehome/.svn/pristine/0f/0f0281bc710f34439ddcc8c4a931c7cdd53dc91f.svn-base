@@ -1,0 +1,1060 @@
+package com.ehome.cloud.member.service.impl;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.shiro.crypto.hash.Md5Hash;
+import org.json.JSONObject;
+import org.springframework.beans.BeanUtils;
+import org.springframework.stereotype.Service;
+
+import tk.mybatis.mapper.entity.Condition;
+
+import com.ehome.cloud.area.model.AreaModel;
+import com.ehome.cloud.area.service.IAreaService;
+import com.ehome.cloud.marry.model.GoldCoinModel;
+import com.ehome.cloud.marry.service.IGoldCoinService;
+import com.ehome.cloud.member.dto.MemberDto;
+import com.ehome.cloud.member.dto.MemberImportDto;
+import com.ehome.cloud.member.mapper.MemberMapper;
+import com.ehome.cloud.member.model.Member;
+import com.ehome.cloud.member.model.MemberHome;
+import com.ehome.cloud.member.model.MemberRecord;
+import com.ehome.cloud.member.model.MemberResume;
+import com.ehome.cloud.member.model.MemberTemp;
+import com.ehome.cloud.member.service.IMemberHomeService;
+import com.ehome.cloud.member.service.IMemberRecordService;
+import com.ehome.cloud.member.service.IMemberResumeService;
+import com.ehome.cloud.member.service.IMemberService;
+import com.ehome.cloud.member.service.IMemberTempService;
+import com.ehome.cloud.sys.model.AppUserModel;
+import com.ehome.cloud.sys.service.IAppUserService;
+import com.ehome.cloud.sys.service.IDictionaryService;
+import com.ehome.core.frame.BaseService;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.service.IEhCacheService;
+import com.ehome.core.util.CollectionUtils;
+import com.ehome.core.util.DateUtils;
+import com.ehome.core.util.ExportExcelUtils;
+import com.ehome.core.util.MD5;
+import com.ehome.core.util.MapUtils;
+import com.ehome.core.util.NumberUtils;
+import com.ehome.core.util.StringUtils;
+import com.ehome.core.util.ThreadUtils;
+import com.ehome.push.PushUtil;
+import com.github.pagehelper.PageHelper;
+
+/**
+ * 会员service
+ * 
+ * @Title:MemberServiceImpl
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年2月21日 下午5:24:55
+ * @version:
+ */
+@Service("memberService")
+public class MemberServiceImpl extends BaseService<Member> implements
+		IMemberService {
+
+	@Resource
+	private MemberMapper memberMapper;
+
+	@Resource
+	private IMemberHomeService memberHomeService;
+
+	@Resource
+	private IAppUserService appUserService;
+
+	@Resource
+	private IMemberRecordService memberRecordService;
+
+	@Resource
+	private IMemberResumeService memberResumeService;
+
+	@Resource
+	private IDictionaryService dictionaryService;
+
+	@Resource
+	private IMemberTempService memberTempService;
+
+	@Resource
+	private IAreaService areaService;
+
+	@Resource
+	private IEhCacheService ehCacheService;
+
+	@Resource
+	private IGoldCoinService goldCoinService;
+
+	private final static int BATCH_POOL_SIZE = 1000;
+
+	private final static ExecutorService es = ThreadUtils.newFixedThreadPool();
+
+	/**
+	 * 查询
+	 */
+	@Override
+	public List<MemberDto> queryForList(MemberDto queryMember, Integer start,
+			Integer pageSize) throws BusinessException {
+		PageHelper.startPage(start, pageSize, true);
+		return memberMapper.queryForList(queryMember);
+	}
+
+	/**
+	 * 检测身份证
+	 */
+	@Override
+	public MemberDto checkIdCard(Integer userId, String idCard)
+			throws BusinessException {
+		return memberMapper.queryByIdCard(idCard);
+	}
+
+	/**
+	 * 更新会员信息
+	 */
+	@Override
+	public void updateMember(MemberDto memberDto, MemberDto queryMember)
+			throws BusinessException {
+		// 修改会员主要信息
+		Member saveMember = new Member();
+		memberDto.setId(queryMember.getId());
+		memberDto.setUpperUnionId(queryMember.getUpperUnionId());
+		memberDto.setBasicUnionId(queryMember.getBasicUnionId());
+		memberDto.setAppUserId(queryMember.getAppUserId());
+		memberDto.setAuditStatus(queryMember.getAuditStatus());
+		memberDto.setUserResource(queryMember.getUserResource());
+		memberDto.setUserId(queryMember.getUserId());
+		memberDto.setIsActive(queryMember.getIsActive());
+		memberDto.setCreateTime(queryMember.getCreateTime());
+		BeanUtils.copyProperties(memberDto, saveMember);
+		try {
+			this.updateByKey(saveMember);
+		} catch (RuntimeException e) {
+			if (e.getMessage().contains("Duplicate entry")
+					&& e.getMessage().contains("tel")) {
+				throw new BusinessException("手机号码:" + saveMember.getTel()
+						+ "已存在！");
+			}
+			throw e;
+		}
+		// 修改AppUser信息
+		AppUserModel appUser = appUserService.selectByKey(queryMember
+				.getAppUserId());
+		if (null != appUser) {
+			appUser.setUserAccount(memberDto.getTel());
+			appUser.setUserName(memberDto.getMemberName());
+			appUser.setSex(memberDto.getSex());
+			appUser.setUserMobile(memberDto.getTel());
+			appUser.setRealName(memberDto.getMemberName());
+			appUser.setNickName(memberDto.getMemberName());
+			appUser.setIdCard(memberDto.getIdCard());
+			appUser.setProvince(memberDto.getProvince());
+			appUser.setCity(memberDto.getCity());
+			appUser.setCounty(memberDto.getArea());
+			appUserService.updateByKey(appUser);
+		}
+	}
+
+	/**
+	 * 保存
+	 */
+	@Override
+	public int insertMember(Integer userId, Integer orgId, MemberDto memberDto)
+			throws BusinessException {
+		// 保存会员信息
+		Member saveMember = new Member();
+		BeanUtils.copyProperties(memberDto, saveMember);
+		saveMember.setCreateTime(new Date());
+		saveMember.setAuditStatus(3);
+		saveMember.setUserResource(2);
+		saveMember.setUserId(userId);
+		saveMember.setBasicUnionId(orgId);
+		saveMember.setUpperUnionId(memberDto.getUpperUnionId());
+		saveMember.setIsActive(0);
+		// saveMember.setStatus(1);
+		// 新增app用户
+		AppUserModel appUserModel = new AppUserModel();
+		String salt = UUID.randomUUID().toString().replaceAll("-", "");
+		appUserModel.setSalt(salt);
+		Md5Hash md5Hash = new Md5Hash(MD5.md5("123456"), salt, 2);
+		appUserModel.setUserPassword(md5Hash.toString());
+		appUserModel.setUserAccount(memberDto.getTel());
+		appUserModel.setUserName(memberDto.getMemberName());
+		appUserModel.setSex(memberDto.getSex());
+		appUserModel.setUserMobile(memberDto.getTel());
+		appUserModel.setCreateTime(new Date());
+		appUserModel.setStatus(0);
+		appUserModel.setIsMember(1);
+		appUserModel.setRealName(memberDto.getMemberName());
+		appUserModel.setNickName(memberDto.getMemberName());
+		appUserModel.setSourceDevice(1);
+		appUserModel.setIdCard(memberDto.getIdCard());
+		appUserModel.setProvince(memberDto.getProvince());
+		appUserModel.setCity(memberDto.getCity());
+		appUserModel.setCounty(memberDto.getArea());
+		appUserService.saveNotNull(appUserModel);
+		// APPUser配置特殊角色
+		Map<String, Object> roleMap = new HashMap<>();
+		List<Map<String, Object>> list = new ArrayList<>();
+		Map<String, Object> tempMap = new HashMap<>();
+		tempMap.put("app_user_id", appUserModel.getId());
+		// FIXME 暂时固定一个角色id
+		tempMap.put("role_id", 21);
+		list.add(tempMap);
+		roleMap.put("list", list);
+		appUserService.saveAppRole(roleMap);
+		saveMember.setAppUserId(appUserModel.getId());
+		saveMember.setIsActive(1);
+		try {
+			this.save(saveMember);
+		} catch (RuntimeException e) {
+			if (e.getMessage().contains("Duplicate entry")
+					&& e.getMessage().contains("tel")) {
+				throw new BusinessException("手机号码:" + saveMember.getTel()
+						+ "已存在！");
+			}
+			throw e;
+		}
+		// 保存会员记录表
+		MemberRecord memberRecord = new MemberRecord();
+		memberRecord.setAuditStatus(3);
+		memberRecord.setCreateTime(new Date());
+		memberRecord.setMemberId(saveMember.getId());
+		memberRecord.setToBasicUnionId(orgId);// 转入的基层工会id 取用户表的基层工会id
+		memberRecordService.save(memberRecord);
+		return saveMember.getId();
+	}
+
+	@Override
+	public Member queryMemberByAppUserId(Integer appUserId) {
+		Member member = new Member();
+		member.setAppUserId(appUserId);
+		return memberMapper.selectOne(member);
+	}
+
+	/**
+	 * 构造家庭成员数据
+	 * 
+	 * @param dto
+	 * @return
+	 */
+	public List<MemberHome> getHomeList(MemberImportDto dto) {
+		List<MemberHome> homeList = new ArrayList<>();
+		if (StringUtils.isNotBlank(dto.getMemberHome1())) {
+			MemberHome memberHome = new MemberHome();
+			memberHome.setMembers(dto.getMemberHome1());
+			if (StringUtils.isNotBlank(dto.getMemberHome1Contact()))
+				memberHome.setContact(dto.getMemberHome1Contact());
+			if (StringUtils.isNotBlank(dto.getFamilyRelationship1())) {
+				memberHome.setFamilyRelationship(this.getDictKey(
+						"CODE_FAMILY_RELATIONSHIP",
+						dto.getFamilyRelationship1()));
+			}
+			homeList.add(memberHome);
+		}
+		if (StringUtils.isNotBlank(dto.getMemberHome2())) {
+			MemberHome memberHome = new MemberHome();
+			memberHome.setMembers(dto.getMemberHome2());
+			if (StringUtils.isNotBlank(dto.getMemberHome2Contact()))
+				memberHome.setContact(dto.getMemberHome2Contact());
+			if (StringUtils.isNotBlank(dto.getFamilyRelationship2())) {
+				memberHome.setFamilyRelationship(this.getDictKey(
+						"CODE_FAMILY_RELATIONSHIP",
+						dto.getFamilyRelationship2()));
+			}
+			homeList.add(memberHome);
+		}
+		if (StringUtils.isNotBlank(dto.getMemberHome3())) {
+			MemberHome memberHome = new MemberHome();
+			memberHome.setMembers(dto.getMemberHome3());
+			if (StringUtils.isNotBlank(dto.getMemberHome3Contact()))
+				memberHome.setContact(dto.getMemberHome3Contact());
+			if (StringUtils.isNotBlank(dto.getFamilyRelationship3())) {
+				memberHome.setFamilyRelationship(this.getDictKey(
+						"CODE_FAMILY_RELATIONSHIP",
+						dto.getFamilyRelationship3()));
+			}
+			homeList.add(memberHome);
+		}
+		if (StringUtils.isNotBlank(dto.getMemberHome4())) {
+			MemberHome memberHome = new MemberHome();
+			memberHome.setMembers(dto.getMemberHome4());
+			if (StringUtils.isNotBlank(dto.getMemberHome4Contact()))
+				memberHome.setContact(dto.getMemberHome4Contact());
+			if (StringUtils.isNotBlank(dto.getFamilyRelationship4())) {
+				memberHome.setFamilyRelationship(this.getDictKey(
+						"CODE_FAMILY_RELATIONSHIP",
+						dto.getFamilyRelationship4()));
+			}
+			homeList.add(memberHome);
+		}
+		return homeList;
+	}
+
+	/**
+	 * 构造个人简历数据
+	 * 
+	 * @param dto
+	 * @return
+	 */
+	public List<MemberResume> getResumeList(MemberImportDto dto) {
+		List<MemberResume> resumeList = new ArrayList<>();
+		if (StringUtils.isNotBlank(dto.getCompanyName())) {
+			MemberResume memberResume = new MemberResume();
+			memberResume.setCompanyName(dto.getCompanyName());
+			if (StringUtils.isNotBlank(dto.getJob2()))
+				memberResume.setJob(dto.getJob2());
+			if (StringUtils.isNotBlank(dto.getJoinedDate()))
+				memberResume.setJoinedDate(DateUtils.getDate(dto
+						.getJoinedDate()));
+			if (StringUtils.isNotBlank(dto.getReleaseDate()))
+				memberResume.setReleaseDate(DateUtils.getDate(dto
+						.getReleaseDate()));
+			resumeList.add(memberResume);
+		}
+		return resumeList;
+	}
+
+	/**
+	 * 执行批量导入
+	 */
+	@Override
+	public Map<String, Object> saveImportMember(
+			List<MemberImportDto> listMember, Integer userId,
+			Integer baseOrgId, Integer upOrgId) throws BusinessException {
+		List<MemberDto> memberList = new ArrayList<>();
+		Map<String, Object> result = new HashMap<>();
+		Map<MemberDto, List<MemberHome>> memberHomeMap = new HashMap<>();
+		Map<MemberDto, List<MemberResume>> memberResumeMap = new HashMap<>();
+		List<MemberImportDto> repeatList = new ArrayList<>();
+		Set<String> telSet = new HashSet<>();
+		Set<String> idCardSet = new HashSet<>();
+		int index = 0;
+		for (int i = 0; i < listMember.size(); i++) {
+			MemberImportDto dto = listMember.get(i);
+			Integer provinceId = 0, cityId = 0;
+			// 各个字段校验
+			if (StringUtils.isBlank(dto.getMemberName())) {
+				result.put("error", "第" + (i + 3) + "行会员名称不能为空!");
+				return result;
+			}
+			if (StringUtils.isBlank(dto.getSex())) {
+				result.put("error", "第" + (i + 3) + "行性别不能为空!");
+				return result;
+			}
+			if (StringUtils.isBlank(dto.getTel())) {
+				result.put("error", "第" + (i + 3) + "行电话号码不能为空!");
+				return result;
+			} else {
+				if (telSet.contains(dto.getTel())) {
+					result.put("error", "第" + (i + 3) + "行不能导入重复的电话号码!");
+					return result;
+				} else {
+					telSet.add(dto.getTel());
+				}
+			}
+			if (StringUtils.isBlank(dto.getStatus())) {
+				result.put("error", "第" + (i + 3) + "行会员状态不能为空!");
+				return result;
+			}
+			if (StringUtils.isNotBlank(dto.getRegisteredAddress())) {
+				if (dto.getRegisteredAddress().indexOf("-") != -1) {
+					String[] address = dto.getRegisteredAddress().split("-");
+					if (address.length != 2) {
+						result.put("error", "第" + (i + 3) + "行户口所在地数据格式不正确!");
+						return result;
+					} else {
+						String province = address[0], city = address[1];
+						Condition condition = new Condition(AreaModel.class);
+						condition.createCriteria()
+								.andEqualTo("areaName", province)
+								.andEqualTo("level", 1);
+						List<AreaModel> provinceList = areaService
+								.selectByCondition(condition);
+						if (CollectionUtils.isNotEmpty(provinceList)) {
+							AreaModel provinceArea = provinceList.get(0);
+							provinceId = provinceArea.getId();
+							dto.setProvince(provinceId);
+							condition.clear();
+							condition.createCriteria()
+									.andEqualTo("areaName", city)
+									.andEqualTo("level", 2);
+							List<AreaModel> cityList = areaService
+									.selectByCondition(condition);
+							if (CollectionUtils.isNotEmpty(cityList)) {
+								AreaModel cityArea = cityList.get(0);
+								cityId = cityArea.getId();
+								dto.setCity(cityId);
+							} else {
+								result.put("error", "第" + (i + 3)
+										+ "行户口所在地地市不存在!");
+								return result;
+							}
+						} else {
+							result.put("error", "第" + (i + 3) + "行户口所在地省份不存在!");
+							return result;
+						}
+					}
+				} else {
+					result.put("error", "第" + (i + 3) + "行户口所在地数据格式不正确!");
+					return result;
+				}
+			}
+			if (StringUtils.isBlank(dto.getIdCard())) {
+				result.put("error", "第" + (i + 3) + "行身份证号码不能为空!");
+				return result;
+			} else {
+				if (idCardSet.contains(dto.getIdCard())) {
+					result.put("error", "第" + (i + 3) + "行不能导入重复的身份证号码!");
+					return result;
+				} else {
+					idCardSet.add(dto.getIdCard());
+					// 检测身份证是否存在冲突,若有冲突则将数据写入临时表，否则直接执行会员主表插入
+					MemberDto memberDto = this.checkIdCard(null,
+							dto.getIdCard());
+					if (null != memberDto) {
+						repeatList.add(dto);
+					} else {
+						MemberDto member = new MemberDto();
+						BeanUtils.copyProperties(dto, member);
+						member.setProvince(provinceId);
+						member.setCity(cityId);
+						member.setSex(this.getDictKey("CODE_SEX", dto.getSex()));
+						member.setNation(this.getDictKey("CODE_NATION",
+								dto.getNation()));
+						member.setEducation(this.getDictKey("CODE_EDUCATION",
+								dto.getEducation()));
+						member.setDegree(this.getDictKey("CODE_DEGREE",
+								dto.getDegree()));
+						member.setPolitical(this.getDictKey(
+								"CODE_POLITICAL_LANDSCAPE", dto.getPolitical()));
+						member.setStatus(this.getDictKey("CODE_MEMBER_STATUS",
+								dto.getStatus()));
+						member.setMaritalStatus(this.getDictKey(
+								"CODE_MARITAL_STATUS", dto.getMaritalStatus()));
+						memberList.add(member);
+						// 校验家庭成员
+						List<MemberHome> homeList = getHomeList(dto);
+						// 校验个人工作简历
+						List<MemberResume> resumeList = getResumeList(dto);
+						memberHomeMap.put(member, homeList);
+						memberResumeMap.put(member, resumeList);
+					}
+				}
+			}
+		}
+		if (CollectionUtils.isNotEmpty(repeatList)) {
+			result.put("repeat", repeatList);
+			// 写进临时表 记录根据已存在身份证号码的会员信息,其他的新增会员则直接插入会员表
+			saveTempTable(repeatList, userId);
+		}
+		// 执行会员主表插入
+		index = saveMemberInfo(index, userId, baseOrgId, upOrgId, memberList,
+				memberHomeMap, memberResumeMap);
+		if (!result.containsKey("repeat")) {
+			result.put("success", index);
+		}
+		return result;
+	}
+
+	/**
+	 * 检验数据字典字段
+	 * 
+	 * @param key
+	 * @param code
+	 * @return
+	 */
+	public Set<String> checkDictFieldValue() {
+		String[] codes = new String[] { "CODE_SEX", "CODE_MEMBER_STATUS",
+				"CODE_NATION", "CODE_EDUCATION", "CODE_DEGREE",
+				"CODE_MARITAL_STATUS", "CODE_POLITICAL_LANDSCAPE" };
+		List<String> codeList = Arrays.asList(codes);
+		List<String> dictList = dictionaryService.getByCode(codeList);
+		Set<String> set = new HashSet<>();
+		set.addAll(dictList);
+		return set;
+	}
+
+	/**
+	 * 写入导入临时表
+	 * 
+	 * @param repeatList
+	 */
+	public void saveTempTable(List<MemberImportDto> repeatList, Integer userId) {
+		List<MemberTemp> listTemp = new ArrayList<>();
+		for (MemberImportDto dto : repeatList) {
+			MemberTemp memberTemp = new MemberTemp();
+			BeanUtils.copyProperties(dto, memberTemp);
+			memberTemp.setUserId(userId);
+			listTemp.add(memberTemp);
+		}
+		memberTempService.insertList4Mysql(listTemp);
+	}
+
+	/**
+	 * 分批写入会员信息表与关联表
+	 */
+	public int saveMemberInfo(int index, Integer userId, Integer baseOrgId,
+			Integer upOrgId, List<MemberDto> listMember,
+			Map<MemberDto, List<MemberHome>> memberHomeMap,
+			Map<MemberDto, List<MemberResume>> memberResumeMap)
+			throws BusinessException {
+		List<MemberDto> subList = null;
+		if (CollectionUtils.isNotEmpty(listMember))
+			ehCacheService.setCache(IEhCacheService.CACHE_MEMBER_IMPORT,
+					"MEMBER_TOTAL_COUNT", listMember.size());
+		while (CollectionUtils.isNotEmpty(listMember)) {
+			if (listMember.size() > BATCH_POOL_SIZE) {
+				subList = listMember.subList(0, BATCH_POOL_SIZE);
+				listMember = listMember.subList(BATCH_POOL_SIZE,
+						listMember.size());
+			} else {
+				subList = new ArrayList<>();
+				subList.addAll(listMember);
+				listMember.clear();
+			}
+			if (CollectionUtils.isNotEmpty(subList)) {
+				for (MemberDto member : subList) {
+					List<MemberHome> listHome = new ArrayList<>();
+					List<MemberResume> listResume = new ArrayList<>();
+					if (MapUtils.isNotEmpty(memberHomeMap)) {
+						listHome = memberHomeMap.get(member);
+					}
+					if (MapUtils.isNotEmpty(memberResumeMap))
+						listResume = memberResumeMap.get(member);
+					member.setUpperUnionId(upOrgId);
+					// 新增会员数据
+					int pkId = this.insertMember(userId, baseOrgId, member);
+					// 新增会员家庭成员
+					if (CollectionUtils.isNotEmpty(listHome)) {
+						for (MemberHome memberHome : listHome) {
+							memberHome.setMemberId(pkId);
+						}
+						memberHomeService.insertList4Mysql(listHome);
+					}
+					// 新增会员简历信息
+					if (CollectionUtils.isNotEmpty(listResume)) {
+						for (MemberResume memberResume : listResume) {
+							memberResume.setMemberId(pkId);
+						}
+						memberResumeService.insertList4Mysql(listResume);
+					}
+					index++;
+					// 记录缓存
+					ehCacheService.setCache(
+							IEhCacheService.CACHE_MEMBER_IMPORT,
+							"MEMBER_COUNT", index);
+					// 导入会员之后发送会员短信
+					//					final String memberName = member.getMemberName(), tel = member
+					//							.getTel();
+					//					es.submit(new Runnable() {
+					//						@Override
+					//						public void run() {
+					//							Map<String, Object> shortMsgMap = new HashMap<>();
+					//							String[] memberNames = new String[] { memberName };
+					//							shortMsgMap.put("smsTemplateId", "166710");
+					//							shortMsgMap.put("mobile", tel);
+					//							shortMsgMap.put("datas", memberNames);
+					//							PushUtil.push(1, shortMsgMap);
+					//						}
+					//					});
+				}
+			}
+		}
+		return index;
+	}
+
+	/**
+	 * 根据Code和Value获取字典Key
+	 * 
+	 * @param code
+	 * @param value
+	 * @return
+	 */
+	public Integer getDictKey(String code, String value) {
+		value = dictionaryService.getFieldKeyByCode(code, value);
+		return NumberUtils.toInt(value);
+	}
+
+	/**
+	 * 根据Code和Key获取字典Value
+	 * 
+	 * @param code
+	 * @param key
+	 * @return
+	 */
+	public String getDictValue(String code, Integer key) {
+		String renderValue = dictionaryService.getRenderFieldValue(code,
+				String.valueOf(key));
+		return renderValue;
+	}
+
+	/**
+	 * 从临时表中获取会员家庭关系集合
+	 * 
+	 * @param homeList
+	 * @param temp
+	 * @return
+	 */
+	public List<MemberHome> getMemberHomeByTemp(List<MemberHome> homeList,
+			MemberTemp temp, Integer memberId) {
+		if (StringUtils.isNotBlank(temp.getMemberHome1())) {
+			MemberHome memberHome = new MemberHome();
+			memberHome.setMemberId(memberId);
+			memberHome.setMembers(temp.getMemberHome1());
+			if (StringUtils.isNotBlank(temp.getMemberHome1Contact()))
+				memberHome.setContact(temp.getMemberHome1Contact());
+			if (StringUtils.isNotBlank(temp.getFamilyRelationship1())) {
+				memberHome.setFamilyRelationship(this.getDictKey(
+						"CODE_FAMILY_RELATIONSHIP",
+						temp.getFamilyRelationship1()));
+			}
+			homeList.add(memberHome);
+		}
+		if (StringUtils.isNotBlank(temp.getMemberHome2())) {
+			MemberHome memberHome = new MemberHome();
+			memberHome.setMemberId(memberId);
+			memberHome.setMembers(temp.getMemberHome2());
+			if (StringUtils.isNotBlank(temp.getMemberHome2Contact()))
+				memberHome.setContact(temp.getMemberHome2Contact());
+			if (StringUtils.isNotBlank(temp.getFamilyRelationship2())) {
+				memberHome.setFamilyRelationship(this.getDictKey(
+						"CODE_FAMILY_RELATIONSHIP",
+						temp.getFamilyRelationship2()));
+			}
+			homeList.add(memberHome);
+		}
+		if (StringUtils.isNotBlank(temp.getMemberHome3())) {
+			MemberHome memberHome = new MemberHome();
+			memberHome.setMemberId(memberId);
+			memberHome.setMembers(temp.getMemberHome3());
+			if (StringUtils.isNotBlank(temp.getMemberHome3Contact()))
+				memberHome.setContact(temp.getMemberHome3Contact());
+			if (StringUtils.isNotBlank(temp.getFamilyRelationship3())) {
+				memberHome.setFamilyRelationship(this.getDictKey(
+						"CODE_FAMILY_RELATIONSHIP",
+						temp.getFamilyRelationship3()));
+			}
+			homeList.add(memberHome);
+		}
+		if (StringUtils.isNotBlank(temp.getMemberHome4())) {
+			MemberHome memberHome = new MemberHome();
+			memberHome.setMemberId(memberId);
+			memberHome.setMembers(temp.getMemberHome4());
+			if (StringUtils.isNotBlank(temp.getMemberHome4Contact()))
+				memberHome.setContact(temp.getMemberHome4Contact());
+			if (StringUtils.isNotBlank(temp.getFamilyRelationship4())) {
+				memberHome.setFamilyRelationship(this.getDictKey(
+						"CODE_FAMILY_RELATIONSHIP",
+						temp.getFamilyRelationship4()));
+			}
+			homeList.add(memberHome);
+		}
+		return homeList;
+	}
+
+	/**
+	 * 从临时表中获取会员简历集合
+	 * 
+	 * @param resumeList
+	 * @param temp
+	 * @return
+	 */
+	public List<MemberResume> getResumeByTemp(List<MemberResume> resumeList,
+			MemberTemp temp, Integer memberId) {
+		if (StringUtils.isNotBlank(temp.getCompanyName())) {
+			MemberResume memberResume = new MemberResume();
+			memberResume.setMemberId(memberId);
+			memberResume.setCompanyName(temp.getCompanyName());
+			if (StringUtils.isNotBlank(temp.getJob2()))
+				memberResume.setJob(temp.getJob2());
+			if (StringUtils.isNotBlank(temp.getJoinedDate()))
+				memberResume.setJoinedDate(DateUtils.getDate(temp
+						.getJoinedDate()));
+			if (StringUtils.isNotBlank(temp.getReleaseDate()))
+				memberResume.setReleaseDate(DateUtils.getDate(temp
+						.getReleaseDate()));
+			resumeList.add(memberResume);
+		}
+		return resumeList;
+	}
+
+	/**
+	 * 更新导入的临时表数据到会员表
+	 */
+	@Override
+	public void saveTemp(Integer userId) throws BusinessException {
+		Condition condition = new Condition(MemberTemp.class);
+		condition.createCriteria().andEqualTo("userId", userId);
+		List<MemberTemp> tempList = memberTempService
+				.selectByCondition(condition);
+		if (CollectionUtils.isNotEmpty(tempList)) {
+			for (MemberTemp temp : tempList) {
+				// 更新会员信息
+				MemberDto queryMember = this.checkIdCard(userId,
+						temp.getIdCard());
+				Member updateMember = new Member();
+				BeanUtils.copyProperties(queryMember, updateMember);
+				updateMember.setMemberName(temp.getMemberName());
+				Integer sex = this.getDictKey("CODE_SEX", temp.getSex());
+				updateMember.setSex(sex);
+				updateMember.setTel(temp.getTel());
+				updateMember.setNation(this.getDictKey("CODE_NATION",
+						temp.getNation()));
+				updateMember.setEducation(this.getDictKey("CODE_EDUCATION",
+						temp.getEducation()));
+				updateMember.setDegree(this.getDictKey("CODE_DEGREE",
+						temp.getDegree()));
+				updateMember.setPolitical(this.getDictKey(
+						"CODE_POLITICAL_LANDSCAPE", temp.getPolitical()));
+				updateMember.setAddress(temp.getAddress());
+				updateMember.setJob(temp.getJob());
+				updateMember.setSpecialty(temp.getSpecialty());
+				updateMember.setOpinion(temp.getOpinion());
+				updateMember.setRemark(temp.getRemark());
+				updateMember.setStatus(this.getDictKey("CODE_MEMBER_STATUS",
+						temp.getStatus()));
+				updateMember.setMaritalStatus(this.getDictKey(
+						"CODE_MARITAL_STATUS", temp.getMaritalStatus()));
+				updateMember.setProvince(temp.getProvince());
+				updateMember.setCity(temp.getCity());
+				this.updateByKey(updateMember);
+				// 更新会员家庭成员信息
+				Condition homeCon = new Condition(MemberHome.class);
+				homeCon.createCriteria().andEqualTo("memberId",
+						queryMember.getId());
+				memberHomeService.deleteByCondition(homeCon);
+				List<MemberHome> homeList = new ArrayList<>();
+				homeList = getMemberHomeByTemp(homeList, temp,
+						queryMember.getId());
+				if (CollectionUtils.isNotEmpty(homeList))
+					memberHomeService.insertList4Mysql(homeList);
+				// 更新会员简历信息
+				Condition resumeCon = new Condition(MemberResume.class);
+				resumeCon.createCriteria().andEqualTo("memberId",
+						queryMember.getId());
+				memberResumeService.deleteByCondition(resumeCon);
+				List<MemberResume> resumeList = new ArrayList<>();
+				resumeList = getResumeByTemp(resumeList, temp,
+						queryMember.getId());
+				if (CollectionUtils.isNotEmpty(resumeList))
+					memberResumeService.insertList4Mysql(resumeList);
+				// 更新用户信息
+				AppUserModel appUser = appUserService.selectByKey(queryMember
+						.getAppUserId());
+				if (null != appUser) {
+					appUser.setUserAccount(temp.getMemberName());
+					appUser.setUserName(temp.getMemberName());
+					appUser.setSex(sex);
+					appUser.setUserMobile(temp.getTel());
+					appUser.setRealName(temp.getMemberName());
+					appUser.setNickName(temp.getMemberName());
+					appUserService.updateByKey(appUser);
+				}
+				// 执行清空临时表数据
+				memberTempService.deleteByKey(temp.getId());
+			}
+		}
+	}
+
+	/**
+	 * 清空导入的临时表
+	 */
+	@Override
+	public void deleteTemp(Integer userId) throws BusinessException {
+		Condition condition = new Condition(MemberTemp.class);
+		condition.createCriteria().andEqualTo("userId", userId);
+		memberTempService.deleteByCondition(condition);
+	}
+
+	/**
+	 * 审核
+	 */
+	@Override
+	public void updateStatus(final Integer auditStatus,
+			List<Integer> memberIdList, String auditDesc, Integer baseOrgId)
+			throws BusinessException {
+		if (CollectionUtils.isNotEmpty(memberIdList)) {
+			final List<String> appUserList = new ArrayList<>();
+			for (Integer memberId : memberIdList) {
+				MemberRecord record = new MemberRecord();
+				Condition condition = new Condition(MemberRecord.class);
+				condition.createCriteria().andEqualTo("memberId", memberId);
+				condition.orderBy("createTime").desc();
+				List<MemberRecord> recordList = memberRecordService
+						.selectByCondition(condition);
+				if (CollectionUtils.isNotEmpty(recordList)) {
+					MemberRecord memberRecord = recordList.get(0);
+					if (null != memberRecord) {
+						BeanUtils.copyProperties(memberRecord, record);
+						record.setId(null);
+						record.setAuditDesc(auditDesc);
+						record.setAuditStatus(auditStatus);
+						record.setCreateTime(new Date());
+					} else {
+						record.setAuditDesc(auditDesc);
+						record.setAuditStatus(auditStatus);
+						record.setCreateTime(new Date());
+						record.setMemberId(memberId);
+						record.setToBasicUnionId(baseOrgId);
+					}
+					// 记录会员审核记录
+					memberRecordService.save(record);
+				}
+				// 更新用户表会员状态
+				if (auditStatus.intValue() == 1) {
+					Member member = this.selectByKey(memberId);
+					if (null != member) {
+						if (!NumberUtils.isNull(member.getAppUserId())
+								&& !NumberUtils.eqZero(member.getAppUserId())) {
+							AppUserModel appUser = appUserService
+									.selectByKey(member.getAppUserId());
+							if (null != appUser) {
+								appUser.setIsMember(1);
+								appUserService.updateNotNull(appUser);
+								appUserList.add(member.getAppUserId()
+										.toString());
+								final String memberName = member
+										.getMemberName(), tel = member.getTel();
+								es.submit(() -> {
+									//判断是否第一次会员审核后增加金币
+									Condition con = new Condition(
+											GoldCoinModel.class);
+									con.createCriteria()
+											.andEqualTo("appUserId",
+													member.getAppUserId())
+											.andEqualTo("goldCoinsChangeType",
+													2)
+											.andEqualTo(
+													"goldCoinsChangeDerection",
+													1);
+									List<GoldCoinModel> coinList = goldCoinService
+											.selectByCondition(con);
+									if (!CollectionUtils.isNotEmpty(coinList)) {
+										goldCoinService
+												.memberVerifiedAddGoldCoins(member
+														.getAppUserId());
+									}
+									Map<String, Object> shortMsgMap = new HashMap<>();
+									String[] memberNames = new String[] { memberName };
+									shortMsgMap.put("smsTemplateId", "166710");
+									shortMsgMap.put("mobile", tel);
+									shortMsgMap.put("datas", memberNames);
+									PushUtil.push(1, shortMsgMap);
+								});
+							}
+						}
+					}
+				}
+			}
+			memberMapper.updateStatus(auditStatus, memberIdList);
+			// 审核通过后消息推送
+			if (auditStatus.intValue() == 1) {
+				es.submit(() -> {
+					Map<String, Object> msgMap = new HashMap<>();
+					msgMap.put("users", appUserList);
+					JSONObject obj = new JSONObject();
+					obj.put("type", 5);// 0表示系统消息 1表示通讯录 2表示圈子、3通知
+					obj.put("subject", "");// type下的具体操作项：新增、修改、删除
+					obj.put("data", "您的会籍申请认证已通过");
+					obj.put("auditStatus", auditStatus);
+					msgMap.put("content", obj.toString());// 传递的内容
+					msgMap.put("title", "会员审核");
+					msgMap.put("text", "审核通过");
+					PushUtil.push(3, msgMap);
+				});
+			}
+		}
+	}
+
+	/**
+	 * 转出
+	 */
+	@Override
+	public void transfer(Integer auditStatus, List<Integer> memberIdList,
+			String auditDesc, Integer baseOrgId) throws BusinessException {
+		if (CollectionUtils.isNotEmpty(memberIdList)) {
+			for (Integer memberId : memberIdList) {
+				// 记录会员操作
+				MemberRecord record = new MemberRecord();
+				record.setAuditDesc(auditDesc);
+				record.setAuditStatus(auditStatus);
+				record.setCreateTime(new Date());
+				record.setMemberId(memberId);
+				record.setFromBasicUnionId(baseOrgId);
+				memberRecordService.save(record);
+			}
+			memberMapper.updateStatus(auditStatus, memberIdList);
+		}
+	}
+
+	/**
+	 * 删除
+	 */
+	public void deleteMember(Integer id) throws BusinessException {
+		Member member = memberMapper.selectByPrimaryKey(id);
+		if (null != member) {
+			// 更新appUser信息
+			Integer appUserId = member.getAppUserId();
+			AppUserModel appUserModel = appUserService.selectByKey(appUserId);
+			if (null != appUserModel) {
+				appUserModel.setIsMember(0);
+				appUserService.updateByKey(appUserModel);
+			}
+			// 删除会员家庭成员关系
+			Condition homeCondi = new Condition(MemberHome.class);
+			homeCondi.createCriteria().andEqualTo("memberId", id);
+			memberHomeService.deleteByCondition(homeCondi);
+			// 删除会员简历信息
+			Condition resumeCondi = new Condition(MemberResume.class);
+			resumeCondi.createCriteria().andEqualTo("memberId", id);
+			memberResumeService.deleteByCondition(resumeCondi);
+			// 删除会员操作记录表
+			Condition recordCondi = new Condition(MemberRecord.class);
+			recordCondi.createCriteria().andEqualTo("memberId", id);
+			memberRecordService.deleteByCondition(recordCondi);
+			// 删除会员本身记录
+			this.deleteByKey(id);
+		}
+	}
+
+	/**
+	 * 基层工会导出
+	 */
+	@Override
+	public List<MemberDto> queryExport(MemberDto memberDto)
+			throws BusinessException {
+		return memberMapper.queryForList(memberDto);
+	}
+
+	/**
+	 * 上级工会导出
+	 */
+	@Override
+	public List<MemberDto> queryExportOrg(MemberDto memberDto)
+			throws BusinessException {
+		return memberMapper.queryForList(memberDto);
+	}
+
+	/**
+	 * 执行导出excel功能
+	 */
+	@Override
+	public void exportMember(List<MemberDto> memberList,
+			HttpServletResponse response) throws BusinessException, IOException {
+		List<MemberImportDto> memberExportList = new ArrayList<>();
+		if (CollectionUtils.isNotEmpty(memberList)) {
+			for (MemberDto dto : memberList) {
+				MemberImportDto memberImportDto = new MemberImportDto();
+				BeanUtils.copyProperties(dto, memberImportDto);
+				String registerAddress = "";
+				if (!NumberUtils.isNull(dto.getProvince())
+						&& !NumberUtils.eqZero(dto.getProvince())) {
+					AreaModel province = areaService.selectByKey(dto
+							.getProvince());
+					if (null != province) {
+						registerAddress += province.getAreaName();
+					}
+				}
+				if (!NumberUtils.isNull(dto.getCity())
+						&& !NumberUtils.eqZero(dto.getCity())) {
+					registerAddress += "-";
+					AreaModel city = areaService.selectByKey(dto.getCity());
+					if (null != city) {
+						registerAddress += city.getAreaName();
+					}
+				}
+				memberImportDto.setRegisteredAddress(registerAddress);
+				memberImportDto.setSex(dto.getSexName());
+				memberImportDto.setNation(dto.getNationName());
+				memberImportDto.setEducation(dto.getEducationName());
+				memberImportDto.setDegree(dto.getDegreeName());
+				memberImportDto.setPolitical(dto.getPoliticalName());
+				memberImportDto.setStatus(dto.getStatusName());
+				memberImportDto.setMaritalStatus(dto.getMaritalStatusName());
+				Condition condition = new Condition(MemberHome.class);
+				condition.createCriteria().andEqualTo("memberId", dto.getId());
+				List<MemberHome> homeList = memberHomeService
+						.selectByCondition(condition);
+				if (CollectionUtils.isNotEmpty(homeList)) {
+					int index = 0;
+					for (MemberHome home : homeList) {
+						if (index == 0) {
+							memberImportDto.setMemberHome1(home.getMembers());
+							memberImportDto.setMemberHome1Contact(home
+									.getContact());
+							memberImportDto.setFamilyRelationship1(this
+									.getDictValue("CODE_FAMILY_RELATIONSHIP",
+											home.getFamilyRelationship()));
+						} else if (index == 1) {
+							memberImportDto.setMemberHome2(home.getMembers());
+							memberImportDto.setMemberHome2Contact(home
+									.getContact());
+							memberImportDto.setFamilyRelationship2(this
+									.getDictValue("CODE_FAMILY_RELATIONSHIP",
+											home.getFamilyRelationship()));
+						} else if (index == 2) {
+							memberImportDto.setMemberHome3(home.getMembers());
+							memberImportDto.setMemberHome3Contact(home
+									.getContact());
+							memberImportDto.setFamilyRelationship3(this
+									.getDictValue("CODE_FAMILY_RELATIONSHIP",
+											home.getFamilyRelationship()));
+						} else {
+							memberImportDto.setMemberHome4(home.getMembers());
+							memberImportDto.setMemberHome4Contact(home
+									.getContact());
+							memberImportDto.setFamilyRelationship4(this
+									.getDictValue("CODE_FAMILY_RELATIONSHIP",
+											home.getFamilyRelationship()));
+						}
+						index++;
+					}
+				}
+				Condition resumeCondition = new Condition(MemberResume.class);
+				resumeCondition.createCriteria().andEqualTo("memberId",
+						dto.getId());
+				List<MemberResume> resumeList = memberResumeService
+						.selectByCondition(resumeCondition);
+				if (CollectionUtils.isNotEmpty(resumeList)) {
+					MemberResume resume = resumeList.get(0);
+					memberImportDto.setCompanyName(resume.getCompanyName());
+					memberImportDto.setJob2(resume.getJob());
+					memberImportDto.setJoinedDate(DateUtils.getDay(resume
+							.getJoinedDate()));
+					memberImportDto.setReleaseDate(DateUtils.getDay(resume
+							.getReleaseDate()));
+				}
+				memberExportList.add(memberImportDto);
+			}
+			ExportExcelUtils.exportExcel(memberExportList, "会员信息",
+					MemberImportDto.class, 65536, response);// 创建工具类.
+		}
+	}
+
+	@Override
+	public Integer seletctUpperUnionId(Integer memberId) throws Exception {
+		// TODO Auto-generated method stub
+		return memberMapper.seletctUpperUnionId(memberId);
+	}
+
+	@Override
+	public List<Map<String, Object>> selectMemberList(Integer memberId)
+			throws Exception {
+		// TODO Auto-generated method stub
+		return memberMapper.selectMemberList(memberId);
+	}
+}

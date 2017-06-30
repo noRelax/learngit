@@ -1,0 +1,66 @@
+<%
+include("/system/public/header.html",{title:'header'}){}
+%>
+
+<%
+layout("/system/public/aside.html",{title:'header'}){}
+%>
+
+
+
+<!-- BEGIN WRAPPER  -->
+	  <div class="editalbeWrap">
+        <section id="main-content">
+            <!-- BEGIN WRAPPER  -->
+            <section class="wrapper site-min-height">
+               <section class="panel">
+                  <header class="panel-heading">
+                     <span class="label label-primary">权限配置</span>
+                     <span class="tools pull-right">
+                     <a href="javascript:;" class="fa fa-chevron-down"></a>
+                     </span>
+                  </header>
+
+                  <div class="panel-body">
+                   	  <div class="modal-body">
+                   <form name="roleForm" action="addRole" method="post">
+                      <input type="hidden" class="form-control" name="roleId" id="roleId" placeholder="roleId" value="${roleId!}">
+                      <div class="form-group">
+                        <ul id="tree" class="tree" style="overflow:auto;"></ul>
+                      </div>
+
+						</form>
+              </div>
+                  </div>
+               </section>
+            </section>
+      <!-- END WRAPPER  -->
+         </section>
+      </div>
+
+
+<link type="text/css" rel="stylesheet" href="${ctxPath}/static/ztreeCheckBox/zTree/2.6/zTreeStyle.css"/>
+<script type="text/javascript" src="${ctxPath}/static/ztreeCheckBox/zTree/2.6/jquery.ztree-2.6.min.js"></script>
+
+<link rel="stylesheet"
+	href="${ctxPath}/static/web/system/role/css/auth-css.css"
+	type="text/css" />
+<script src="${ctxPath}/static/web/system/role/js/role-auth.js"></script>
+
+<script type="text/javascript">
+   var zTree;
+$(document).ready(function(){
+
+	var setting = {
+	    showLine: true,
+	    checkable: true
+	};
+	var zTreeNodes = eval(${zTreeNodes});
+	zTree = $("#tree").zTree(setting, zTreeNodes);
+});
+
+   </script>
+<!-- END MAIN CONTENT -->
+<%
+layout("/system/public/footer.html",{title:'header'}){}
+%>

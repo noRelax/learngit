@@ -1,0 +1,399 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>编辑生活服务信息</title>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+<link href="${ctxPath}/static/ui/layui/css/layui.css" rel="stylesheet">
+<link rel="stylesheet"
+	href="${ctxPath}/static/zTreev3/css/zTreeStyle/zTreeStyle.css"
+	type="text/css" />
+<link rel="stylesheet"
+	href="${ctxPath}/static/web/system/orgain/css/list-css.css"
+	type="text/css" />
+<link rel="stylesheet"
+	href="${ctxPath}/static/ui/dialog/css/jquery-ui.min.css">
+<link rel="stylesheet" href="${ctxPath}/static/ui/dialog/css/lxl.css">
+<style>
+.ui-menu .ui-menu-item:hover {
+	background: none !important;
+}
+</style>
+
+</head>
+<body>
+	<form id="app" class="layui-form" style="padding: 15px" action=""
+		method="post" enctype="multipart/form-data">
+		<input type="hidden" name="id" value="${lifeConfigModel.id}"></input>
+		<div class="layui-form-item">
+			<label class="layui-form-label"> 服务名称： </label>
+			<div class="layui-input-block">
+				<input type="text" name="lifeName" required lay-verify="lifeName"
+					placeholder="请输入服务名称" autocomplete="off" class="layui-input"
+					style="width: 250px" value="${lifeConfigModel.lifeName}">
+			</div>
+		</div>
+		<div class="site-demo-upload">
+			<label class="layui-form-label"> 图标： </label>
+			<div class="site-demo-upbar">
+				<img id="LAY_demo_upload" style="width: 42px; height: 38px;"
+					src="${ctxPath}${lifeConfigModel.icon}"> <input type="file"
+					name="file" class="layui-upload-file"  id="icon" 
+					onchange="PreviewImage(this,'LAY_demo_upload')">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label"> URL： </label>
+			<div class="layui-input-block">
+				<input type="text" name="url" required lay-verify="url"
+					placeholder="包含http://" autocomplete="off" class="layui-input"
+					style="width: 250px" value="${lifeConfigModel.url}">
+			</div>
+		</div>
+		<div class="layui-form-item" style="position: relative;">
+			<label class="layui-form-label">添加城市：</label> <input
+				style="width: 250px;" class="lxl_text layui-input"
+				v-model="inputVal" id="project" @compositionstart="comPositionStart"
+				@compositionend="comPositionEnd">
+			<div class="city-body" v-if="isCity">
+				<h3 class="sheng">省</h3>
+				<div v-if="item.level == 1" class="city-item"
+					v-for="item in searchData"
+					@click="selected(item.uid,item.level,item.value)">{{item.value}}</div>
+				<h3 class="sheng">市</h3>
+				<div v-if="item.level == 2" class="city-item"
+					v-for="item in searchData" @click="selected(item.uid,item.level)">{{item.value}}</div>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label" style="padding: 9px 0; width: 98px;"
+				id="checkedCityId" name="checkedCityId">已添加的城市：</label>
+			<div class="checked_city">
+				<div class="city_list" v-for="(item,pid) in showData">
+					<div class="parent">{{item.pname}}</div>
+					<div class="children">
+						<span v-for="(city,cid) in item.children"
+							@click="cityDel(pid,cid)" :data-pid="pid">{{city.cname}}</span> <a
+							href="javascript:;" class="empty_button" @click="cityEmpty(pid)">清空</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label"> 服务提供： </label>
+			<div class="layui-input-block">
+				<input type="text" name="lifeDept" required lay-verify="lifeDept"
+					placeholder="服务提供" autocomplete="off" class="layui-input"
+					style="width: 250px" value="${lifeConfigModel.lifeDept}">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label"> 描述： </label>
+			<div class="layui-input-block">
+				<input type="text" name="remark" required lay-verify="remark"
+					placeholder="描述" autocomplete="off" class="layui-input"
+					style="width: 250px" value="${lifeConfigModel.remark}">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label"> 排序： </label>
+			<div class="layui-inline">
+				<div class="layui-input-inline">
+					<input type="number" name="sort" required lay-verify="sort"
+						value="${lifeConfigModel.sort}" autocomplete="off"
+						class="layui-input lxl-input-number" placeholder="排序"
+						style="width: 250px">
+				</div>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">首页推荐：</label>
+			<div class="layui-input-block" style="width: 250px">
+				<select name="isIndex" lay-filter="aihao">
+					<option value=""></option>
+					<option value="0" selected="">否</option>
+					<option value="1">是</option>
+				</select>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">状态 ：</label>
+			<div class="layui-input-block" style="width: 250px">
+				<select name="status" lay-filter="aihao">
+					<option value=""></option>
+					<option value="0">关闭</option>
+					<option value="1" selected="">开启</option>
+				</select>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<div class="layui-input-block">
+				<button class="layui-btn lxl-btn-submit" lay-submit lay-filter="formDemo">
+					保存</button>
+				<button type="reset" class="layui-btn layui-btn-primary">
+					重置</button>
+			</div>
+		</div>
+
+
+	</form>
+	<script>
+		var project = {};
+	</script>
+	<script src="${ctxPath}/static/system/olive/all/js/jquery-1.8.3.min.js"></script>
+	<script src="${ctxPath}/static/ui/layui/layui.js"></script>
+	<script src="${ctxPath}/static/zTreev3/js/jquery.ztree.core-3.5.js"></script>
+	<script src="${ctxPath}/static/ui/dialog/js/vue.min.js"></script>
+	<script src="${ctxPath}/static/ui/dialog/js/city.selector.js"></script>
+	<script src="${ctxPath}/static/ui/dialog/js/lxl.js"></script>
+	<script type="text/javascript">
+		//$('.children').each(function(){
+
+		var lifeCityModel = '${lifeCityModel}';
+
+		lifeCityModel = jQuery.parseJSON(lifeCityModel);
+
+		var obj = [];
+
+		for ( var i in lifeCityModel) {
+			var flag = false;
+			var self_arr = lifeCityModel;
+			for ( var j in obj) {
+				if (obj[j].pid == self_arr[i].provinceId) {
+					flag = true;
+				}
+			}
+			if (!flag) {
+				obj.push({
+					pid : self_arr[i].provinceId,
+					pname : self_arr[i].provinceName,
+					children : []
+				});
+				flag = true;
+			}
+
+		}
+
+		for ( var j in obj) {
+			for ( var k in lifeCityModel) {
+				if (obj[j].pid == lifeCityModel[k].provinceId) {
+					obj[j].children.push({
+						cid : lifeCityModel[k].cityId,
+						cname : lifeCityModel[k].cityName
+					})
+				}
+			}
+		}
+		vm.$data.showData = obj;
+	</script>
+	<script>
+		$(function() {
+			$('.lxl-input-number').on('change', function() {
+				if ($(this).val() < 0) {
+					$(this).val(0)
+				}
+			});
+		});
+		
+	
+
+		var unloadId = '';
+		layui.use('upload', function() {
+
+			layui.upload({
+				url : '../upload/one',
+
+				elem : '#icon', //指定原始元素，默认直接查找class="layui-upload-file"
+				method : 'post', //上传接口的http类型
+				success : function(res) {
+					LAY_demo_upload.src = "${request.scheme}://"
+							+ "${request.serverName}:"
+							+ "${request.serverPort}"
+							+ "${request.contextPath}" + res.path;
+
+					icon = res.path
+					unloadId = res.id
+
+				}
+			});
+		});
+	</script>
+
+	<script>
+		$(document).keydown(function(event) {
+			switch (event.keyCode) {
+			case 13:
+				return false;
+			}
+		});
+
+		layui.use('form', function() {
+			var form = layui.form();
+			var pkId = jQuery(this).attr('data-id');
+
+			form.verify({
+				lifeName : function(value) {
+					if (value.trim().length > 6) {
+						return '服务名称不能超过六个字符！';
+					}
+					if (!value.trim().length) {
+						return '服务名称不能为空或空字符串！';
+					}
+				},
+				url : function(value) {
+					var url1 = value.substr(0, 7);
+					var url2 = value.substr(0, 8);
+					var urls1 = 'http://';
+					var urls2 = 'https://';
+					
+					if(url1==urls1||url2==urls2){
+						
+					}else{
+						return '请以http://和https://格式开头填写！';
+					}
+					
+//					if(url1 = ){
+//					if (url1 != urls1) {
+//						return '请以http://格式开头填写！';
+//					}
+//					}
+//					if(url2 != urls2){
+//						return '请以https://格式开头填写！';
+//					}
+					if (!value.trim().length) {
+						return 'url不能为空或空字符串！';
+					}
+				},
+				lifeDept : function(value) {
+					if (value.trim().length > 6) {
+						return '提供部门不能超过六个字符！';
+					}
+				},
+				remark : function(value) {
+					if (value.trim().length > 6) {
+						return '描述信息不能超过六个字符！';
+					}
+				},
+				sort : function(value) {
+					var reg = new RegExp("^-?[0-9]*.?[0-9]*$");
+					if (value.trim().length > 9) {
+						return '排序长度不能超过9位数！';
+					}
+					if (!value.trim().length) {
+						return '排序不能为空或空字符串！'
+					}
+					if (reg.test(value)) {
+						var absVal = value > 0 ? value : Math.abs(value);
+						if (value != absVal) {
+							return '排序不能为负数！';
+						}
+					}
+				}
+			});
+			
+			//监听提交
+			form.on('submit(formDemo)', function(data) {
+				
+				$('.lxl-btn-submit').attr('disabled','true');
+				
+				if (icon.value == '') {
+						var Iconname = jQuery("#LAY_demo_upload").attr('src')
+						var index = Iconname.indexOf('/files');
+						var str = Iconname.substring(index, Iconname.length);
+						data.field.icon = str
+	
+					} else {
+						data.field.icon = icon;
+					}
+					setTimeout(function() {
+						console.log(vm.$data.showData);
+					}, 300);
+	
+					data.field.unloadId = unloadId;
+	
+					var id = [];
+					var checkedCityId = $("div[class=children]");
+					for (var x = 0; x < checkedCityId.length; x++) {
+						var span = $('span', checkedCityId[x]);
+						for (var i = 0; i < span.length; i++)
+							id.push($(span[i]).attr('data-uid'));
+					}
+	
+					data.field.List = id;
+					var cityArr = vm.$data.showData;
+	
+					//data.field.provinceId = parentIdArr;
+					data.field.json = JSON.stringify(cityArr);
+	
+					$.post('../life/addLife', data.field, function(data) {
+						if (data.status == 10000) {
+							parent.layer.alert(data.data, {
+								title : '操作提示',
+								icon : 1,
+								time : 2000,
+								end : function() {
+									window.parent.location.reload();
+									parent.layer.closeAll();
+								}
+							});
+						} else {
+							layer.alert(data.data, {
+								title : '操作提示',
+								icon : 2
+							});
+						}
+					}, 'json');
+					return false;
+					
+				});
+			});
+			
+		
+		function getObjectURL(file) {
+			var url = null;
+			if (window.createObjectURL != undefined) { // basic
+				url = window.createObjectURL(file);
+			} else if (window.URL != undefined) { // mozilla(firefox)
+				url = window.URL.createObjectURL(file);
+			} else if (window.webkitURL != undefined) { // webkit or chrome
+				url = window.webkitURL.createObjectURL(file);
+			}
+			return url;
+		}
+
+		function PreviewImage(imgFile, imgname) {
+			var filextension = imgFile.value.substring(imgFile.value
+					.lastIndexOf("."), imgFile.value.length);
+			filextension = filextension.toLowerCase();
+			if ((filextension != '.jpg') && (filextension != '.gif')
+					&& (filextension != '.jpeg') && (filextension != '.png')
+					&& (filextension != '.bmp')) {
+				alert("对不起，系统仅支持标准格式的图片，请您调整格式后重新上传，谢谢 !");
+				imgFile.focus();
+			} else {
+				var path;
+				if (document.all && (ie.ie8 || ie.ie9))//IE 
+				{
+					imgFile.select();
+					path = imgFile.value;
+					document.getElementById(imgname).src = "";
+					document.getElementById(imgname).style.filter = "progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled='true',sizingMethod='scale',src=\""
+							+ path + "\")";//使用滤镜效果 
+				} else//FF 
+				{
+
+					var objUrl = getObjectURL(imgFile.files[0]);
+					if (objUrl) {
+						document.getElementById(imgname).src = objUrl;
+					}
+
+				}
+			}
+		}
+	</script>
+</body>
+
+</html>

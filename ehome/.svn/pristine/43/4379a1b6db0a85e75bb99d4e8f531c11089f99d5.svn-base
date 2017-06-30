@@ -1,0 +1,63 @@
+package com.ehome.cloud.sys.service;
+
+import java.util.List;
+
+import com.ehome.cloud.sys.model.UserGroupModel;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.util.PageData;
+
+/**
+ * 
+ * @Title:IUserGroupService
+ * @Description:TODO
+ * @author:tcr
+ * @date:2017年2月7日
+ * @version 1.0,2017年2月7日
+ * @{tags}
+ */
+public interface IUserGroupService {
+   List<UserGroupModel> queryQTForList (String keyword, Integer page, Integer rows)
+   throws Exception;
+   
+   List<UserGroupModel> queryHTForList (Integer groupType, String keyword, Integer page, Integer rows)
+   throws Exception;
+   
+   UserGroupModel queryById(Integer id) throws Exception;
+
+   int insertGroup(UserGroupModel groupModel)throws BusinessException;
+
+   int updateGroup(UserGroupModel groupModel) throws BusinessException;
+   
+   int deleteGroupById(Integer groupId,Integer userId) throws Exception;  
+   
+   int insertUserGroup(PageData pd) throws Exception;
+
+   List<Integer> queryUserId(Integer groupId) throws BusinessException;
+
+   Integer queryByType(Integer groupId) throws BusinessException;
+
+   List<Integer> queryAppUserId(Integer groupId) throws BusinessException;
+
+   int deleteAppGroupById(Integer groupId, Integer userId) throws Exception;
+
+   int deleteById(Integer id)throws Exception;
+
+   List<UserGroupModel> queryHTByList(Integer groupType, int page, int rows)throws BusinessException;
+
+   List<UserGroupModel> queryQTByList(Integer groupType, int page, int rows)throws BusinessException;
+
+   UserGroupModel queryEditById(Integer id) throws BusinessException;
+
+   UserGroupModel queryMemberNum(Integer groupId) throws BusinessException;
+
+   UserGroupModel queryQTMemberNum(Integer ugId) throws BusinessException;
+
+   int deleteAllUserGroup(Integer groupId, Integer[] USER_IDS) throws BusinessException;
+
+   int deleteAppAllUserGroup(Integer groupId, Integer[] USER_IDS) throws BusinessException;
+
+
+
+
+
+}

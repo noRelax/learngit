@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>广州宏穗科技有限公司</title>
+<link href="${ctxPath}/static/system/public/css/bootstrap-3.3.4.min.css" rel="stylesheet">
+<link href="${ctxPath}/static/system/olive/all/css/bootstrap-reset.min.css" rel="stylesheet">
+<link href="${ctxPath}/static/system/olive/all/css/style.css" rel="stylesheet">
+</head>
+<body class="login-screen">
+	<form class="form-signin" name="loginForm" action="toLogin" method="post">
+		<h2 class="form-signin-heading">系统登录</h2>
+		<div class="login-wrap">
+			<input type="text" class="form-control" name="loginName" placeholder="用户名" autofocus>
+			<input type="password" class="form-control" name="password" placeholder="密码">
+			<input type="submit" name="submitBtn" value="登录" class="btn btn-lg btn-login btn-block" style="margin-bottom: 0;"></input>
+		</div>
+	</form>
+	<script src="${ctxPath}/static/system/olive/all/js/jquery-1.8.3.min.js"></script>
+	<script src="${ctxPath}/static/system/olive/all/js/jquery.form.min.js"></script>
+	<script src="${ctxPath}/static/system/olive/all/js/jquery.validate.min.js"></script>
+	<script src="${ctxPath}/static/web/admin/login/js/login.js"></script>
+</body>
+</html>
+

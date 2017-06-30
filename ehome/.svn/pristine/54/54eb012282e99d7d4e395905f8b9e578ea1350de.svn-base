@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.marry.mapper.GoldCoinMapper">
+	
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.marry.dto.GoldCoinDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="gold_coins_change_type" property="goldCoinsChangeType" jdbcType="INTEGER" />
+		<result column="gold_coins_change_number" property="goldCoinsChangeNum" jdbcType="INTEGER"/>
+		<result column="gold_coins_change_derection" property="goldCoinsChangeDerection" jdbcType="INTEGER"/>
+		<result column="change_time" property="changeTime" jdbcType="TIMESTAMP"/>
+		<result column="app_user_id" property="appUserId" jdbcType="INTEGER" />
+	</resultMap>
+
+	<sql id="commonSQL">
+		SELECT
+		T.ID,T.GOLD_COINS_CHANGE_TYPE,T.GOLD_COINS_CHANGE_NUMBER,T.GOLD_COINS_CHANGE_DERECTION,T.CHANGE_TIME,T.APP_USER_ID
+		FROM
+		T_MARRY_GOLD_COINS_DETAIL T
+	</sql>
+
+	<select id="selectPageByAppUserId" resultMap="BaseResultMap" >
+		<include refid="commonSQL"></include>
+		<where>
+			<if test="appUserId!=null and appUserId!='' and appUserId!=0">
+				AND t.app_user_id=#{appUserId}
+			</if>
+		</where>
+		ORDER BY t.change_time DESC
+	</select>
+	
+	<select id="queryTotalByDerectionAndId" resultType="java.lang.Integer" >
+		SELECT SUM(T.GOLD_COINS_CHANGE_NUMBER )
+		FROM T_MARRY_GOLD_COINS_DETAIL T WHERE T.APP_USER_ID=#{appUserId} AND T.GOLD_COINS_CHANGE_DERECTION=#{derection}
+	</select>
+	
+	
+</mapper>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.help.mapper.HelpApplyMapper">
+	
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.help.dto.HelpApplyDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="apply_file_status" property="applyFileStatus" jdbcType="INTEGER" />
+		<result column="process_instance_id" property="processInstanceId" jdbcType="VARCHAR" />
+		<result column="apply_file_time" property="applyFileTime" jdbcType="TIMESTAMP" />
+		<result column="name" property="name" jdbcType="VARCHAR" />
+		
+	</resultMap>
+	
+	<resultMap id="BaseHelpApplyUserMap" type="com.ehome.cloud.help.dto.HelpApplyUserDto">
+	    <id column="id" property="id" jdbcType="INTEGER" />
+	    <id column="help_apply_id" property="helpApplyId" jdbcType="INTEGER" />
+	    <id column="user_id" property="userId" jdbcType="INTEGER" />
+	</resultMap>
+
+    <update id="updateApplyFileStatus">
+       UPDATE t_help_apply SET apply_file_status = 1 WHERE id=#{id}
+    </update>
+    
+    <select id="selectByApplyFileSuperList" resultMap="BaseResultMap">
+       SELECT t.id,t.name,t.id_card,t.phone,t.apply_file_time,t.process_instance_id,
+       u.basic_union_id,g.orgain_name as basicOrgainName,u.upper_union_id,o.orgain_name as upperOorgainName
+       FROM t_help_apply t LEFT JOIN t_member u ON t.member_id=u.id 
+       LEFT JOIN t_orgain o ON u.upper_union_id=o.id LEFT JOIN t_orgain g ON u.basic_union_id=g.id
+       WHERE t.apply_file_status =1 
+       <if test="name!=null and name!=''">
+				AND t.name like CONCAT('%', #{name},'%')
+	   </if>
+       <if test="startTime!=null and startTime!=''">
+				AND t.apply_file_time &gt; #{startTime}
+	   </if>
+	   <if test="endTime!=null and endTime!=''">
+				AND t.apply_file_time &lt; #{endTime}
+	   </if>
+    </select>
+    
+    <select id="selectByApplyFileList" resultMap="BaseResultMap">
+       SELECT t.id,t.name,t.id_card,t.phone,t.apply_file_time,t.process_instance_id,
+       u.basic_union_id,g.orgain_name as basicOrgainName,u.upper_union_id,o.orgain_name as upperOorgainName
+       FROM t_help_apply t LEFT JOIN t_member u ON t.member_id=u.id 
+       LEFT JOIN t_orgain o ON u.upper_union_id=o.id LEFT JOIN t_orgain g ON u.basic_union_id=g.id
+       WHERE t.apply_file_status =1 and t.id in 
+       <foreach collection="id" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+       <if test="name!=null and name!=''">
+				AND t.name like CONCAT('%', #{name},'%')
+	   </if>
+       <if test="startTime!=null and startTime!=''">
+				AND t.apply_file_time &gt; #{startTime}
+	   </if>
+	   <if test="endTime!=null and endTime!=''">
+				AND t.apply_file_time &lt; #{endTime}
+	   </if>
+    </select>
+    
+    <update id="insertProcessInstanceId">
+       UPDATE t_help_apply SET process_instance_id = #{processInstanceId} WHERE id=#{id}
+    </update>
+    
+    <insert id="updateUserId">
+       INSERT INTO t_help_apply_user (help_apply_id,user_id)VALUES(#{helpApplyId},#{userId})
+    </insert>
+    
+    <select id="selectHelpApplyId" resultMap="BaseHelpApplyUserMap">
+       SELECT help_apply_id FROM t_help_apply_user WHERE user_id=#{userId}
+    </select>
+    
+    <update id="updateApplyFileEndManStatus">
+       UPDATE t_help_apply SET apply_file_status = 0 WHERE id=#{id}
+    </update>
+    
+    <update id="updateApplyFileEndStatus">
+        UPDATE t_help_apply SET apply_file_status = 0 WHERE id=#{id}
+    </update>
+</mapper>

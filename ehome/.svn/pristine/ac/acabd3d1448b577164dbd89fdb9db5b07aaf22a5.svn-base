@@ -1,0 +1,92 @@
+<%
+include("/system/public/header.html",{title:'header'}){} 
+%>
+
+<%
+layout("/system/public/aside.html",{title:'header'}){} 
+%>
+
+
+
+<!-- BEGIN WRAPPER  -->
+	  <div class="editalbeWrap">
+        <section id="main-content">
+            <!-- BEGIN WRAPPER  -->
+            <section class="wrapper site-min-height">
+               <section class="panel">
+                  <header class="panel-heading">
+                     <span class="label label-primary">新增角色</span>
+                     <span class="tools pull-right">
+                     <a href="javascript:;" class="fa fa-chevron-down"></a>
+                     <a href="javascript:;" class="fa fa-times"></a>
+                     </span>
+                  </header>
+               
+                  <div class="panel-body">
+                   	  <div class="modal-body">
+                   <form name="roleForm" action="addRole" method="post">
+                      <input type="hidden" class="form-control" name="id" placeholder="id" value="${roleModel.id!}">
+                      <div class="form-group">
+                         <label for="roleCode">角色编号</label>
+                         <input type="text" class="form-control" name="roleCode" placeholder="角色编号" value="${roleModel.roleCode!}">
+                      </div>
+
+					<div class="form-group">
+						<label for="roleType">角色类型</label> <select name="roleType"
+							class="form-control input-sm m-bot15">
+							 <option value=1  ${roleModel.roleType == 1?"selected='selected'"}>业务角色</option>
+                               <option value=2  ${roleModel.roleType == 2?"selected='selected'"}>职能角色</option>
+                         </select>
+						</select>
+					</div>
+					
+					<div class="form-group">
+						<label for="isAppType">是否app角色</label> <select name="isAppType"
+							class="form-control input-sm m-bot15">
+							 <option value=0  ${roleModel.isAppType == 0?"selected='selected'"}>否</option>
+                               <option value=1  ${roleModel.isAppType == 1?"selected='selected'"}>是</option>
+                         </select>
+						</select>
+					</div>
+
+					<div class="form-group">
+                         <label for="roleName">角色名称</label>
+                         <input type="text" class="form-control" name="roleName" placeholder="角色名称" value="${roleModel.roleName!}">
+                      </div>
+                       <div class="form-group">
+                         <label for="roleDesc">角色描述</label>
+                         <input type="text" class="form-control" name="roleDesc" placeholder="角色描述" value="${roleModel.roleDesc!}">
+                      </div>
+                       
+                       <div style="margin:0 auto;width:100px;height:100px;border:0px;">
+                        <input type="submit" name="submitBtn" value="保存" class="btn btn-info"></input>
+                       </div>
+                   </form>
+              </div>
+                  </div>
+               </section>
+            </section>
+      <!-- END WRAPPER  -->
+         </section>
+      </div>
+ 
+   <script src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script><!-- DATATABLE JS  -->
+    <script src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script><!-- DATATABLE JS  -->
+    <script src="${ctxPath}/static/system/olive/all/js/editable-table.js" ></script>
+    
+    <script type="text/javascript">
+      new Vue({
+        el:'.editalbeWrap',
+        data:{
+        	tablelist:${tablelist!}
+        }
+      })
+      
+      /* jQuery(document).ready(function() {
+          EditableTable.init();
+      }); */
+    </script>
+<!-- END MAIN CONTENT -->
+<%
+layout("/system/public/footer.html",{title:'header'}){} 
+%>

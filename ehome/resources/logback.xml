@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true">
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{80}.%M\(%line\) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILEDEBUG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <file>logs/ehome/ehomeDebug.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/ehome/ehomeDebug-%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+            <maxHistory>90</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{80}.%M\(%line\) - %msg%n</pattern>
+        </encoder>
+
+    </appender>
+
+    <appender name="FILEINFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <file>logs/ehome/ehomeInfo.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/ehome/ehomeInfo-%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+            <maxHistory>180</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{80}.%M\(%line\) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILEERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <file>logs/ehome/ehomeError.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/ehome/ehomeError-%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+            <maxHistory>360</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{80}.%M\(%line\) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+ 	 <logger name="com.ehome" level="info"  additivity="false">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILEDEBUG" />
+        <appender-ref ref="FILEINFO" />
+        <appender-ref ref="FILEERROR" />
+    </logger>
+
+    <logger name="com.ehome.core.frame.MyRequestMappingHandlerMapping" level="error" additivity="false">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILEDEBUG" />
+        <appender-ref ref="FILEINFO" />
+        <appender-ref ref="FILEERROR" />
+    </logger>
+
+     <logger name="com.ehome.core.shiro.security" level="error" additivity="false">
+         <appender-ref ref="STDOUT" />
+         <appender-ref ref="FILEDEBUG" />
+         <appender-ref ref="FILEINFO" />
+         <appender-ref ref="FILEERROR" />
+    </logger>
+
+    <logger name="org.springframework" level="error" additivity="false">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILEDEBUG" />
+        <appender-ref ref="FILEINFO" />
+        <appender-ref ref="FILEERROR" />
+    </logger>
+
+    <logger name="org.activiti" level="warn" additivity="false">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILEDEBUG" />
+        <appender-ref ref="FILEINFO" />
+        <appender-ref ref="FILEERROR" />
+    </logger>
+
+    <logger name="org.apache.shiro" level="warn" additivity="false">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILEDEBUG" />
+        <appender-ref ref="FILEINFO" />
+        <appender-ref ref="FILEERROR" />
+    </logger>
+
+    <root level="info">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILEDEBUG" />
+        <appender-ref ref="FILEINFO" />
+        <appender-ref ref="FILEERROR" />
+    </root>
+</configuration>

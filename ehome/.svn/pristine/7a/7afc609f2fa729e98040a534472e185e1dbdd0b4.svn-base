@@ -1,0 +1,87 @@
+package com.ehome.cloud.demo.controller;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.ehome.cloud.demo.mapper.CountryMapper;
+import com.ehome.cloud.demo.model.Country;
+import com.ehome.cloud.demo.service.ICountryService;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.frame.PageBean;
+import com.ehome.core.util.ServletUtil;
+import com.github.pagehelper.PageInfo;
+
+@Controller
+@RequestMapping(value = "country")
+public class CountryController extends BaseController {
+
+    @Resource
+    private CountryMapper mapper;
+    
+    @Autowired
+    private ICountryService countryService;
+
+    private String redirect_list = "redirect:list";
+
+    @RequestMapping(value = "list.html")
+    public ModelAndView getList(Country country, @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "10") int rows) {
+        ModelAndView result = new ModelAndView("/system/country/index.html");
+        List<Country> countryList = countryService.selectByCountry(country, page, rows);
+
+        PageBean<Country> pb = new PageBean<>(countryList, ServletUtil.getPageUrl(this.getRequest()));
+
+        Country cc = new Country();
+        cc.setCountryname("121314");
+
+        result.addObject("pageInfo", new PageInfo<Country>(countryList));
+        result.addObject("queryParam", country);
+        result.addObject("page", page);
+        result.addObject("rows", rows);
+        logger.info("{}", countryList);
+        logger.info("{}", new PageInfo<Country>(countryList));
+
+        result.addObject("pb", pb);
+        result.addObject("pageHtml", pb.pageHtml);
+        return result;
+    }
+
+    @RequestMapping(value = "view", method = RequestMethod.GET)
+    public ModelAndView view(Country country) {
+        ModelAndView result = new ModelAndView();
+        if (country.getId() != null) {
+            country = countryService.selectByKey(country.getId());
+        }
+        result.addObject("country", country);
+        
+        return result;
+    }
+
+    @RequestMapping(value = "save", method = {RequestMethod.GET, RequestMethod.POST})
+    public ModelAndView save(Country country) {
+        ModelAndView result = new ModelAndView(redirect_list);
+        if (country.getId() != null) {
+            countryService.updateNotNull(country);
+        } else {
+            countryService.save(country);
+        }
+
+        return result;
+    }
+
+    @RequestMapping("delete")
+    public String delete(Integer id) {
+        countryService.deleteByKey(id);
+
+        return redirect_list;
+    }
+
+}

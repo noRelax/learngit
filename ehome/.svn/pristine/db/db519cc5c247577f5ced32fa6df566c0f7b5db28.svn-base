@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Document</title>
+  <link rel="stylesheet" href="css/jquery-ui.min.css">
+  <link rel="stylesheet" href="css/lxl.css">
+</head>
+<body>
+
+
+    <button class="open">弹框</button>
+
+    <div class="dialog-main">
+        <div class="dialog-body">
+            <div class="dialog-head">
+                新增
+                <span class="dialog-close"></span>
+            </div>
+            <div class="dialog-content">
+                <form action="">
+                    <div class="form-group">
+                        <label>服务名称：</label>
+                        <input class="lxl_text form_name" type="text" maxlength="6">
+                        <div class="lxl_text_error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>图标：</label>
+                        <div class="icon_file">+<input class="form_icon" type="file" onchange="fileChange()"></div>
+                        <div class="icon_body"><div class="img_wrap"><a href="javascript:;" class="img_delete"></a></div></div>
+                        <div class="lxl_text_error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>URL:</label>
+                        <input class="lxl_text form_url" type="text" placeholder="包含http://">
+                        <div class="lxl_text_error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>添加城市：</label>
+                        <input class="lxl_text" type="text" id="project">
+                        <input type="hidden" id="project-id">
+                    </div>
+                    <div class="form-group">
+                        <label>已添加的城市：</label>
+                        <div class="checked_city">
+                          <!--   <div class="city_list">
+                                <div class="parent">广东省</div>
+                                <div class="children">
+                                    <span>广州市</span>
+                                    <span>广州市</span>
+                                    <span>广州市</span>
+                                    <span>广州市</span>
+                                    <span>广州市</span>
+                                    <span>广州市</span>
+                                    <span>广州市</span>
+                                    <span>广州市</span>
+                                    <span>广州市</span>
+                                    <span>广州市</span>
+                                    <a href="javascript:;" class="empty_button">清空</a>
+                                </div>
+                            </div> -->
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>服务提供：</label>
+                        <input class="lxl_text" type="text" maxlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label>描述：</label>
+                        <input class="lxl_text" type="text" maxlength="6">
+                    </div>
+                     <div class="form-group">
+                        <label>排序：</label>
+                        <input class="lxl_text" type="number" value="6">
+                    </div>
+                    <div class="form-group">
+                        <label>首页推荐：</label>
+                        <select class="lxl_select">
+                            <option value="0">否</option>
+                            <option value="1">是</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>状态：</label>
+                        <select class="lxl_select">
+                            <option value="1">开启</option>
+                            <option value="0">关闭</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="dialog-foot">
+                <a class="dialog-foot-save" href="javascript:;">保存</a>
+                <a class="dialog-foot-cancel" href="javascript:;">取消</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/jquery.min.js"></script>
+    <script src="js/jquery-ui.min.js"></script>
+    <script src="js/city.selector.js"></script>
+    <script src="js/lxl.js"></script>
+</body>
+</html>

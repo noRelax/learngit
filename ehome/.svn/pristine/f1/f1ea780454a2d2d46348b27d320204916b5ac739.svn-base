@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.marry.mapper.MarryPhotoMapper">
+	
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.marry.dto.MarryPhotoDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="picture_id" property="pictureId" jdbcType="INTEGER" />
+		<result column="picture_url" property="pictureUrl"/>
+		<result column="idea" property="idea"/>
+		<result column="location" property="location"/>
+		<result column="app_user_id" property="appUserId"/>
+		<result column="thumb_up_num" property="thumbUpNum" jdbcType="INTEGER" />
+		<result column="comment_num" property="commentNum" jdbcType="INTEGER" />
+		<result column="public_time" property="publicTime" jdbcType="TIMESTAMP" />
+		<result column="is_recommended" property="isRecommended" jdbcType="INTEGER" />
+		<result column="is_shielding" property="isShielding" jdbcType="INTEGER" />
+		<result column="select_require" property="selectRequire"/>
+		<result column="source_device" property="sourceDevice"/>
+		<result column="is_new" property="isNew"/>
+		<result column="blacklist" property="blacklist"/>
+	</resultMap>
+
+	<sql id="commonSQL">
+		SELECT
+			t.id,
+			t.picture_id,
+			t.picture_url,
+			t.idea,
+			t.location,
+			t.app_user_id,
+			t.thumb_up_num,
+			t.comment_num,
+			t.public_time,
+			t.is_recommended,
+			t.is_shielding,
+			t.select_require,
+			t.source_device,
+			t.is_new,
+			t.blacklist
+		FROM
+			t_marry_photo t
+	</sql>
+
+	<select id="queryForList" parameterType="com.ehome.cloud.marry.dto.MarryPhotoDto" resultMap="BaseResultMap" >
+		<include refid="commonSQL"></include>
+		<where>
+            <choose>  
+	            <when test="searchType==1">
+	                <if test="keyword!=null and keyword!=''">
+	                    AND t.app_user_id = #{keyword} 
+	                </if>  
+	            </when>  
+	            <otherwise>  
+	                <if test="keyword!=null and keyword!=''">
+	                    AND t.idea LIKE CONCAT('%',#{keyword},'%')
+	                </if> 
+	            </otherwise>  
+            </choose>  
+			<if test="selectRequire!=null and selectRequire!=''">
+				AND t.select_require = #{selectRequire}
+			</if>
+			<if test="isRecommended==0">
+			    AND t.is_recommended = 0
+			</if>
+			<if test="isRecommended==1">
+			    AND t.is_recommended = 1
+			</if>	
+			<if test="isShielding==0">
+				AND t.is_shielding = 0
+			</if>	
+			<if test="isShielding==1">
+				AND t.is_shielding = 1
+			</if>	
+			<if test="startPublictTime!=null and startPublictTime!=''">
+				AND t.public_time >= #{startPublictTime}
+			</if>	
+			<if test="endPublicTime!=null and endPublicTime!=''">
+				AND t.public_time <![CDATA[ <= ]]> #{endPublicTime}
+			</if>		
+		</where>
+		ORDER BY ${fieldName} ${fieldSort}
+	</select>
+	
+	<!--author : hl@diandianwifi.com  -->
+	<resultMap id="AppBaseResultMap"
+		type="com.ehome.cloud.app.marry.dto.AppMarryReplyDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="from_user_id" property="fromUserID" jdbcType="INTEGER" />
+		<result column="to_user_id" property="toUserId" jdbcType="INTEGER" />
+		<result column="reply_msg" property="replyMsg" jdbcType="VARCHAR" />
+		<result column="create_date" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="portrait" property="fromUserPortrait" jdbcType="VARCHAR" />
+		<result column="to_nick_name" property="toUserNickName"
+			jdbcType="VARCHAR" />
+		<result column="frome_nick_name" property="fromUserNickName"
+			jdbcType="VARCHAR" />
+	</resultMap>
+
+
+	<select id="selectByPhotoId" resultMap="AppBaseResultMap">
+		SELECT A.REPLY_MSG,
+		A.create_date, B.NICK_NAME AS FROME_NICK_NAME,
+		B.PORTRAIT, C.NICK_NAME
+		AS TO_NICK_NAME FROM
+		T_MARRY_REPLY A INNER JOIN T_APP_USER B ON
+		A.FROM_USER_ID = B.ID
+		INNER JOIN T_APP_USER C ON A.TO_USER_ID= C.ID
+		ORDER BY A.CREATE_DATE DESC
+	</select>
+	
+</mapper>

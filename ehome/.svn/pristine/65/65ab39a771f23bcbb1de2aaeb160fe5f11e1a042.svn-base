@@ -1,0 +1,364 @@
+<% include("/system/public/header.html",{title:'header'}){} %> 
+<% layout("/system/public/aside.html",{title:'header'}){} %>
+<link rel="stylesheet" href="${ctxPath}/static/ui/layui/css/layui.css" type="text/css" />
+	<style>
+	.lxl-wrap{
+		padding: 15px;
+	}
+	.lxl-header{
+		margin-bottom: 10px;
+		border-bottom: 1px solid #ddd;
+	}
+	.lxl-header-time{
+		margin-top: 6px;
+		margin-left: 20px;
+	}
+	.lxl-header-time .layui-input{
+		height: 25px;
+		line-height: 25px;
+	}
+	.lxl-table .fl{
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.lxl-table .fl:nth-child(1) {
+		padding-right: 15px;
+	}
+	.lxl-h3{
+		padding: 5px 0;
+		font-weight: bold;
+	}
+	.fl{
+		float: left;
+	}
+	.clearfix:after{content:".";display:block;height:0;clear:both;visibility:hidden}
+	.clearfix{*+height:1%;}
+	</style>
+</head>
+<body>
+	<div id="main-content">
+	<div class="wrapper site-min-height">
+	<div class="lxl-wrap">
+
+		<div class="lxl-header clearfix">
+			<div class="fl">
+				<div class="layui-btn-group">
+					<button class="layui-btn layui-btn-primary" name="android">Android</button>
+					<button class="layui-btn layui-btn-primary" name="ios">IOS</button>
+				</div>
+			</div>
+			<div class="lxl-header-time fl">
+				起始时间：
+				<div class="layui-input-inline">
+					<input class="layui-input" placeholder="开始日" id="LAY_demorange_s">
+				</div>
+				 至
+				<div class="layui-input-inline">
+					<input class="layui-input" placeholder="结束日" id="LAY_demorange_e">
+				</div>
+			</div>
+			<div class="lxl-header-time fl">
+			<div class="layui-input-inline">
+					<button name="searchBtn" class="layui-btn">搜索</button>
+					</div>
+			</div>
+		</div>
+
+		<div class="lxl-table clearfix">
+			<div class="fl" style="width: 60%;">
+				<h3 class="lxl-h3">用户转化</h3>
+				<table class="layui-table" lay-skin="line" id="user">
+				  <colgroup>
+				    <col>
+				    <col>
+				    <col>
+				    <col>
+				    <col>
+				  </colgroup>
+				  <thead>
+				    <tr>
+				      <th>APP总用户</th>
+				      <th>婚恋总用户</th>
+				      <th>认证</th>
+				      <th>配对成功</th>
+				      <th>男女比例</th>
+				    </tr>
+				  </thead>
+				  <tbody>
+				  </tbody>
+				</table>
+			</div>
+			<div class="fl" style="width: 40%;">
+				<h3 class="lxl-h3">金币转化</h3>
+				<table class="layui-table" lay-skin="line" id="coins">
+				  <colgroup>
+				    <col>
+				    <col>
+				    <col>
+				    <col>
+				  </colgroup>
+				  <thead>
+				    <tr>
+				      <th>金币流水总额</th>
+				      <th>剩余金币</th>
+				      <th>新增金币</th>
+				      <th>消耗金币</th>
+				    </tr>
+				  </thead>
+				  <tbody>
+				  </tbody>
+				</table>
+			</div>
+		</div>
+
+		<div class="lxl-table clearfix">
+			<div class="fl" style="width: 60%;">
+				<h3 class="lxl-h3">年收入分布明细</h3>
+				<table class="layui-table" lay-skin="line" id="income">
+				  <colgroup>
+				    <col>
+				    <col>
+				    <col>
+				  </colgroup>
+				  <thead>
+				    <tr>
+				      <th>年收入</th>
+				      <th>用户数</th>
+				      <th>用户数百分比</th>
+				    </tr>
+				  </thead>
+				  <tbody>
+				  </tbody>
+				</table>
+			</div>
+			<div class="fl" style="width: 40%;">
+				<h3 class="lxl-h3">年龄分布明细</h3>
+				<table class="layui-table" lay-skin="line" id="age">
+				  <colgroup>
+				    <col>
+				    <col>
+				    <col>
+				    <col>
+				  </colgroup>
+				  <thead>
+				    <tr>
+				      <th>年龄</th>
+				      <th>用户数</th>
+				      <th>用户数百分比</th>
+				    </tr>
+				  </thead>
+				  <tbody>
+				  </tbody>
+				</table>
+			</div>
+		</div>
+
+		<div class="lxl-table clearfix">
+			<div>
+				<h3 class="lxl-h3">数据统计</h3>
+				<table class="layui-table" lay-skin="line" id="data">
+				  <colgroup>
+				    <col>
+				    <col>
+				    <col>
+				    <col>
+				  </colgroup>
+				  <thead>
+				    <tr>
+				      <th>照片总数</th>
+				      <th>点赞总数</th>
+				      <th>评论总数</th>
+				      <th>私聊总数</th>
+				    </tr>
+				  </thead>
+				  <tbody>
+				  </tbody>
+				</table>
+			</div>
+		</div>
+
+		<div class="lxl-chart" >
+			<h3 class="lxl-h3">用户意向分布</h3>
+			<div id="container11">
+				图表
+			</div>
+		</div>
+
+	</div>
+	</div>
+	</div>
+    <script src="${ctxPath}/static/system/olive/all/js/jquery.form.js"></script>
+    <script src="${ctxPath}/static/system/olive/all/js/jquery.validate.min.js"></script>
+	<script src="${ctxPath}/static/ui/layui/layui.js"></script>
+    <script src="${ctxPath}/static/ui/highcharts/code/highcharts.js"></script>
+    <script src="${ctxPath}/static/ui/highcharts/code/modules/data.js"></script>
+    <script src="${ctxPath}/static/ui/highcharts/code/modules/drilldown.js"></script>
+	<script type="text/javascript">
+	
+	var searchBtn = jQuery('button[name=searchBtn]');
+	var android = jQuery('button[name=android]');
+	var ios = jQuery('button[name=ios]');
+	var sourceDevice = '';
+	android.on('click',function(e){
+		sourceDevice=3;
+		android.removeClass("layui-btn-primary");
+		ios.addClass("layui-btn-primary");
+	});
+	ios.on('click',function(e){
+		sourceDevice=4;
+		ios.removeClass("layui-btn-primary");
+		android.addClass("layui-btn-primary");
+	});
+	searchBtn.on('click',function(e){
+		e.preventDefault();
+		var start=$("#LAY_demorange_s").val();
+		var end = $("#LAY_demorange_e").val();
+		search(sourceDevice,start,end);
+	});
+	layui.use('laydate', function(){
+		  var laydate = layui.laydate;
+		  
+		  var start = {
+		    //min: laydate.now()
+		    max: '2099-06-16 23:59:59'
+		    ,istoday: true
+		    ,choose: function(datas){
+		      end.min = datas; //开始日选好后，重置结束日的最小日期
+		      end.start = datas //将结束日的初始值设定为开始日
+		    }
+		  };
+		  
+		  var end = {
+		    //min: laydate.now()
+		    max: '2099-06-16 23:59:59'
+		    ,istoday: true
+		    ,choose: function(datas){
+		      start.max = datas; //结束日选好后，重置开始日的最大日期
+		    }
+		  };
+		  
+		  document.getElementById('LAY_demorange_s').onclick = function(){
+		    start.elem = this;
+		    laydate(start);
+		  }
+		  document.getElementById('LAY_demorange_e').onclick = function(){
+		    end.elem = this
+		    laydate(end);
+		  }
+		  
+		});
+	    search('','','');
+	    function search(sourceDevice,start,end){
+	    	//window.location.reload();
+		    jQuery.post('../../marry/statistics/userConver',{"sourceDevice":sourceDevice,"startDate":start,"endDate":end},function(data){
+		    	if(data.status==10000){
+		    		$("#user tr:not(:first)").empty(); 
+			    	var table =jQuery('table[id=user]');
+			    	var html = '';
+			    	var data =data.data;
+			    	html+="<tr><td>"+data.userCount+"</td><td>"+data.marryCount+"</td><td>"+data.authUserCount+"</td><td>"+data.mutual+"</td><td>"+data.sexPer+"</td></tr>";
+			    	table.append(html);
+		    	}
+		    },'json');
+		    jQuery.post('../../marry/statistics/goldCoinsConver',{"sourceDevice":sourceDevice,"startDate":start,"endDate":end},function(data){
+		    	if(data.status==10000){
+		    		$("#coins tr:not(:first)").empty(); 
+			    	var table =jQuery('table[id=coins]');
+			    	var html = '';
+			    	var data =data.data;
+			    	html+="<tr><td>"+data.totalGolds+"</td><td>"+data.remainGolds+"</td><td>"+data.addGolds+"</td><td>"+data.expendGolds+"</td></tr>";
+			    	table.append(html);
+		    	}
+		    },'json');
+		    jQuery.post('../../marry/statistics/dataStatistics',{"sourceDevice":sourceDevice,"startDate":start,"endDate":end},function(data){
+		    	if(data.status==10000){
+		    		$("#data tr:not(:first)").empty(); 
+			    	var table =jQuery('table[id=data]');
+			    	var html = '';
+			    	var data =data.data;
+			    	html+="<tr><td>"+data.photoNum+"</td><td>"+data.thumbNum+"</td><td>"+data.commentNum+"</td><td></td></tr>";
+			    	table.append(html);
+		    	}
+		    },'json');
+		    jQuery.post('../../marry/statistics/incomeAndAge',{"sourceDevice":sourceDevice,"startDate":start,"endDate":end},function(data){
+		    	if(data.status==10000){
+		    		$("#income tr:not(:first)").empty(); 
+		    		$("#age tr:not(:first)").empty(); 
+			    	var incomeTable =jQuery('table[id=income]');
+			    	var ageTable = jQuery('table[id=age]');
+			    	var incomeHtml = '',ageHtml='';
+			    	var data =data.data;
+			    	var age =data.age;
+			    	var income= data.income;
+			    	if(age!=null){
+			    		for(var i=0;i<age.length;i++){
+			    			ageHtml+="<tr><td>"+(age[i].dictAgeName!=null?age[i].dictAgeName:'其他')+"</td><td>"+age[i].userNum+"</td><td>"+age[i].userPercent+"</td></tr>";
+			    		}
+			    		ageTable.append(ageHtml);
+			    	}
+			    	if(income!=null){
+			    		for(var i=0;i<income.length;i++){
+			    			incomeHtml+="<tr><td>"+(income[i].annualIncomeName!=null?income[i].annualIncomeName:'其他')+"</td><td>"+income[i].userNum+"</td><td>"+income[i].userPercent+"</td></tr>";
+			    		}
+			    		incomeTable.append(incomeHtml);
+			    	}
+		    	}
+		    },'json');
+		    var chartData = [];
+		    jQuery.post('../../marry/statistics/userInterest',{"sourceDevice":sourceDevice,"startDate":start,"endDate":end},function(data){
+		    	if(data.status==10000){
+		    		data =data.data;
+		    		var chart = data.data;
+		    		if(chart!=null && chart.length>0){
+		    			for(var x in chart){
+		    				var json ={};
+		    				json.name=chart[x].interestTypeName;
+		    				json.y=parseInt(chart[x].userPercent);
+		    				chartData.push(json);
+		    			}
+		    		}
+				    Highcharts.chart('container11', {
+				        chart: {
+				            type: 'column'
+				        },
+				        title: {
+				            text: '用户意向分布'
+				        },
+				        subtitle: {
+				            text: ''
+				        },
+				        xAxis: {
+				            type: 'category'
+				        },
+				        yAxis: {
+				            title: {
+				                text: ''
+				            }
+				        },
+				        legend: {
+				            enabled: false
+				        },
+				        plotOptions: {
+				            series: {
+				                borderWidth: 0,
+				                dataLabels: {
+				                    enabled: true,
+				                    format: '{point.y:.2f}%'
+				                }
+				            }
+				        },
+				        tooltip: {
+				            headerFormat: '',
+				            pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y:.2f}%</b><br/>'
+				        },
+				        series: [{
+				            name: '用户意向分布',
+				            colorByPoint: true,
+				            data: chartData
+				        }]
+				    });
+		    	}
+		    },'json');
+	    }
+	</script>
+<% layout("/system/public/footer.html",{title:'header'}){} %>

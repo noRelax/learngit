@@ -1,0 +1,189 @@
+<%
+include("/system/public/header.html",{title:'header'}){} 
+%>
+
+<%
+layout("/system/public/aside.html",{title:'header'}){} 
+%>
+
+<script type="text/javascript"></script>
+
+
+<!-- BEGIN WRAPPER  -->
+	  <div class="editalbeWrap">
+        <section id="main-content">
+            <!-- BEGIN WRAPPER  -->
+            <section class="wrapper site-min-height">
+               <section class="panel">
+                  <div class="panel-body">
+                     <div class="adv-table editable-table ">
+                        <div class="clearfix">
+                        </div>
+                        <div class="space15"></div>
+			<table id="table_report" class="table table-striped table-bordered table-hover">
+				<thead>
+					<tr>
+						<th width="70px" class="center">发布内容</th>
+						<th width="70px" class="center">是否话题回复</th>
+						<th width="70px" class="center">发布地址</th>
+						<th width="70px" class="center">话题ID</th>
+<!-- 						<th width="70px" class="center">文件ID</th> -->
+						<th width="70px" class="center">是否显示地址</th>
+						<th width="70px" class="center">纬度</th>
+      					<th width="70px" class="center">经度</th>
+						<th width="70px" class="center">用户ID</th>
+						<th width="70px" class="center">用户昵称</th>
+						<th width="70px" class="center">评论次数</th>
+						<th width="70px" class="center">点赞次数</th>
+						<th width="70px" class="center">发布时间</th>
+						<th width="70px" class="center">操作</th>
+					</tr>
+				</thead>
+				<tbody>
+								<tr class="editalbeWrap" v-for="item in tablelist">
+                                 <td v-text="item.content"></td>
+                                 <td class="hidden-phone">{{item.isanonymous | status}}</td>
+                                 <td v-text="item.address" class="center hidden-phone"></td>
+                                 <td v-text="item.topicId" class="center hidden-phone"></td>
+                                 <td class="hidden-phone">{{item.isshowposition | status2}}</td>
+                                 <td v-text="item.lat" class="center hidden-phone"></td>
+                                 <td v-text="item.lng" class="center hidden-phone"></td>
+                                 <td v-text="item.userId" class="center hidden-phone"></td>
+                                 <td v-text="item.username" class="center hidden-phone"></td>
+                                 <td v-text="item.commenttimes" class="center hidden-phone"></td>
+                                 <td v-text="item.upvotetimes" class="center hidden-phone"></td>
+                                 <td class="center hidden-phone">{{item.createtime | time}}</td>
+                                 <td>
+                                   <a :id="item.id" class='btn btn-mini btn-danger' title="删除" onclick="del(this);">删除</a>
+                                 </td>
+                              </tr>
+				</tbody>
+			</table>
+                       <div style="float:right">${pageHtml}</div>
+                     </div>
+                  </div>
+               </section>
+            </section>
+      <!-- END WRAPPER  -->
+         </section>
+      </div>
+ 
+   <script src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script><!-- DATATABLE JS  -->
+    <script src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script><!-- DATATABLE JS  -->
+    <script src="${ctxPath}/static/system/olive/all/js/editable-table.js" ></script>
+    
+    <script type="text/javascript">
+    var pagedata = ${pageInfo}; 
+    new Vue({
+        el:'.editalbeWrap',
+        data:{
+        	tablelist:pagedata.list,
+        },
+        filters:{
+        	time:function(value) {
+          	   var date = new Date(value);
+         	   Y = date.getFullYear(),
+         	   m = date.getMonth() + 1,
+         	   d = date.getDate(),
+         	   H = date.getHours(),
+         	   i = date.getMinutes(),
+         	   s = date.getSeconds();
+         	   if (m < 10) {
+         	    m = '0' + m;
+         	   }
+         	   if (d < 10) {
+         	    d = '0' + d;
+         	   }
+         	   if (H < 10) {
+         	    H = '0' + H;
+         	   }
+         	   if (i < 10) {
+         	    i = '0' + i;
+         	   }
+         	   if (s < 10) {
+         	    s = '0' + s;
+         	   }
+         	   var t = Y+'-'+m+'-'+d+' '+H+':'+i+':'+s;
+         	   return t;
+         	   },
+         	  status: function(value) {
+         		 switch(value){
+         		 case 0:
+         			 return '否';
+         			 break;
+         		 case 1:
+         			 return '是';
+         			 break;
+         		 }
+        		 return '';
+        	   },
+         	  status2: function(value) {
+         		 switch(value){
+         		 case 0:
+         			 return '不显示';
+         			 break;
+         		 case 1:
+         			 return '显示'
+         		 }
+        		 return '';
+        	   }
+        }
+      });
+    
+    function search(){
+		var key=$('#nav-search-input').val();			
+			$("#Form").submit();			
+	}
+    
+    function add(){
+        var userId = jQuery(this).attr('data-id');
+        parent.layer.open({
+            type: 2,
+            title: '添加话题',
+            area: ['700px', '750px'],
+            content:'../user/add-user-page.html?userId='+userId,
+            end:function(){
+     
+            }
+        });
+    }
+	
+	//删除
+	function del(tobj){
+		if(confirm("你确认删除吗?")){
+			$.ajax({
+				url:'deleteSpace?id='+tobj.id,
+				type:'get',
+				success:function(data){
+//	         var obj = eval('(' + data + ')');
+					if(data==1){
+						alert("删除成功");
+						var tb = tobj.parentNode.parentNode;
+						tb.parentNode.removeChild(tb);
+					}else{
+						alert("删除失败");
+					}
+				}
+			});
+		}else{
+			
+		}
+	}
+    
+    function selectAll(){
+		 var checklist = document.getElementsByName ("ids");
+		   if(document.getElementById("zcheckbox").checked){
+		   for(var i=0;i<checklist.length;i++){
+		      checklist[i].checked = 1;
+		   } 
+		 }else{
+		  for(var j=0;j<checklist.length;j++){
+		     checklist[j].checked = 0;
+		  }
+		 }
+	}
+    </script>
+<!-- END MAIN CONTENT -->
+<%
+layout("/system/public/footer.html",{title:'header'}){} 
+%>

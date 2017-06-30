@@ -1,0 +1,593 @@
+<% include("/system/public/header.html",{title:'header'}){} %> <%
+layout("/system/public/aside.html",{title:'header'}){} %>
+
+<script type="text/javascript"></script>
+
+<!-- BEGIN WRAPPER  -->
+<div class="editalbeWrap">
+	<section id="main-content">
+		<!-- BEGIN WRAPPER  -->
+		<section class="wrapper site-min-height">
+			<section class="panel">
+				<header class="panel-heading">
+					<span class="label label-primary">报表管理</span>
+				</header>
+				<div class="panel-body">
+					<div class="adv-table editable-table ">
+						<div class="clearfix">
+							<div class="form-inline">
+								<div class="form-group">
+
+									<form id="searchForm" action="${ctxPath}/phOrder/exportExcel">
+
+										<input type="hidden" id="orderIds" name="orderIds" />
+
+										<select class="form-control" id="searchType" name="searchType">
+											<option value="1" selected="selected">商家名称</option>
+											<option value="2">商家ID</option>
+											<option value="3">买单用户名</option>
+											<option value="4">用户ID</option>
+										</select>
+
+										<input class="form-control" type="text" id="searchTitle" name="searchTitle" />
+
+										&nbsp;支付日期:
+										<input  id="startDate" name="startDate" class="form-control laydate-icon" style="height: 33px;"
+											onkeydown="return false;"
+											onclick="laydate({istime: true, format: 'YYYY-MM-DD hh:mm:ss',max:laydate.now()})" />
+										---
+										<input  id="endDate" name="endDate" class="form-control laydate-icon" style="height: 33px;"
+											onkeydown="return false;"
+											onclick="laydate({istime: true, format: 'YYYY-MM-DD hh:mm:ss',max:laydate.now()})" />
+
+										<select class="form-control" id="issettle" name="issettle">
+											<option value=''>全部</option>
+											<option value="1">已结算</option>
+											<option value="0">未结算</option>
+										</select>
+										<select class="form-control" id="payWay" name="payWay">
+											<option value=''>全部</option>
+											<option value="0">微信</option>
+											<option value="1">支付宝</option>
+										</select>
+
+										<select class="form-control" style="width: 140px" name="province" id="province"
+											onchange="provinceChange(this.value)">
+											<option value=''>请选择省份</option>
+										</select>
+										<select class="form-control" style="width: 140px" name="city" id="city"
+											onchange="cityChange(this.value)">
+											<option value=''>请选择城市</option>
+										</select>
+										<select class="form-control" style="width: 140px" name="county" id="county">
+											<option value=''>请选择区/县</option>
+										</select>
+										<input type="button" class="btn btn-primary" style="float: none;" onclick="init();"
+											value="检索" />
+									</form>
+								</div>
+							</div>
+						</div>
+						<div class="space15" style="border: 1px;border-style: solid; width: 50%;">
+
+							<table>
+								<tr>
+									<td id="orderTotal"></td>
+									<td id="merchantTotal"></td>
+									<td id="payMoneyTotal"></td>
+								</tr>
+								<tr>
+									<td id="settleOrder"></td>
+									<td></td>
+									<td id="settlePayMoney"></td>
+								</tr>
+							</table>
+
+
+						</div>
+						<table class="table table-striped table-hover table-bordered" id="sample-table">
+							<thead>
+								<tr>
+									<th width="5%"><input type="checkbox" id="zcheckbox" /> <span class="lbl"></span></th>
+									<th>订单号</th>
+									<th>支付交易号</th>
+									<th>支付时间</th>
+									<th>支付方式</th>
+									<th>支付金额（元）</th>
+									<th>手续费（元）</th>
+									<th>买单用户名</th>
+									<th>商家名称</th>
+									<th>导出时间</th>
+									<th>结算状态</th>
+									<th>操作</th>
+								</tr>
+							</thead>
+						</table>
+						<ul class="pagination"></ul>
+					</div>
+
+					<input class="btn btn-primary" type="button" value="批量结算" onclick="batchSettle();" />
+					<input class="btn btn-info" type="button" value="导出数据" onclick="exportExcel();" />
+
+
+				</div>
+			</section>
+		</section>
+		<!-- END WRAPPER  -->
+	</section>
+</div>
+
+
+<script src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script>
+<!-- DATATABLE JS  -->
+<script src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script>
+<!-- DATATABLE JS  -->
+<script src="${ctxPath}/static/system/olive/all/js/jquery.form.js"></script>
+<script src="${ctxPath}/static/system/olive/all/js/jquery.validate.min.js"></script>
+<script src="${ctxPath}/static/ui/laydate/laydate/laydate.js"></script>
+
+<script type="text/javascript">
+	jQuery(document).ready(
+			function() {
+			
+
+				//加载省
+				$.ajax({
+					url : '${ctxPath}/area/getProvince',
+					type : 'POST',
+					dataType : 'json',
+					success : function(data) {
+						var obj = data.data;
+						$('#province').empty();
+						var tabDataHtml = "";
+						tabDataHtml = tabDataHtml
+								+ "<option value=''>--请选择省份--</option>";
+						for ( var k = 0; k < obj.length; k++) {
+							tabDataHtml = tabDataHtml
+									+ "<option value="+obj[k].id+">"
+									+ obj[k].areaName + "</option>";
+						}
+						$('#province').append(tabDataHtml);
+					}
+				});
+
+				//初始化表格
+				init();
+				//全选
+				$('table th input:checkbox').on(
+						'click',
+						function() {
+							var that = this;
+							$(this).closest('table').find(
+									'tr > td:first-child input:checkbox').each(
+									function() {
+										this.checked = that.checked;
+										$(this).closest('tr').toggleClass(
+												'selected');
+									});
+
+						});
+			});
+
+	//查看订单详情
+	function detail(id) {
+
+		layer.open({
+			type : 2,
+			title : '订单详情',
+			shadeClose : true,
+			skin : 'layui-layer-rim',
+			shade : 0.6,
+			shadeClose : false, //开启遮罩关闭
+			maxmin : true, //开启最大化最小化按钮
+			area : [ '60%', '80%' ],
+			anim : 1,
+			content : [ '${ctxPath}/phOrder/goOrderDetails?id=' + id, 'yes' ],
+			success : function(layero) {
+				//隐藏最小化按钮
+				layero.find('.layui-layer-min').hide();
+			},
+			end : function() {
+				init();
+			}
+		});
+
+	}
+
+	//批量结算
+	function batchSettle() {
+
+		var str = '';
+		for ( var i = 0; i < document.getElementsByName('ids').length; i++) {
+			if (document.getElementsByName('ids')[i].checked) {
+				if (str == '')
+					str += document.getElementsByName('ids')[i].value;
+				else
+					str += ',' + document.getElementsByName('ids')[i].value;
+			}
+		}
+
+		if (str == '') {
+			alert("至少选择一个订单");
+			return;
+		}
+
+		if (confirm("确定更改勾选的" + document.getElementsByName('ids').length
+				+ "个订单吗？")) {
+
+			$.ajax({
+				url : '${ctxPath}/phOrder/batchUpdateSettleByIds',
+				type : 'POST',
+				data : {
+					"ids" : str
+				},
+				success : function(data) {
+					var obj = JSON.parse(data); //由JSON字符串转换为JSON对象
+					alert(obj.msg);
+					if (obj.code == "10000") {
+						init();
+					} else {
+
+						alert("更新失败");
+					}
+				}
+			});
+
+		}
+
+	}
+
+	//导出数据
+	function exportExcel() {
+
+		var str = '';
+		for ( var i = 0; i < document.getElementsByName('ids').length; i++) {
+			if (document.getElementsByName('ids')[i].checked) {
+				if (str == '')
+					str += document.getElementsByName('ids')[i].value;
+				else
+					str += ',' + document.getElementsByName('ids')[i].value;
+			}
+		}
+
+		//获取查询类型
+		var searchType = $("#searchType").val();
+		switch (searchType) {
+		case "2":
+			if (isNaN($("#searchTitle").val())) {
+				alert("ID由数字组成");
+				return;
+			}
+			break;
+
+		case "4":
+			if (isNaN($("#searchTitle").val())) {
+				alert("ID由数字组成");
+				return;
+			}
+			break;
+		}
+
+		if (str == '') {
+
+			if (document.getElementsByName('ids').length > 0) {
+				if (confirm("确定导出查询的数据？")) {
+					$("#searchForm").submit();
+				}
+			} else {
+				alert("无数据导出");
+			}
+
+		} else {
+			if (confirm("确定导出勾选的数据？")) {
+
+				$("#orderIds").val(str);
+				$("#searchForm").submit();
+			}
+
+		}
+
+	}
+
+	//	切换省
+	function provinceChange(id) {
+		if (id == "") {
+			$('#city').empty();
+			$('#county').empty();
+			$('#city').append("<option value=''>--请选择城市--</option>");
+			$('#county').append("<option value=''>--请选择区/县--</option>");
+			return;
+		}
+		$.ajax({
+			url : '${ctxPath}/area/getByPid?pid=' + id,
+			type : 'POST',
+			dataType : 'json',
+			success : function(data) {
+				var obj = data.data;
+				$('#city').empty();
+				var tabDataHtml = "";
+				tabDataHtml = tabDataHtml
+						+ "<option value=''>--请选择城市--</option>";
+				for ( var k = 0; k < obj.length; k++) {
+					tabDataHtml = tabDataHtml + "<option value="+obj[k].id+">"
+							+ obj[k].areaName + "</option>";
+				}
+				$('#city').append(tabDataHtml);
+				$('#county').empty();
+				$('#county').append("<option value=''>--请选择区/县--</option>");
+			}
+		});
+	}
+
+	//切换市
+	function cityChange(id) {
+		if (id == "") {
+			$('#county').empty();
+			$('#county').append("<option value=''>--请选择区/县--</option>");
+			return;
+		}
+		$.ajax({
+			url : '${ctxPath}/area/getByPid?pid=' + id,
+			type : 'POST',
+			dataType : 'json',
+			success : function(data) {
+				var obj = data.data;
+				$('#county').empty();
+				var tabDataHtml = "";
+				tabDataHtml = tabDataHtml
+						+ "<option value=''>--请选择区/县--</option>";
+				for ( var k = 0; k < obj.length; k++) {
+					tabDataHtml = tabDataHtml + "<option value="+obj[k].id+">"
+							+ obj[k].areaName + "</option>";
+				}
+				$('#county').append(tabDataHtml);
+			}
+		});
+
+	}
+
+	//获取统计
+	function getStatistics(searchType) {
+		$.ajax({
+			url : '${ctxPath}/phOrder/getStatistics',
+			type : 'POST',
+			data : {
+				searchType : $("#searchTitle").val(),
+				"startDate" : $("#startDate").val(),
+				"endDate" : $("#endDate").val(),
+				"issettle" : $("#issettle").val(),
+				"payWay" : $("#payWay").val(),
+				"province" : $("#province").val(),
+				"city" : $("#city").val(),
+				"county" : $("#county").val()
+			},
+			success : function(data) {
+				var obj = JSON.parse(data); //由JSON字符串转换为JSON对象
+
+				$("#orderTotal").html("买单数：" + obj.orderTotal);
+				$("#merchantTotal").html("商家数：" + obj.merchantTotal);
+
+				if (obj.payMoneyTotal == null) {
+					$("#payMoneyTotal").html("支付金额统计（元）：0");
+				} else {
+					$("#payMoneyTotal").html("支付金额统计（元）：" + obj.payMoneyTotal);
+				}
+
+				$("#settleOrder").html("已结算买单数：" + obj.settleOrder);
+
+				if (obj.settlePayMoney == null) {
+					$("#settlePayMoney").html("已结算支付金额统计（元）：0");
+				} else {
+					$("#settlePayMoney").html(
+							"已结算支付金额统计（元）：" + obj.settlePayMoney);
+				}
+			}
+		});
+
+	}
+
+	//初始化表格
+	function init() {
+
+		var url = "${ctxPath}/phOrder/getOrderList";
+		var searchType;
+
+		//初始化table
+		var oTable1 = $('#sample-table')
+				.dataTable(
+						{
+							"bPaginate" : true,//分页工具条显示
+							//"sPaginationType" : "full_numbers",//分页工具条样式
+							"bStateSave" : true, //是否打开客户端状态记录功能,此功能在ajax刷新纪录的时候不会将个性化设定回复为初始化状态  
+							"bScrollCollapse" : true, //当显示的数据不足以支撑表格的默认的高度
+							"bLengthChange" : true, //每页显示的记录数
+							"bFilter" : false, //搜索栏
+							"bSort" : true, //是否支持排序功能
+							"bInfo" : true, //显示表格信息
+							"bAutoWidth" : true, //自适应宽度
+							"bJQueryUI" : false,//是否开启主题
+							"bDestroy" : true,
+							"bProcessing" : true, //开启读取服务器数据时显示正在加载中……特别是大数据量的时候，开启此功能比较好
+							"bServerSide" : true,//服务器处理分页，默认是false，需要服务器处理，必须true
+							"sServerMethod" : "POST",
+							"sAjaxDataProp" : "aData",//是服务器分页的标志，必须有 
+							"sAjaxSource" : url,//通过ajax实现分页的url路径。  
+							"fnServerParams" : function(aoData) {//向服务器传额外的参数
+								//获取查询类型
+								searchType = $("#searchType").val();
+								switch (searchType) {
+								case "1":
+									searchType = "merchantName";
+									break;
+								case "2":
+									searchType = "merchantId";
+
+									if (isNaN($("#searchTitle").val())) {
+										alert("ID由数字组成");
+										return;
+									}
+
+									break;
+
+								case "3":
+									searchType = "customerName";
+									break;
+								case "4":
+									searchType = "customerId";
+									if (isNaN($("#searchTitle").val())) {
+										alert("ID由数字组成");
+										return;
+									}
+									break;
+								}
+
+								aoData.push({
+									"name" : searchType,
+									"value" : $("#searchTitle").val()
+								}, {
+									"name" : "startDate",
+									"value" : $("#startDate").val()
+								}, {
+									"name" : "endDate",
+									"value" : $("#endDate").val()
+								}, {
+									"name" : "issettle",
+									"value" : $("#issettle").val()
+								}, {
+									"name" : "payWay",
+									"value" : $("#payWay").val()
+								}, {
+									"name" : "province",
+									"value" : $("#province").val()
+								}, {
+									"name" : "city",
+									"value" : $("#city").val()
+								}, {
+									"name" : "county",
+									"value" : $("#county").val()
+								});
+							},
+							"aoColumns" : [//初始化要显示的列
+									{
+										"mDataProp" : "id",//获取列数据，跟服务器返回字段一致
+										"sClass" : "center",//显示样式
+										"mRender" : function(data, type, full) {//返回自定义的样式
+											return "<label><input type='checkbox' name='ids' value='"+data+"' class='ace' /><span class='lbl'></span></label>";
+										}
+									},
+									{
+										"mDataProp" : "orderNum"
+									},
+									{
+										"mDataProp" : "payTransactionNo"
+									},
+									{
+										"mDataProp" : "payTime",
+										"mRender" : function(data, type, full) {
+											return new Date(data)//处理时间显示
+											.toLocaleString();
+										}
+									},
+									{
+										"mDataProp" : "payWay",
+										"sClass" : "center",//显示样式
+										"mRender" : function(data, type, full) {
+											if (data == "0") {
+												return "微信";
+											} else {
+												return "支付宝";
+											}
+										}
+
+									},
+									{
+										"mDataProp" : "payMoney"
+
+									},
+									{
+										"mDataProp" : "handlingCharge"
+
+									},
+									{
+										"mDataProp" : "customerName"
+
+									},
+									{
+										"mDataProp" : "merchantName"
+
+									},
+									{
+										"mDataProp" : "exportTime",
+										"mRender" : function(data, type, full) {
+
+											if (data != null) {
+												return new Date(data)//处理时间显示
+												.toLocaleString();
+											}
+
+											return "";
+										}
+									},
+									{
+										"mDataProp" : "issettle",
+										"sClass" : "center",//显示样式
+										"mRender" : function(data, type, full) {
+											if (data == "0") {
+												return "未结算";
+											} else {
+												return "已结算";
+											}
+										}
+
+									},
+									{
+										"mDataProp" : "id",
+										"sClass" : "center",//显示样式
+										"mRender" : function(data, type, full) {
+
+											return "<a class='update' onclick='detail(\""
+													+ data
+													+ "\");' title='查看/结算'><span class='btn btn-success'>查看/结算</span></a>";
+										}
+									} ],
+							"aoColumnDefs" : [ {//用来设置列一些特殊列的属性
+								"bSortable" : false,
+								"aTargets" : [ 0 ]
+							//第一列不排序
+							}, {
+								"bSortable" : false,
+								"aTargets" : [ 5 ]
+							} ],
+							"oLanguage" : {//语言设置
+								"sProcessing" : "处理中...",
+								"sLengthMenu" : "显示 _MENU_ 项结果",
+								"sZeroRecords" : "没有匹配结果",
+								"sInfo" : "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+								"sInfoEmpty" : "显示第 0 至 0 项结果，共 0 项",
+								"sInfoFiltered" : "(由 _MAX_ 项结果过滤)",
+								"sInfoPostFix" : "",
+								"sSearch" : "搜索:",
+								"sUrl" : "",
+								"sEmptyTable" : "表中数据为空",
+								"sLoadingRecords" : "载入中...",
+								"sInfoThousands" : ",",
+								"oPaginate" : {
+									"sFirst" : "首页",
+									"sPrevious" : "上页",
+									"sNext" : "下页",
+									"sLast" : "末页"
+								},
+								"oAria" : {
+									"sSortAscending" : ": 以升序排列此列",
+									"sSortDescending" : ": 以降序排列此列"
+								}
+							}
+						});
+
+		//计算统计
+		getStatistics(searchType);
+
+	};
+</script>
+<!-- END MAIN CONTENT -->
+<% layout("/system/public/footer.html",{title:'header'}){} %>

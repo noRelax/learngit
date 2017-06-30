@@ -1,0 +1,736 @@
+/**
+ * @Project:ZGHome
+ * @FileName:RightsApplyController.java
+ */
+package com.ehome.cloud.help.controller;
+
+import java.io.File;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.activiti.engine.TaskService;
+import org.activiti.engine.history.HistoricTaskInstance;
+import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.Task;
+import org.activiti.engine.task.TaskQuery;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.session.Session;
+import org.apache.shiro.subject.Subject;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.ehome.activiti.general.Code;
+import com.ehome.activiti.services.WorkFlowService;
+import com.ehome.activiti.services.WorkFlowUtilService;
+import com.ehome.cloud.help.model.RightsModel;
+import com.ehome.cloud.help.service.IRightsService;
+import com.ehome.cloud.sys.dto.LoginInfoDto;
+import com.ehome.cloud.sys.service.IOrgainService;
+import com.ehome.cloud.sys.service.IUploadFileService;
+import com.ehome.cloud.sys.service.IUserService;
+import com.ehome.core.dict.ResponseCode;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.frame.Pagination;
+import com.ehome.core.model.AjaxResult;
+import com.ehome.core.shiro.cons.SessionCons;
+import com.ehome.core.util.DateUtils;
+import com.ehome.core.util.ExcelUtil;
+import com.ehome.push.PushUtil;
+import com.github.pagehelper.PageInfo;
+
+/**
+ * 法律维权
+ * 
+ * @Title:RightsApplyController
+ * @Description:TODO
+ * @author:张宗奎
+ * @date:2017年3月20日
+ * @version:
+ */
+
+@Controller
+@RequestMapping(value = "/help/rightApply")
+public class RightsApplyController extends BaseController {
+
+	@Autowired
+	private WorkFlowService workFlowService;
+	@Autowired
+	private WorkFlowUtilService workFlowUtilService;
+	@Autowired
+	private TaskService taskService;
+	@Resource
+	private IRightsService iRightsService;
+	@Resource
+	private IUploadFileService iUploadFileService;
+	@Resource
+	private IUserService iUserService;
+	@Resource
+	private IOrgainService iOrgainService;
+
+	/**
+	 * 列表
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "list")
+	public String list() {
+		return "help/rightApply/list.html";
+	}
+
+	/**
+	 * 待审批列表数据
+	 * 
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "getCheckList")
+	public AjaxResult getCheckList(HttpServletRequest request) {
+
+		Subject currentUser = SecurityUtils.getSubject(); // shiro管理的session
+		Session session = currentUser.getSession();
+		LoginInfoDto user = (LoginInfoDto) session.getAttribute(SessionCons.LOGIN_USER_SESSION);// 当前的操作用户
+
+		// 获取前端过来的参数
+		Integer sEcho = Integer.valueOf(request.getParameter("sEcho"));// 记录操作的次数
+
+		Integer iDisplayStart = request.getParameter("iDisplayStart") == null ? 0
+				: Integer.valueOf(request.getParameter("iDisplayStart"));// 起始
+		Integer iDisplayLength = request.getParameter("iDisplayLength") == null ? 10
+				: Integer.valueOf(request.getParameter("iDisplayLength"));// 每页显示的size
+
+		// "flwq" category设置
+
+		// 新建一个保存流程定义，不知为什么，直接返回上面的list,有循环引用问题，估计是框架有bug
+		List<Map<String, Object>> dataList = new ArrayList<Map<String, Object>>();
+
+		try {
+			// ProcessDefinition processDefinition =
+			// workFlowUtilService.findProcessDefinitionByTenantId("flwq",
+			// user.getCity() + "");
+			//
+			//
+			// Deployment deployment =
+			// workFlowUtilService.getDeploymentById(processDefinition.getDeploymentId());
+
+			// 待办
+			List<Task> tList = workFlowService.getMyAssignTask(user.getId() + "", "flwq", iDisplayStart, iDisplayLength,
+					null);
+
+			for (Task task : tList) {
+
+				ProcessInstance pi = workFlowUtilService.findProcessInstanceByTaskId(task.getId());
+
+				Map<String, Object> obj = workFlowService.getTaskVariables(pi.getId(), user.getId() + "");
+
+				obj.put("fp_definitionName", pi.getProcessDefinitionName());// 获取流程定义名称
+				obj.put("fp_id", task.getId());// id
+				obj.put("fp_instanceId", task.getProcessInstanceId());
+				obj.put("fp_name", task.getName());// 流程节点
+				obj.put("fp_assignee", task.getAssignee());// 当前经办人
+				obj.put("fp_description", task.getDescription());// 备注
+				obj.put("fp_dueDate", task.getDueDate());// 到期时间
+				dataList.add(obj);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+//		PageInfo<Map<String, Object>> pageInfo = new PageInfo<Map<String, Object>>(dataList);
+		Pagination<Map<String, Object>> pagination = new Pagination<Map<String, Object>>();
+		pagination.setsEcho(sEcho);
+		pagination.setData(dataList);
+		pagination.setiTotalDisplayRecords((int) workFlowService.getMyAssignCount(
+				user.getId() + "", "flwq", null));
+		pagination.setiTotalRecords((int) workFlowService.getMyAssignCount(
+				user.getId() + "", "flwq", null));
+
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+
+	}
+
+	/**
+	 * 已审批列表数据
+	 * 
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "getCheckedList")
+	public AjaxResult getCheckedList(HttpServletRequest request) {
+
+		Subject currentUser = SecurityUtils.getSubject(); // shiro管理的session
+		Session session = currentUser.getSession();
+		LoginInfoDto user = (LoginInfoDto) session.getAttribute(SessionCons.LOGIN_USER_SESSION);// 当前的操作用户
+
+		// 获取前端过来的参数
+		Integer sEcho = Integer.valueOf(request.getParameter("sEcho"));// 记录操作的次数
+
+		Integer iDisplayStart = request.getParameter("iDisplayStart") == null ? 0
+				: Integer.valueOf(request.getParameter("iDisplayStart"));// 起始
+		Integer iDisplayLength = request.getParameter("iDisplayLength") == null ? 10
+				: Integer.valueOf(request.getParameter("iDisplayLength"));// 每页显示的size
+
+		// 新建一个保存流程定义，不知为什么，直接返回上面的list,有循环引用问题，估计是框架有bug
+		List<Map<String, Object>> dataList = new ArrayList<Map<String, Object>>();
+	
+
+		List<HistoricTaskInstance> historicTaskInstanceList = null;
+		try {
+			// ProcessDefinition processDefinition =
+			// workFlowUtilService.findProcessDefinitionByTenantId("flwq",
+			// user.getCity() + "");
+			//
+			// Deployment deployment =
+			// workFlowUtilService.getDeploymentById(processDefinition.getDeploymentId());
+
+			// 历史
+			historicTaskInstanceList = workFlowService.getDisposeTaskList(user.getId() + "",
+					"flwq", iDisplayStart, iDisplayLength, null);
+
+			for (HistoricTaskInstance hti : historicTaskInstanceList) {
+				try {
+//					map = workFlowService
+//							.getAllVariablesListByProcessInstanceId(hti.getProcessInstanceId(), user.getId() + "")
+//							.get(0);
+					
+					Map<String, Object> map  =workFlowService.getHistoricTaskVariables(hti.getId());
+					map.put("fp_instanceId", hti.getProcessInstanceId()) ;
+					dataList.add(map);
+				} catch (Exception e) {
+					continue;
+				}
+
+				
+		
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+//		PageInfo<HistoricTaskInstance> pageInfo = new PageInfo<HistoricTaskInstance>(historicTaskInstanceList);
+		Pagination<Map<String, Object>> pagination = new Pagination<Map<String, Object>>();
+		pagination.setsEcho(sEcho);
+		pagination.setData(dataList);
+		pagination.setiTotalDisplayRecords((int) workFlowService.getDisposeTaskCount(
+				user.getId() + "", "flwq", null));
+		pagination.setiTotalRecords((int) workFlowService.getDisposeTaskCount(
+				user.getId() + "", "flwq", null));
+
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+
+	}
+
+	/**
+	 * 审批页
+	 * 
+	 * @param processInstanceId
+	 * @param request
+	 * @return
+	 * @throws Exception
+	 */
+	@RequestMapping(value = "/get-form/task/{processInstanceId}")
+	@ResponseBody
+	public ModelAndView findTaskForm(@PathVariable("processInstanceId") String processInstanceId,
+			HttpServletRequest request) throws Exception {
+		ModelAndView mav = new ModelAndView();
+		// 获取当前登陆人信息。
+		/* User user = UserUtil.getUserFromSession(request.getSession()); */
+
+		TaskQuery taskQuery = taskService.createTaskQuery().processInstanceId(processInstanceId)
+				.orderByProcessInstanceId().desc();
+
+		List<Task> tasks = taskQuery.list();
+		if (tasks.size() == 0) {
+			ModelAndView mav2 = new ModelAndView("activiti/formKey/error.html");
+			return mav2;
+		}
+		Task task = tasks.get(0);
+
+		// 获取外置表单
+		// Object renderedTaskForm =
+		// formService.getRenderedTaskForm(task.getId());
+
+		// 当前活动节点ID
+		// String activityId = workFlowUtilService.findTaskById(task.getId())
+		// .getTaskDefinitionKey();
+		// 获取配置的formKey
+		// String formKey =
+		// formService.getTaskFormKey(task.getProcessDefinitionId(),
+		// task.getTaskDefinitionKey());
+
+		// 获取表单提交的变量
+		Map<String, Object> formProperties = taskService.getVariables(task.getId());
+
+		List<Map<String, Object>> approveList = getApproveList(task.getId());
+
+		// 身份证图片
+		List<Map<String, String>> idcardsList = new ArrayList<Map<String, String>>();
+		if (formProperties.get("idCardPics") != null) {
+			String[] idCards = formProperties.get("idCardPics").toString().split(",");
+			for (String pic : idCards) {
+				String url = "";
+				if (iUploadFileService.selectByKey(Integer.parseInt(pic)) != null)
+					url = iUploadFileService.selectByKey(Integer.parseInt(pic)).getFilePath();
+				Map<String, String> picMap = new HashMap<String, String>();
+				picMap.put("id", pic);
+				picMap.put("url", url);
+				idcardsList.add(picMap);
+			}
+		}
+
+		// 证明图片
+		List<Map<String, String>> proofPicsList = new ArrayList<Map<String, String>>();
+		if (formProperties.get("proofPics") != null) {
+			String[] proofPics = formProperties.get("proofPics").toString().split(",");
+			for (String pic : proofPics) {
+				String url = "";
+				if (iUploadFileService.selectByKey(Integer.parseInt(pic)) != null)
+					url = iUploadFileService.selectByKey(Integer.parseInt(pic)).getFilePath();
+				Map<String, String> picMap = new HashMap<String, String>();
+				picMap.put("id", pic);
+				picMap.put("url", url);
+				proofPicsList.add(picMap);
+			}
+		}
+		// mav.addObject("renderedTaskForm", renderedTaskForm.toString());//
+		// 整个页面，参数已经赋值（外置表单，普通表单不适用）
+		mav.addObject("taskId", task.getId());
+		mav.addObject("processInstanceId", processInstanceId);
+		mav.addObject("data", formProperties);
+		mav.addObject("approveList", approveList);
+		mav.addObject("idcardPic", idcardsList);
+		mav.addObject("proofPic", proofPicsList);
+		mav.setViewName("help/rightApply/rightsApplyCheck.html");
+		return mav;
+	}
+
+	/**
+	 * 查看页
+	 * 
+	 * @param processInstanceId
+	 * @param request
+	 * @return
+	 * @throws Exception
+	 */
+	@RequestMapping(value = "/look-form/task/{processInstanceId}")
+	@ResponseBody
+	public ModelAndView lookTaskForm(@PathVariable("processInstanceId") String processInstanceId,
+			HttpServletRequest request) throws Exception {
+		ModelAndView mav = new ModelAndView();
+		// Map<String, Object> approveMap =
+		// workFlowService.getApproveListByProcessInstanceId(processInstanceId).get(0);
+		List<Map<String, Object>> approveList = workFlowService.getApproveListByProcessInstanceId(processInstanceId);
+
+		// 身份证图片
+		List<Map<String, String>> idcardsList = new ArrayList<Map<String, String>>();
+		if (approveList.get(0).get("idCardPics") != null) {
+			String[] idCards = approveList.get(0).get("idCardPics").toString().split(",");
+			for (String pic : idCards) {
+				String url = "";
+				if (iUploadFileService.selectByKey(Integer.parseInt(pic)) != null)
+					url = iUploadFileService.selectByKey(Integer.parseInt(pic)).getFilePath();
+				Map<String, String> picMap = new HashMap<String, String>();
+				picMap.put("id", pic);
+				picMap.put("url", url);
+				idcardsList.add(picMap);
+			}
+		}
+
+		// 证明图片
+		List<Map<String, String>> proofPicsList = new ArrayList<Map<String, String>>();
+		if (approveList.get(0).get("proofPics") != null) {
+			String[] proofPics = approveList.get(0).get("proofPics").toString().split(",");
+			for (String pic : proofPics) {
+				String url = "";
+				if (iUploadFileService.selectByKey(Integer.parseInt(pic)) != null)
+					url = iUploadFileService.selectByKey(Integer.parseInt(pic)).getFilePath();
+				Map<String, String> picMap = new HashMap<String, String>();
+				picMap.put("id", pic);
+				picMap.put("url", url);
+				proofPicsList.add(picMap);
+			}
+		}
+
+		List<Map<String, Object>> approve = new ArrayList<Map<String, Object>>();
+		for (int i = 1; i < approveList.size(); i++) {
+			approve.add(approveList.get(i));
+		}
+
+		mav.addObject("data", approveList.get(0));
+		mav.addObject("idcardPic", idcardsList);
+		mav.addObject("proofPic", proofPicsList);
+		mav.addObject("approve", approve);
+		mav.setViewName("help/rightApply/rightsApplyLook.html");
+		return mav;
+	}
+
+	/**
+	 * 获取流程审批结果
+	 * 
+	 * @param request
+	 * @return
+	 */
+	public List<Map<String, Object>> getApproveList(String taskId) {
+
+		try {
+
+			List<Map<String, Object>> variableMapList = workFlowService.getApproveList(taskId);
+			return variableMapList;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+
+	}
+
+	/**
+	 * 审批通过
+	 */
+	@ResponseBody
+	@RequestMapping(value = "task/complete/{taskId}/{processInstanceId}")
+	public Map<String, String> completeTask(@PathVariable("taskId") String taskId,
+			@PathVariable("processInstanceId") String processInstanceId, RedirectAttributes redirectAttributes,
+			HttpServletRequest request) {
+
+		Map<String, String> result = new HashMap<String, String>();
+
+		try {
+			Session session = SecurityUtils.getSubject().getSession();
+			LoginInfoDto user = (LoginInfoDto) session.getAttribute(SessionCons.LOGIN_USER_SESSION);
+
+			Map<String, String> formProperties = new HashMap<String, String>();
+			Map<String, Object> map = workFlowService.getTaskVariables(processInstanceId, user.getId() + "");
+			for(String key:map.keySet())  formProperties.put(key, map.get(key).toString());
+
+			// 从request中读取参数然后转换
+//			Map<String, String[]> parameterMap = request.getParameterMap();
+//			Set<Entry<String, String[]>> entrySet = parameterMap.entrySet();
+//			for (Entry<String, String[]> entry : entrySet) {
+//				String key = entry.getKey();
+//
+//				/*
+//				 * 参数结构：fq_reason，用_分割 fp的意思是form paremeter 最后一个是属性名称
+//				 */
+//				if (StringUtils.defaultString(key).startsWith("fp_")) {
+//					String[] paramSplit = key.split("_");
+//					formProperties.put(paramSplit[1], entry.getValue()[0]);
+//				}
+//			}
+			
+			formProperties.put("applyMsg", request.getParameter("applyMsg"));
+
+			// 保存审批人信息
+			formProperties.put("approveUserId", user.getId() + "");
+			formProperties.put("approveUserName", user.getUserName() + "");
+
+			// String flag = formProperties.get("deptLeaderPass");
+
+			// 判断审批意见，同意执行下一步，不同意打回到发起人
+			// if (flag != null && flag.equalsIgnoreCase("true")) {
+			formProperties.put("direction", "通过");
+			// } else {
+			// formProperties.put("direction", "驳回到发起人");
+			// }
+			// 添加审批时间
+			formProperties.put("approveTime", DateUtils.getTime());
+
+			iRightsService.saveRightsInfoAndSubmitTask(processInstanceId, taskId, formProperties, user.getId() + "");
+			
+			//推送
+			pushToApp(formProperties.get("userId"), iOrgainService.selectByKey(user.getDeptId()).getOrgainName(), formProperties.get("applyMsg"), formProperties.get("direction"));
+
+			result.put("code", Code.SUCCESS + "");
+			result.put("msg", "提交成功");
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			result.put("code", Code.SERVER_EXCEPTION + "");
+			result.put("msg", "提交失败");
+		}
+		
+
+		redirectAttributes.addFlashAttribute("message", "任务完成：taskId=" + taskId);
+		return result;
+
+	}
+
+	/**
+	 * 驳回上一步或第一步
+	 * 
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "backProcess")
+	public Map<String, Object> backProcess(HttpServletRequest request, String taskId, String processInstanceId, Integer tag) {
+
+		Map<String, Object> result = new HashMap<String, Object>();
+
+		try {
+			Session session = SecurityUtils.getSubject().getSession();
+			LoginInfoDto user = (LoginInfoDto) session.getAttribute(SessionCons.LOGIN_USER_SESSION);
+			
+			Map<String, String> formProperties = new HashMap<String, String>();
+			Map<String, Object> map = workFlowService.getTaskVariables(processInstanceId, user.getId() + "");
+			for(String key:map.keySet())  formProperties.put(key, map.get(key).toString());
+
+			// 从request中读取参数然后转换
+//			Map<String, String[]> parameterMap = request.getParameterMap();
+//			Set<Entry<String, String[]>> entrySet = parameterMap.entrySet();
+//			for (Entry<String, String[]> entry : entrySet) {
+//				String key = entry.getKey();
+//
+//				/*
+//				 * 参数结构：fq_reason，用_分割 fp的意思是form paremeter 最后一个是属性名称
+//				 */
+//				if (StringUtils.defaultString(key).startsWith("fp_")) {
+//					String[] paramSplit = key.split("_");
+//					formProperties.put(paramSplit[1], entry.getValue()[0]);
+//				}
+//			}
+			formProperties.put("applyMsg", request.getParameter("applyMsg"));
+			
+			// 保存审批人信息
+			formProperties.put("approveUserId", user.getId() + "");
+			formProperties.put("approveUserName", user.getUserName() + "");
+			formProperties.put("approveTime", DateUtils.getTime());
+
+			if (tag == 1) {
+				// 驳回上一步 
+				formProperties.put("direction", "驳回上一步");
+
+				//等于1说明此节点是归属工会的节点，那么动态指点审批人是提交人
+				if(workFlowService.isNextTaskDynamicAssign(taskId, "驳回上一步") == 1){
+					List<String> list = new ArrayList<String>();
+					list.add(formProperties.get("userId"));
+					workFlowService.submitTaskFormData(taskId, list, formProperties, formProperties.get("userId"));
+				}else{
+					workFlowService.submitTaskFormData(taskId, formProperties, user.getId() + "");
+				}
+				result.put("msg", "驳回成功");
+			} else {
+				// 不通过
+				formProperties.put("direction", "不通过");
+				iRightsService.saveRightsInfoAndSubmitTask(processInstanceId, taskId, formProperties, user.getId() + "");
+				result.put("msg", "不通过成功");
+			}
+
+			result.put("code", Code.SUCCESS + "");
+
+			
+			//推送
+			pushToApp(formProperties.get("userId"), iOrgainService.selectByKey(user.getDeptId()).getOrgainName(), formProperties.get("applyMsg"), formProperties.get("direction"));
+		} catch (Exception e) {
+			e.printStackTrace();
+			result.put("code", Code.SERVER_EXCEPTION + "");
+			result.put("msg", "审批异常");
+		}
+
+
+		return result;
+
+	}
+
+	/**
+	 * 导出excel 已审批维权申请表
+	 * 
+	 * @param requsest
+	 * @param response
+	 * @throws Exception
+	 */
+	@RequestMapping(value = "/checkedExport/{processInstanceId}")
+	public void checkedexport(HttpServletRequest requsest, HttpServletResponse response,
+			@PathVariable("processInstanceId") String processInstanceId) throws Exception {
+		List<Map<String, Object>> approveList = workFlowService.getApproveListByProcessInstanceId(processInstanceId);
+		List<Map<String, Object>> approveElements = new ArrayList<Map<String, Object>>();
+		for (int i = 1; i < approveList.size(); i++) {
+			approveElements.add(approveList.get(i));
+		}
+		export(response, approveList.get(0), approveElements);
+
+	}
+
+	/**
+	 * 导出excel 未审批维权申请表
+	 * 
+	 * @param requsest
+	 * @param response
+	 * @throws Exception
+	 */
+	@RequestMapping(value = "/checkExport/{processInstanceId}")
+	public void checkexport(HttpServletRequest requsest, HttpServletResponse response,
+			@PathVariable("processInstanceId") String processInstanceId) throws Exception {
+		TaskQuery taskQuery = taskService.createTaskQuery().processInstanceId(processInstanceId)
+				.orderByProcessInstanceId().desc();
+
+		List<Task> tasks = taskQuery.list();
+		Task task = tasks.get(0);
+
+		// 获取表单提交的变量
+		Map<String, Object> formProperties = taskService.getVariables(task.getId());
+
+		export(response, formProperties, null);
+
+	}
+
+	public void export(HttpServletResponse response, Map<String, Object> map, List<Map<String, Object>> approveElements) {
+
+		try {
+			response.setCharacterEncoding("UTF-8");
+			response.setContentType("application/x-download");
+
+			String filedisplay = "维权申请表.xls";
+			ExcelUtil excel = null;
+
+			excel = new ExcelUtil();
+			excel.setSrcPath(getClassResources() + "exceltemplate/rightApplyTemplate.xls");
+			excel.setSheetName("Sheet1");
+			excel.getSheet();
+			SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+			SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy年MM月dd日");
+
+			Date applicationTime = sdf1.parse(map.get("applicationTime").toString());
+			excel.setCellStrValue(1, 0, sdf2.format(applicationTime));
+			excel.setCellStrValue(2, 2, map.get("name").toString());
+			excel.setCellStrValue(2, 5, map.get("sex").toString());
+			excel.setCellStrValue(2, 7, map.get("nation").toString());
+			excel.setCellStrValue(3, 2, map.get("birthday").toString());
+			excel.setCellStrValue(3, 6, map.get("IDcard").toString());
+			excel.setCellStrValue(4, 2, map.get("registered").toString());
+			excel.setCellStrValue(4, 6, map.get("homeTel").toString());
+			excel.setCellStrValue(5, 2, map.get("company").toString());
+			excel.setCellStrValue(5, 6, map.get("workPhone").toString());
+			excel.setCellStrValue(6, 2, map.get("address").toString());
+			excel.setCellStrValue(6, 7, map.get("postcode").toString());
+			excel.setCellStrValue(7, 2, map.get("education").toString());
+			excel.setCellStrValue(7, 4, map.get("industry").toString());
+			excel.setCellStrValue(7, 7, map.get("health").toString());
+			excel.setCellStrValue(8, 0, "申请事项及主要理由：\r\n    " + map.get("reasons").toString());
+			excel.setCellStrValue(18, 3, map.get("legalProceedings").toString());
+			if (approveElements != null){
+				for(int i=0; i<approveElements.size(); i++){
+					Map<String, Object> tmp = approveElements.get(i);
+					excel.setCellStrValue(21+i, 0, tmp.get("taskName").toString());
+					excel.setCellStrValue(21+i, 2, tmp.get("approveUserName").toString());
+					excel.setCellStrValue(21+i, 4, tmp.get("applyMsg").toString());
+					excel.setCellStrValue(21+i, 6, tmp.get("direction").toString());
+					excel.setCellStrValue(21+i, 7, tmp.get("approveTime").toString());
+				}
+			}
+			
+			filedisplay = URLEncoder.encode(filedisplay, "UTF-8");
+			response.addHeader("Content-Disposition", "attachment;filename=" + filedisplay);
+			OutputStream output = response.getOutputStream();
+			excel.exportToNewFile(output);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+	/**
+	 * 归档列表
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "fileList")
+	public String fileList() {
+		return "help/archive/rightsList.html";
+	}
+	
+	/**
+	 * 获取归档列表
+	 * 
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "getFileList")
+	public AjaxResult getFileList(@RequestParam int sEcho,
+			@RequestParam(required = false, defaultValue = "0") int iDisplayStart,
+			@RequestParam(required = false, defaultValue = "10") int iDisplayLength,
+			@RequestParam(required = false, defaultValue = "") String keyword,
+			@RequestParam(required = false, defaultValue = "") String startTime,
+			@RequestParam(required = false, defaultValue = "") String endTime,
+			@RequestParam(required = false, defaultValue = "") String result
+			) {
+
+		Map<String, String> condition = new HashMap<String, String>();
+		condition.put("keyword", keyword);
+		condition.put("startTime", startTime);
+		condition.put("endTime", endTime);
+		condition.put("result", result.equals("审核结果") ? "" : result);
+
+		List<RightsModel> dataList = null;
+		try {
+			dataList = iRightsService.selectForListByCondition(condition, iDisplayStart, iDisplayLength);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		PageInfo<RightsModel> pageInfo = new PageInfo<RightsModel>(dataList);
+		Pagination<RightsModel> pagination = new Pagination<RightsModel>();
+		pagination.setsEcho(sEcho);
+		pagination.setData(pageInfo.getList());
+		pagination.setiTotalDisplayRecords((int)pageInfo.getTotal());
+		pagination.setiTotalRecords((int)pageInfo.getTotal());
+
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+
+	}
+	
+
+	/**
+	 * 获取文件路径
+	 * 
+	 * @return
+	 */
+	public static String getClassResources() {
+		String path = (String.valueOf(Thread.currentThread().getContextClassLoader().getResource("")))
+				.replaceAll("file:/", "").replaceAll("%20", " ").trim();
+		if (path.indexOf(":") != 1) {
+			path = File.separator + path;
+		}
+		return path;
+	}
+	
+	
+	/**
+	 * 向app推送内容
+	 * @param userId 用户id
+	 * @param nodeName 审批节点
+	 * @param applyMsg 审批信息
+	 */
+	public void pushToApp(String userId, String nodeName, String applyMsg, String direction){
+
+		// 同步发送审核推送信息给App提交者
+		Map<String, Object> msgMap = new HashMap<>();
+		msgMap.put("users", Arrays.asList(userId));
+		JSONObject obj = new JSONObject();
+		obj.put("type", 0);// 0帮扶维权
+		obj.put("subject", "");
+		obj.put("data", "您好，你的维权申请进度更新为：【" + nodeName + "】，审批结果为【" + direction + "】,审批意见为【"  + applyMsg + "】，请到个人中心查看详细审批进度！");
+		msgMap.put("content", obj.toString());// 传递的内容
+		PushUtil.push(3, msgMap);
+	}
+
+}

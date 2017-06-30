@@ -1,0 +1,101 @@
+<% include("/system/public/header.html",{title:'header'}){} %> 
+<% layout("/system/public/aside.html",{title:'header'}){} %>
+
+
+<!-- BEGIN WRAPPER  -->
+<section id="main-content">
+	<!-- BEGIN WRAPPER  -->
+	<section class=" wrapper">
+		<!-- BEGIN ROW  -->
+		<div class="row">
+
+			<!-- 第一模块 -->
+			<div class="col-md-5 olmd">
+				<section class="panel olmds">
+					<header class="panel-heading">
+						菜单管理 <span class="text-muted"></span> <span
+							class="tools pull-right"> <a class="fa fa-chevron-down"
+							href="javascript:;"></a> <a class="fa fa-times"
+							href="javascript:;"></a>
+						</span>
+					</header>
+					<div class="panel-body">
+						<!-- BEGIN ROW  -->
+						<div class="row">
+							<div class="col-md-12">
+								<div id="treeCode"  class='ztree treeWidth' >
+									<ul id="treeCodes"></ul>
+								</div>
+							</div>
+						</div>
+						<!-- END ROW  -->
+					</div>
+				</section>
+			</div>
+
+			<!-- 第二模块 -->
+			<div class="col-md-7 olmd">
+				<!-- BEGIN ROW  -->
+				<div class="row">
+					<div class="col-md-12">
+						<section class="panel olmds">
+							<header class="panel-heading">
+								节点管理 <span class="text-muted"></span> <span
+									class="tools pull-right"> <a class="fa fa-chevron-down"
+									href="javascript:;"></a> <a class="fa fa-times"
+									href="javascript:;"></a>
+								</span>
+							</header>
+							<div class="panel-body">
+								<div id="data_tab"></div>
+									<input type="hidden" id="menuId" name="menuId" /> 
+									<input type="hidden" id="type" name="type" />
+									<div id="tab_tmp">
+										<table id="table_report"
+											class="table table-striped table-bordered table-hover">
+											<th width="10%" align="center">菜单id</th>
+											<th width="10%" align="center">菜单code</th>
+											<th width="10%" align="center">菜单url</th>
+											<th width="100%" align="center">菜单名称</th>
+											<th width="7%" align="center">排序</th>
+											<th width="30%" align="center">备注</th>
+											<th width="16%" align="center">操作</th>
+										</table>
+									</div>
+									<div id="data_tab"></div>
+									<input type="button" class="btn btn-small btn-info" value="新增"
+										onclick="addNode()" />
+							</div>
+						</section>
+					</div>
+				</div>
+				<!-- END ROW  -->
+			</div>
+
+		</div>
+		<!-- END ROW  -->
+	</section>
+	<!-- END WRAPPER  -->
+</section>
+
+
+<!-- END MAIN CONTENT -->
+<script src="${ctxPath}/static/zTreev3/js/jquery.ztree.core-3.5.js"></script>
+<script src="${ctxPath}/static/web/system/menu/js/treeCreate.js"></script>
+<link rel="stylesheet"
+	href="${ctxPath}/static/zTreev3/css/zTreeStyle/zTreeStyle.css"
+	type="text/css" />
+<link rel="stylesheet"
+	href="${ctxPath}/static/web/system/menu/css/list-css.css"
+	type="text/css" />
+<script src="${ctxPath}/static/web/system/menu/js/menu-list.js"></script>
+
+<script type="text/javascript">
+		   $(document).ready(function(){
+				var nodeTree2 = ${resultStr};	
+				 nodeTree2 = eval(nodeTree2);
+				treeCreate(nodeTree2,"treeCodes","put",true,false);
+			});
+		   </script>
+
+<% layout("/system/public/footer.html",{title:'header'}){} %>

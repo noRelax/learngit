@@ -1,0 +1,125 @@
+package com.ehome.cloud.sys.model;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import com.ehome.core.model.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+/**
+ * 系统菜单资源实体
+ * @Title:MenuModel
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年1月21日 上午10:02:03
+ * @version:
+ */
+public class MenuModel extends BaseEntity implements Serializable{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8961117725299159L;
+	
+	private String menuCode;
+	
+	private String menuName;
+	
+	private Integer parentId;
+	
+	private Integer sort;
+	
+	private String menuUrl;
+	
+	private Integer isEndLevel;
+	
+	private Integer levelNum;
+	
+	private Integer isButton;
+	
+	private Integer status;
+	
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+	private Date createTime;
+	
+	public String getMenuCode() {
+		return menuCode;
+	}
+
+	public void setMenuCode(String menuCode) {
+		this.menuCode = menuCode;
+	}
+
+	public String getMenuName() {
+		return menuName;
+	}
+
+	public void setMenuName(String menuName) {
+		this.menuName = menuName;
+	}
+
+	public Integer getParentId() {
+		return parentId;
+	}
+
+	public void setParentId(Integer parentId) {
+		this.parentId = parentId;
+	}
+
+	public Integer getSort() {
+		return sort;
+	}
+
+	public void setSort(Integer sort) {
+		this.sort = sort;
+	}
+
+	public String getMenuUrl() {
+		return menuUrl;
+	}
+
+	public void setMenuUrl(String menuUrl) {
+		this.menuUrl = menuUrl;
+	}
+
+	public Integer getIsEndLevel() {
+		return isEndLevel;
+	}
+
+	public void setIsEndLevel(Integer isEndLevel) {
+		this.isEndLevel = isEndLevel;
+	}
+
+	public Integer getLevelNum() {
+		return levelNum;
+	}
+
+	public void setLevelNum(Integer levelNum) {
+		this.levelNum = levelNum;
+	}
+
+	public Integer getIsButton() {
+		return isButton;
+	}
+
+	public void setIsButton(Integer isButton) {
+		this.isButton = isButton;
+	}
+
+	public Integer getStatus() {
+		return status;
+	}
+
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+
+	public Date getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(Date createTime) {
+		this.createTime = createTime;
+	}
+
+}

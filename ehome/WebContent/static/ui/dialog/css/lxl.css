@@ -1,0 +1,128 @@
+  body,html,input,select,textarea{
+    font-family: '微软雅黑';
+  }
+  a{
+    text-decoration: none;
+  }
+  #project-label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 1em;
+  }
+  #project-icon {
+    float: left;
+    height: 32px;
+    width: 32px;
+  }
+  #project-description {
+    margin: 0;
+    padding: 0;
+  }
+
+
+.checked_city{
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 13px;
+    padding: 0 5px;
+    width: 433px;
+    height: 100px;
+    overflow-y: auto;
+    border: 1px solid #D2D2D2;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+.checked_city .city_list{
+    padding: 7px 0;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+}
+.checked_city .city_list .parent{
+    padding-top: 3px;
+    margin-right: 10px;
+    font-weight: bold;
+    font-size: 14px;
+}
+.checked_city .city_list .children {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -moz-box-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+}
+.checked_city .city_list .children span{
+    position: relative;
+    display: block;
+    float: left;
+    margin: 5px 20px 5px 5px;
+    font-size: 12px;
+    cursor: pointer;
+}
+.checked_city .city_list .children span::after{
+    content:'';
+    position: absolute;
+    top: 8px;
+    right: -18px;
+    width: 12px;
+    height: 2px;
+    background-color: #666;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
+}
+.checked_city .city_list .children span::before{
+    content:'';
+    position: absolute;
+    top: 8px;
+    right: -18px;
+    width: 12px;
+    height: 2px;
+    background-color: #666;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+}
+.checked_city .city_list .children .empty_button{
+    display: block;
+    float: left;
+    padding: 5px 8px;
+    background-color: #ff6666;
+    color: #fff;
+    font-size: 12px;
+}
+.checked_city .city_list .children .empty_button:hover{
+    opacity: 0.8;
+}
+
+.city-body{
+    position: absolute;
+    top: 33px;
+    z-index: 9;
+    left: 110px;
+    width: 250px;
+    height: 190px;
+    overflow-y: auto;
+    background-color: #fff;
+    border: 1px solid #eee;
+}
+.city-body h3{
+    padding:0 10px;
+    line-height: 35px;
+    font-size: 16px;
+}
+.city-body .city-item{
+    padding:0 10px;
+    line-height: 25px;
+    font-size: 14px;
+    cursor: pointer;
+}
+.city-body .city-item:hover{
+    background-color: #eee;
+}
+
+

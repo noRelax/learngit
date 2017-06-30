@@ -1,0 +1,128 @@
+<%
+include("/system/public/header.html",{title:'header'}){} 
+%>
+
+<%
+layout("/system/public/aside.html",{title:'header'}){} 
+%>
+
+<script type="text/javascript"></script>
+
+<!-- BEGIN WRAPPER  -->
+	  <div class="editalbeWrap">
+        <section id="main-content">
+            <!-- BEGIN WRAPPER  -->
+            <section class="wrapper site-min-height">
+               <section class="panel">
+                  <header class="panel-heading">
+                     <span class="label label-primary">用户管理-前端用户</span>
+                     <span class="tools pull-right">
+                     <a href="javascript:;" class="fa fa-chevron-down"></a>
+                     <a href="javascript:;" class="fa fa-times"></a>
+                     </span>
+                  </header>
+                  <div class="panel-body">
+                     <div class="adv-table editable-table ">
+                        <div class="clearfix">
+                           <div class="btn-group">
+                              <a id="batch-freeze" class="btn btn-success green" onclick="batchUpstatus(1)">
+                              批量冻结 <i class="fa fa-plus"></i>
+                              </a>
+                           </div>
+                           <div class="btn-group">
+                             <a id="batch_unfreeze" class="btn btn-success green" onclick="batchUpstatus(0)">
+                             批量解冻 <i class="fa fa-plus"></i>
+                              </a>
+                           </div>
+                           <!-- <div class="btn-group">
+                             <a id="batch_import-member" class="btn btn-success green">
+                             批量导入会员<i class="fa fa-plus"></i>
+                              </a>
+                           </div> -->
+                        </div>
+                        <div class="clearfix">
+                           <div class="panel-body">
+                           <form class="form-inline" role="form" name="searchForm">
+                              <div class="form-group">
+                                 <input type="text" class="form-control" name="keyword" placeholder="用户编号、真实姓名、昵称、前端注册号、基层工会名称、邀请码">
+                              </div>
+                              <!-- <div class="form-group">
+                                 <lable>黑名单用户筛选</lable>
+                                 <select class="form-control " name="blackType" placeholder="">
+			                         <option value="0">技术部</option>
+			                     </select>
+                              </div> -->
+                              <button type="submit" name="search" class="btn btn-success">检索</button>
+                              <!-- <button type="submit" name="reset" class="btn btn-success">重置检索</button> -->
+                           </form>
+                        </div>
+                        </div>
+                        <div class="space15"></div>
+                        <table class="table table-striped table-hover table-bordered" id="editable-sample">
+                           <thead>
+                              <tr>
+                              <th width="1%" class="center"><input
+										type="checkbox" id="zcheckbox" /> <span class="lbl"></span></th>
+                                 <th width="5%" class="hidden-phone">序号</th>
+                                 <th width="6%" class="hidden-phone">用户编号</th>
+                                 <th width="6%" class="hidden-phone">用户名</th>
+                                 <th width="6%" class="hidden-phone">昵称</th>
+                                 <th width="5%" class="hidden-phone">性别</th>
+                                 <th width="8%" class="hidden-phone">地区</th>
+                                 <th width="6%" class="hidden-phone">基层工会</th>
+                                 <th width="6%" class="hidden-phone">是否会员</th>
+                                 <th width="8%" class="hidden-phone">是否为黑名单</th>
+                                 <th width="6%" class="hidden-phone">邀请码</th>
+                                 <th width="8%" class="hidden-phone">注册时间</th>
+                                 <th width="6%" class="hidden-phone">备注</th>
+                                 <th width="15%" class="hidden-phone">操作</th>
+                              </tr>
+                           </thead>
+                           <tbody>
+                           </tbody>
+                        </table>
+                        <ul class="pagination"></ul>
+                     </div>
+                  </div>
+               </section>
+            </section>
+      <!-- END WRAPPER  -->
+         </section>
+      </div>
+ 
+   <script src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script><!-- DATATABLE JS  -->
+   <script src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script><!-- DATATABLE JS  -->
+   <script src="${ctxPath}/static/web/system/user/js/app-user-editable-table.js" ></script>
+    
+    <script type="text/javascript">
+      jQuery(document).ready(function() {
+          EditableTable.init();//初始化表格
+      });
+      
+      function batchUpstatus(status){
+  		var ids = "";
+  		jQuery('input[class=checkchild]').each(function(index, element) {
+  			if (jQuery(this).is(':checked')) {
+  				ids = ids + jQuery(this).val().trim() + ",";
+  			}
+  		});
+  		if(ids.length <= 0){
+  			layer.alert('请先选择用户',{title : '操作提示',icon: 2});
+  		}else{
+  			jQuery.post('../appUser/batchUpdateStatus',{"status":status,'ids':ids},function(data){
+				if(data.status == 10000){
+					parent.layer.alert(data.data, {title : '操作提示', icon : 1, time:2000, end: function(){
+						window.parent.location.reload();
+						parent.layer.closeAll();
+					}});
+				}else{
+					layer.alert(data.data,{title : '操作提示',icon: 2});
+				}
+		},'json');
+  		}
+      }
+    </script>
+<!-- END MAIN CONTENT -->
+<%
+layout("/system/public/footer.html",{title:'header'}){} 
+%>

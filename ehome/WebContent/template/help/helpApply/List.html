@@ -1,0 +1,128 @@
+<% include("/system/public/header.html",{title:'header'}){} %>
+<% layout("/system/public/aside.html",{title:'header'}){} %>
+<script type="text/javascript"></script>
+
+<!-- BEGIN WRAPPER  -->
+<div class="editalbeWrap">
+	<section id="main-content">
+		<!-- BEGIN WRAPPER  -->
+		<section class="wrapper site-min-height">
+			<section class="panel">
+				<header class="panel-heading">
+					<span class="label label-primary">帮扶审批</span> <span
+						class="tools pull-right"> <a href="javascript:;"
+						class="fa fa-chevron-down"></a> <a href="javascript:;"
+						class="fa fa-times"></a>
+					</span>
+				</header>
+				<div class="panel-body">
+					<div class="layui-tab" lay-filter="demo" style="margin-top: 0px">
+					<ul class="layui-tab-title">
+						<li class="layui-this" lay-id="11" name="info">待审批列表</li>
+						<li lay-id="22">已审批列表</li>
+					</ul>
+					
+					
+					<div class="layui-tab-content">
+						<div class="layui-tab-item">
+
+							<table class="table table-striped table-hover table-bordered"
+							id="check-tableList">
+							<thead>
+								<tr>
+									<th width="5%"><input type="checkbox" id="zcheckbox" /> <span class="lbl"></span>
+									</th>
+									
+									<th>姓名</th>
+									<th>性别</th>
+									<th>政治面貌</th>
+									<th>电话</th>
+									<th>工作单位</th>
+									<th>基层工会</th>
+									<th>归属工会</th>
+									<th>申请项目</th>
+									<th>审批状态</th>
+									<th>申请时间</th>
+									<th>备注</th>
+									<th>操作</th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+						</div>
+						<div class="layui-tab-item">
+							<table class="table table-striped table-hover table-bordered"
+							id="checked-tableList">
+							<thead>
+								<tr>
+									<th width="5%"><input type="checkbox" id="zcheckbox" /> <span class="lbl"></span>
+									</th>
+									<th>姓名</th>
+									<th>性别</th>
+									<th>政治面貌</th>
+									<th>电话</th>
+									<th>工作单位</th>
+									<th>基层工会</th>
+									<th>归属工会</th>
+									<th>申请项目</th>
+									<th>审批状态</th>
+									<th>申请时间</th>
+									<th>备注</th>
+									<th>操作</th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+						</div>
+					</div>
+					</div>
+				</div>
+			</section>
+		</section>
+		<!-- END WRAPPER  -->
+	</section>
+</div>
+
+
+<link rel="stylesheet" href="${ctxPath}/static/system/public/css/font-awesome.4.6.0.css">
+<script src="${ctxPath}/static/system/olive/all/js/jquery.form.js"></script>
+<script
+	src="${ctxPath}/static/system/olive/all/js/jquery.validate.min.js"></script>
+<script
+	src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script>
+<!-- DATATABLE JS  -->
+<script
+	src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script>
+<script src="${ctxPath}/static/ui/layui/layui.js"></script>
+<!-- DATATABLE JS  -->
+<script src="${ctxPath}/static/web/help/helpApply/list.js"></script>
+<script type="text/javascript">
+//去掉框架的回车事件
+	jQuery(document).ready(function() {
+		$(document).keydown(function(event){
+			  switch(event.keyCode){
+			     case 13:return false;
+			     }
+			});
+		layui.use([ 'layer', 'element' ], function() {
+			var $ = layui.jquery, element = layui.element(); //Tab的切换功能，切换事件监听等，需要依赖element模块
+			element.tabChange('demo', 11);//初始化功能必须要
+		});
+
+		listTable.init();//初始化表格
+		
+	});
+  
+  
+	//子页面关闭调用刷新
+	function refresh(){
+		window.location.href='${ctxPath}/helpApply/goHelpList';
+	}
+
+</script>
+<!-- END MAIN CONTENT -->
+
+<!-- END MAIN CONTENT -->
+<% layout("/system/public/footer.html",{title:'header'}){} %>

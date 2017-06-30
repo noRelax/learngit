@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CommonMapper">
+<!-- 
+   <cache type="org.mybatis.caches.ehcache.LoggingEhcache"/>  
+  -->   
+	<select id="columnsList"   resultType="java.util.HashMap">
+		select  column_name, column_comment, column_type from information_schema.COLUMNS c where table_name = #{table};
+	</select>
+	
+	<select id="list"   resultType="java.util.HashMap">
+		select 	#{fields}	
+		 from ${table} where 1=1  
+		 <foreach collection="condition.keys" item="key" open=" and " close=" " separator=" and " >       
+		     ${key}=#{condition[${key}]} 	             
+         </foreach>
+        limit #{start},#{pageSize}
+	</select>
+	
+	<insert id="insertReturnId" parameterType="java.util.HashMap" useGeneratedKeys="true" keyProperty="id">
+	    INSERT ${table}
+	    <foreach collection="entity.keys" item="key" open="(" close=")" separator="," >  
+	        <if test='key != "table"'>
+	              ${key}  
+	        </if>        
+         </foreach>  
+         values   
+         <foreach collection="entity.keys"  item="key" open="(" close=")" separator=",">  
+              <if test='key != "table"'>
+            	#{entity[${key}]}  
+            </if>
+         </foreach> 
+	</insert>
+	
+	<insert id="insert" parameterType="java.util.HashMap" >
+	   INSERT ${table}
+	    <foreach collection="entity.keys" item="key" open="(" close=")" separator="," >  
+	        <if test='key != "table"'>
+	              ${key}  
+	        </if>        
+         </foreach>  
+         values   
+         <foreach collection="entity.keys"  item="key" open="(" close=")" separator=",">  
+              <if test='key != "table"'>
+            	#{entity[${key}]}  
+            </if>
+         </foreach> 	
+	</insert>
+	
+	<update id="update" parameterType="java.util.HashMap">
+		update ${table} set 
+		 <foreach collection="entity.keys"  item="key" open="" close="" separator=",">  
+              <if test='key != "id"'>
+            	${key}=#{entity[${key}]}  
+              </if>
+         </foreach> 
+		where id=#{id}
+	</update>
+	
+
+    <delete id="deleteByBatchId" parameterType="java.util.HashMap" >
+        delete from ${table} where id in (#{ids})
+    </delete>
+	
+	
+
+</mapper>

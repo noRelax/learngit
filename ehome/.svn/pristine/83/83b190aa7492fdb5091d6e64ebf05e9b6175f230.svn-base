@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.member.mapper.MemberHomeMapper">
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.member.dto.MemberHomeDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="member_id" property="memberId"/>
+		<result column="members" property="members" jdbcType="VARCHAR" />
+		<result column="contact" property="contact" jdbcType="VARCHAR" />
+		<result column="family_relationship" property="familyRelationship" />
+		<result column="sex" property="sex" />
+		<result column="political" property="political" />
+		<result column="id_card" property="idCard" />
+		<result column="health" property="health" />
+		<result column="monthly_income" property="monthlyIncome" />
+		<result column="identity" property="identity" />
+		<result column="medical_insurance" property="medicalInsurance" />
+		<result column="unit_school" property="unitSchool" />
+	</resultMap>
+
+	<select id="queryForList" resultMap="BaseResultMap">
+		 SELECT id,member_id,members,contact,family_relationship,sex,political,id_card,health,
+		 monthly_income,identity,medical_insurance,unit_school FROM t_member_home
+		 <where>
+		     member_id = #{memberId}
+		 </where>
+	</select>
+
+</mapper>

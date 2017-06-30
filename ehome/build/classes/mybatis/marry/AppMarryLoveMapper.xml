@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.marry.mapper.AppMarryLoveMapper">
+
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.app.marry.dto.AppMarryLoveDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="app_user_id" property="appUserId" jdbcType="INTEGER" />
+		<result column="member_id" property="MemberId" jdbcType="INTEGER" />
+		<result column="portrait" property="portrait" jdbcType="VARCHAR" />
+		<result column="nick_name" property="nickName" jdbcType="VARCHAR" />
+		<result column="work_place" property="workPlace" jdbcType="VARCHAR" />
+		<result column="annual_income" property="annualIncome" jdbcType="INTEGER" />
+	</resultMap>
+
+
+
+	<select id="randomSelectOppositeSex" resultMap="BaseResultMap">
+		select t.id,
+		t.app_user_id, t.member_id, t.portrait, t.nick_name, t.work_place from
+		t_marry_member t where t.sex!=#{sex} and t.app_user_id not in 
+		 <foreach item="item" index="index" collection="list"   
+                        open="(" separator="," close=")">  
+                        #{item}  
+         </foreach>  
+		ORDER BY RAND() ,t.active_time desc
+		LIMIT #{rows} 
+	</select>
+
+	<select id="selectDtoByAppUserIdList" resultMap="BaseResultMap">
+		select t.id,
+		t.app_user_id, t.member_id, t.portrait, t.nick_name, t.work_place, p.annual_income from
+		t_marry_member t inner join t_app_user p on t.app_user_id = p.id where t.app_user_id in 
+		 <foreach item="item" index="index" collection="list"   
+                        open="(" separator="," close=")">  
+                        #{item}  
+       
+         </foreach>  
+	</select>
+
+	<select id="queryMyLove" resultType="java.lang.Integer">
+		select t.love_app_user_id from t_marry_love t where
+		t.app_user_id=#{appUserId} and t.statu=1 ORDER BY t.create_time DESC
+	</select>
+	
+	<select id="queryLoveMe" resultType="java.lang.Integer">
+		select t.app_user_id from t_marry_love t where
+		t.love_app_user_id=#{appUserId} and t.statu=1 ORDER BY t.create_time DESC
+	</select>
+	
+</mapper>

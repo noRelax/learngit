@@ -1,0 +1,147 @@
+package com.ehome.cloud.marry.service.impl;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Service;
+
+import com.ehome.cloud.marry.dto.MarryExportDto;
+import com.ehome.cloud.marry.dto.MarryMemberDto;
+import com.ehome.cloud.marry.mapper.MarryMemberMapper;
+import com.ehome.cloud.marry.model.MarryMemberLog;
+import com.ehome.cloud.marry.model.MarryMemberModel;
+import com.ehome.cloud.marry.service.IMarryMemberLogService;
+import com.ehome.cloud.marry.service.IMarryMemberService;
+import com.ehome.cloud.sys.service.IDictionaryService;
+import com.ehome.core.frame.BaseService;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.util.CollectionUtils;
+import com.ehome.core.util.DateUtils;
+import com.ehome.core.util.EntityUtils;
+import com.ehome.core.util.ExportExcelUtils;
+import com.ehome.core.util.NumberUtils;
+import com.github.pagehelper.PageHelper;
+
+@Service("marryMemberService")
+public class MarryMemberImpl extends BaseService<MarryMemberModel> implements
+		IMarryMemberService {
+
+	@Resource
+	private MarryMemberMapper marryMemberMapper;
+
+	@Resource
+	private IMarryMemberLogService marryMemberLogService;
+
+	@Resource
+	private IDictionaryService dictionaryService;
+
+	@Override
+	public List<MarryMemberDto> queryForList(MarryMemberDto dto, int start,
+			int pageSize) throws BusinessException {
+		PageHelper.startPage(start, pageSize);
+		return marryMemberMapper.queryForList(dto);
+	}
+
+	@Override
+	public MarryMemberDto queryForEditList(Integer id) throws BusinessException {
+		return marryMemberMapper.queryForEditList(id);
+	}
+
+	@Override
+	public List<MarryMemberDto> queryForEditBlackList(Integer id, Integer uid,
+			int start, int pageSize) throws BusinessException {
+		PageHelper.startPage(start, pageSize);
+		return marryMemberMapper.queryForEditBlackList(id, uid);
+	}
+
+	@Override
+	public int updateIsBlacklist(Integer id, Integer isBlacklist,
+			Integer curUserId) throws BusinessException {
+		if (!NumberUtils.eqZero(isBlacklist)) {
+			MarryMemberLog log = new MarryMemberLog();
+			log.setCreateTime(new Date());
+			log.setMarryMemberId(id);
+			String dicValue = dictionaryService.getRenderFieldValue(
+					"CODE_BLACKLIST", isBlacklist + "");
+			log.setEvent("设为黑名单:" + dicValue);
+			log.setUid(curUserId);
+			log.setCreateUser(curUserId);
+			marryMemberLogService.save(log);
+		}
+		return marryMemberMapper.updateIsBlacklist(id, isBlacklist);
+	}
+
+	@Override
+	public List<MarryMemberDto> queryById(MarryMemberDto marryMemberDto)
+			throws BusinessException {
+		// TODO Auto-generated method stub
+		return marryMemberMapper.queryById(marryMemberDto);
+	}
+
+	/**
+	 * 执行导出excel功能
+	 */
+	@Override
+	public void exportMember(List<MarryMemberDto> marryMoldelList,
+			HttpServletResponse response) throws BusinessException, IOException {
+		List<MarryExportDto> memberExportList = new ArrayList<>();
+		if (CollectionUtils.isNotEmpty(marryMoldelList)) {
+			for (MarryMemberDto dto : marryMoldelList) {
+				MarryExportDto marryMemberExportDto = EntityUtils.convert(dto,
+						MarryExportDto.class);
+				if (!NumberUtils.isNull(dto.getIsBlacklist())
+						&& !NumberUtils.eqZero(dto.getIsBlacklist())) {
+					marryMemberExportDto.setIsBackListName("是");
+				} else {
+					marryMemberExportDto.setIsBackListName("否");
+				}
+				if (!NumberUtils.isNull(dto.getCommentNum())
+						&& !NumberUtils.eqZero(dto.getCommentNum())) {
+					marryMemberExportDto.setCommentNum(dto.getCommentNum());
+				} else
+					marryMemberExportDto.setCommentNum(0);
+				if (!NumberUtils.isNull(dto.getGoldCoins())
+						&& !NumberUtils.eqZero(dto.getGoldCoins()))
+					marryMemberExportDto.setGoldCoins(dto.getGoldCoins());
+				else
+					marryMemberExportDto.setGoldCoins(0);
+				if (!NumberUtils.isNull(dto.getPhotoNum())
+						&& !NumberUtils.eqZero(dto.getPhotoNum()))
+					marryMemberExportDto.setPhotoNum(dto.getPhotoNum());
+				else
+					marryMemberExportDto.setPhotoNum(0);
+				if (!NumberUtils.isNull(dto.getThumbUpNum())
+						&& !NumberUtils.eqZero(dto.getThumbUpNum()))
+					marryMemberExportDto.setThumbUpNum(dto.getThumbUpNum());
+				else
+					marryMemberExportDto.setThumbUpNum(0);
+				if (!NumberUtils.isNull(dto.getReportNum())
+						&& !NumberUtils.eqZero(dto.getReportNum()))
+					marryMemberExportDto.setReportNum(dto.getReportNum());
+				else
+					marryMemberExportDto.setReportNum(0);
+				if (null != dto.getActiveTime()) {
+					marryMemberExportDto.setActiveTime(DateUtils.getTime(dto
+							.getActiveTime()));
+				}
+				memberExportList.add(marryMemberExportDto);
+			}
+			ExportExcelUtils.exportExcel(memberExportList, "婚恋会员表",
+					MarryExportDto.class, 65536, response);// 创建工具类.
+		}else{
+			ExportExcelUtils.exportExcel(memberExportList, "婚恋会员表",
+					MarryExportDto.class, 65536, response);// 创建工具类.
+		}
+	}
+
+	@Override
+	public void updateEvent(String event, Integer id) throws BusinessException {
+		marryMemberMapper.updateEvent(event, id);
+	}
+
+}

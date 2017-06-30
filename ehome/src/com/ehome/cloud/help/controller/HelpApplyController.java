@@ -1,0 +1,1005 @@
+/**
+ * @Project:ZGHome
+ * @FileName:HelpApplyController.java
+ */
+package com.ehome.cloud.help.controller;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.activiti.engine.FormService;
+import org.activiti.engine.TaskService;
+import org.activiti.engine.history.HistoricTaskInstance;
+import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.Task;
+import org.activiti.engine.task.TaskQuery;
+import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.apache.shiro.authz.annotation.RequiresUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.util.StopWatch;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.context.request.async.WebAsyncTask;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import tk.mybatis.mapper.entity.Condition;
+
+import com.alibaba.fastjson.JSON;
+import com.ehome.activiti.services.WorkFlowService;
+import com.ehome.activiti.services.WorkFlowUtilService;
+import com.ehome.cloud.help.dto.HelpApplyApproveDto;
+import com.ehome.cloud.help.dto.HelpApplyDto;
+import com.ehome.cloud.help.dto.HelpApplyFamilyDto;
+import com.ehome.cloud.help.dto.MemberHelpDto;
+import com.ehome.cloud.help.model.HelpApplyFamilyModel;
+import com.ehome.cloud.help.model.HelpApplyModel;
+import com.ehome.cloud.help.model.MemberHelpModel;
+import com.ehome.cloud.help.service.IHelpApplyFamilyService;
+import com.ehome.cloud.help.service.IHelpApplyService;
+import com.ehome.cloud.help.service.IMemberHelpService;
+import com.ehome.cloud.member.dto.HelpMemberImportDto;
+import com.ehome.cloud.member.model.Member;
+import com.ehome.cloud.member.service.IMemberService;
+import com.ehome.cloud.sys.model.Dictionary;
+import com.ehome.cloud.sys.model.OrgainModel;
+import com.ehome.cloud.sys.model.UploadFile;
+import com.ehome.cloud.sys.service.IDictionaryService;
+import com.ehome.cloud.sys.service.IOrgainService;
+import com.ehome.cloud.sys.service.IUploadFileService;
+import com.ehome.core.dict.ResponseCode;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.frame.Pagination;
+import com.ehome.core.model.AjaxResult;
+import com.ehome.core.service.IEhCacheService;
+import com.ehome.core.util.CollectionUtils;
+import com.ehome.core.util.DateUtils;
+import com.ehome.core.util.DictoryCodeUtils;
+import com.ehome.core.util.ExcelUtil;
+import com.ehome.core.util.ImportExcelUtils;
+import com.ehome.core.util.MapUtils;
+import com.ehome.core.util.NumberUtils;
+import com.ehome.core.util.StringUtils;
+import com.github.pagehelper.PageInfo;
+
+/**
+ * @Title:HelpApplyController
+ * @Description:TODO
+ * @author:tcr
+ * @date:2017年3月21日
+ * @version:
+ */
+
+@Controller
+@RequestMapping(value = "/helpApply")
+public class HelpApplyController extends BaseController {
+
+	private final static Logger logger = LoggerFactory
+			.getLogger(HelpApplyController.class);
+
+	@Autowired(required = false)
+	private WorkFlowService workFlowService;
+
+	@Autowired(required = false)
+	private WorkFlowUtilService workFlowUtilService;
+
+	@Autowired(required = false)
+	private FormService formService;
+
+	@Resource
+	private IHelpApplyService helpApplyService;
+
+	@Resource
+	private IMemberService memberService;
+
+	@Resource
+	private IHelpApplyFamilyService helpApplyFamilyService;
+
+	@Autowired(required = false)
+	private TaskService taskService;
+
+	@Resource
+	private IUploadFileService uploadFileService;
+
+	@Resource
+	private IDictionaryService dictionaryService;
+
+	@Resource
+	private IMemberHelpService memberHelpService;
+
+	@Resource
+	private IOrgainService orgainService;
+
+	@Resource
+	private IEhCacheService ehCacheService;
+
+	/**
+	 * 到我待办任务列表
+	 *
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-9
+	 * @param userId
+	 * @return
+	 */
+	@RequestMapping(value = "/goHelpList")
+	public ModelAndView goTaskAgentsList() {
+		ModelAndView mv = new ModelAndView("help/helpApply/List.html");
+		return mv;
+	}
+
+	/**
+	 * 查询我的待办事项
+	 *
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-1-9
+	 * @param userId
+	 * @return
+	 */
+	@RequestMapping(value = "/getHelpList", method = RequestMethod.POST)
+	@ResponseBody
+	public AjaxResult getRuntimeTask(HttpServletRequest request) {
+		Integer userId = this.getCurrentUserId();
+		// 获取前端过来的参数
+		Integer sEcho = Integer.valueOf(request.getParameter("sEcho"));// 记录操作的次数
+		Integer iDisplayStart = request.getParameter("iDisplayStart") == null ? 0
+				: Integer.valueOf(request.getParameter("iDisplayStart"));// 起始
+		Integer iDisplayLength = request.getParameter("iDisplayLength") == null ? 10
+				: Integer.valueOf(request.getParameter("iDisplayLength"));// 每页显示的size
+		List<HelpApplyApproveDto> approvelList = new ArrayList<>();
+		OrgainModel unionChairName = null, supUnionChairName = null;
+		try {
+			List<Task> tList = workFlowService.getMyAssignTask(userId + "",
+					"knbf", iDisplayStart, iDisplayLength, null);
+			for (Task task : tList) {
+				ProcessInstance pi = workFlowUtilService
+						.findProcessInstanceByTaskId(task.getId());
+				Map<String, Object> obj = workFlowService.getTaskVariables(
+						pi.getId(), userId + "");
+				HelpApplyModel helpApply = null;
+				String approvalStatus = "";
+				String helpApplyId = "";
+				if (MapUtils.isNotEmpty(obj)) {
+					helpApplyId = obj.get("helpApplyId").toString();
+					helpApply = helpApplyService.selectByKey(NumberUtils
+							.toInt(helpApplyId));
+					if (obj.get("approvalStatus") != null)
+						approvalStatus = obj.get("approvalStatus").toString();
+				}
+				// 判断审批状态是否是已审批
+				HelpApplyApproveDto approveDto = new HelpApplyApproveDto();
+				if (null != helpApply) {
+					approveDto.setName(helpApply.getName());
+					approveDto.setSex(helpApply.getSex());
+					approveDto.setCompany(helpApply.getCompany());
+					approveDto.setPolitical(helpApply.getPolitical());
+					approveDto.setPhone(helpApply.getPhone());
+					approveDto.setUnionChairId(helpApply.getUnionChairId());
+					approveDto.setHelpType(helpApply.getHelpType());
+					approveDto.setCreateTime(helpApply.getCreateTime());
+				}
+				approveDto.setHelpApplyId(obj.get("helpApplyId").toString());
+				Integer memberid = helpApply.getMemberId();
+				Member member = new Member();
+				member.setId(memberid);
+				Member memberinfo = memberService.selectOne(member);
+				unionChairName = orgainService.quserUnionChairName(memberinfo
+						.getBasicUnionId());
+				Integer parentId = unionChairName.getParentId();
+				supUnionChairName = orgainService
+						.quserySupUnionChairName(parentId);
+				approveDto.setUnionChairName(unionChairName.getOrgainName());
+				approveDto.setUpOrgName(supUnionChairName.getOrgainName());
+				approveDto.setHelpType(helpApply.getHelpType());
+				approveDto.setApprovalStatus(approvalStatus);
+				// 获取到流程信息
+				approveDto.setInstanceId(task.getProcessInstanceId());
+				approveDto.setRemark(task.getDescription());// 备注
+				approveDto.setAssignee(task.getAssignee());// 当前经办人
+				approveDto.setDueDate(task.getDueDate());// 到期时间
+				approveDto.setWfName(task.getName());// 流程节点
+				approveDto.setId(task.getId());// id
+				approveDto.setOrginzeType(unionChairName.getOrgainType());// 添加工会类型，用户判读节点
+				approvelList.add(approveDto);
+				DictoryCodeUtils.renderList(approvelList);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		PageInfo<HelpApplyApproveDto> pageInfo = new PageInfo<>(approvelList);
+		Pagination<HelpApplyApproveDto> pagination = new Pagination<>();
+		pagination.setsEcho(sEcho);
+		pagination.setData(approvelList);
+		pagination.setiTotalDisplayRecords((int) pageInfo.getTotal());
+		pagination.setiTotalRecords((int) pageInfo.getTotal());
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+	}
+
+	/**
+	 * 审批页
+	 *
+	 * @param processInstanceId
+	 * @param request
+	 * @return
+	 * @throws Exception
+	 */
+	@RequestMapping(value = "/get-form/task/{processInstanceId}")
+	@ResponseBody
+	public ModelAndView findTaskForm(
+			@PathVariable("processInstanceId") String processInstanceId,
+			HttpServletRequest request) throws Exception {
+		String orginType = "1";
+		ModelAndView mav = new ModelAndView();
+		// 获取当前登陆人信息。
+		/* User user = UserUtil.getUserFromSession(request.getSession()); */
+		TaskQuery taskQuery = taskService.createTaskQuery()
+				.processInstanceId(processInstanceId)
+				.orderByProcessInstanceId().desc();
+		List<Task> tasks = taskQuery.list();
+		if (CollectionUtils.isEmpty(tasks)) {
+			ModelAndView mav2 = new ModelAndView("activiti/formKey/error.html");
+			return mav2;
+		}
+		Task task = tasks.get(0);
+		Map<String, Object> var = workFlowUtilService
+				.findRuntimeVariablesById(task.getId());
+		if (null != var.get("taskType")) {
+			if (var.get("taskType").toString().equals("dynamic")) {
+				orginType = "2";
+			}
+		}
+		// 获取外置表单
+		// Object renderedTaskForm =
+		// formService.getRenderedTaskForm(task.getId());
+		// 当前活动节点ID
+		String activityId = workFlowUtilService.findTaskById(task.getId())
+				.getTaskDefinitionKey();
+		String applyMsg = "";
+		// 获取流程审批结果
+		List<Map<String, Object>> variableMapList = workFlowService
+				.getApproveList(task.getId());
+		if (CollectionUtils.isNotEmpty(variableMapList)
+				&& variableMapList.size() > 1) {
+			if (null != variableMapList.get(1).get("applyMsg"))
+				applyMsg = variableMapList.get(1).get("applyMsg").toString();
+		}
+		// 获取配置的formKey
+		String formKey = formService.getTaskFormKey(
+				task.getProcessDefinitionId(), task.getTaskDefinitionKey());
+		// 获取表单提交的变量
+		Map<String, Object> formProperties = taskService.getVariables(task
+				.getId());
+		List<Map<String, Object>> approveList = getApproveList(task.getId());
+		List<Map<String, Object>> idcardPic = getApproveList(task.getId());
+		List<Map<String, Object>> proofPic = getApproveList(task.getId());
+		List<Map<String, Object>> checkInfo = getApproveList(task.getId());
+		String helpApplyId = formProperties.get("helpApplyId").toString();
+		HelpApplyDto helpApplyDto = new HelpApplyDto();
+		List<UploadFile> idCardList = new ArrayList<>(), famIdCardList = new ArrayList<>(), povertyImgIdList = new ArrayList<>();
+		String brithday = "", workYear = "";
+		if (StringUtils.isNotBlank(helpApplyId)) {
+			HelpApplyModel helpApply = helpApplyService.selectByKey(NumberUtils
+					.toInt(helpApplyId));
+			brithday = DateUtils.getDay(helpApply.getBrithday());
+			workYear = DateUtils.getDay(helpApply.getWorkYear());
+			if (null != helpApply) {
+				BeanUtils.copyProperties(helpApply, helpApplyDto);
+				DictoryCodeUtils.renderCode(helpApplyDto);
+				if (StringUtils.isNotBlank(helpApply.getPovertyCauses())) {
+					String[] povertyId = helpApply.getPovertyCauses()
+							.split(",");
+					if (!CollectionUtils.isEmpty(povertyId)) {
+						for (int i = 0; i < povertyId.length; i++) {
+							povertyId[i] = dictionaryService
+									.getRenderFieldValue("CODE_STUCK_REASON",
+											povertyId[i]);
+						}
+					}
+					helpApplyDto.setPovertyCausesName(StringUtils.join(
+							povertyId, ","));
+				} else {
+					helpApplyDto.setPovertyCausesName("");
+				}
+				Condition condition = new Condition(HelpApplyFamilyModel.class);
+				condition.createCriteria().andEqualTo("helpApplyId",
+						helpApply.getId());
+				List<HelpApplyFamilyModel> familyList = helpApplyFamilyService
+						.selectByCondition(condition);
+				List<HelpApplyFamilyDto> familyDtoList = new ArrayList<>();
+				if (CollectionUtils.isNotEmpty(familyList)) {
+					for (HelpApplyFamilyModel family : familyList) {
+						HelpApplyFamilyDto familyDto = new HelpApplyFamilyDto();
+						BeanUtils.copyProperties(family, familyDto);
+						familyDtoList.add(familyDto);
+					}
+					DictoryCodeUtils.renderList(familyDtoList);
+					helpApplyDto.setHelpApplyFamilyList(familyDtoList);
+				}
+				if (StringUtils.isNotBlank(helpApply.getIdCardImgId())) {
+					List<String> idCardImgId = Arrays.asList(helpApply
+							.getIdCardImgId().split(","));
+					if (!CollectionUtils.isEmpty(idCardImgId)) {
+						Integer[] foo = new Integer[idCardImgId.size()];
+						for (int i = 0; i < idCardImgId.size(); i++) {
+							foo[i] = NumberUtils.toInt(idCardImgId.get(i), 0);
+						}
+						Iterable<Integer> iterable = Arrays.asList(foo);
+						Condition con = new Condition(UploadFile.class);
+						con.createCriteria().andIn("id", iterable);
+						List<UploadFile> uploadFiled = uploadFileService
+								.selectByCondition(con);
+						if (CollectionUtils.isNotEmpty(uploadFiled)) {
+							for (UploadFile fild : uploadFiled) {
+								UploadFile filePath = new UploadFile();
+								BeanUtils.copyProperties(fild, filePath);
+								idCardList.add(filePath);
+							}
+						}
+					}
+				}
+				if (StringUtils.isNotBlank(helpApply.getFamIdCardImgId())) {
+					List<String> famIdCardImgId = Arrays.asList(helpApply
+							.getFamIdCardImgId().split(","));
+					if (!CollectionUtils.isEmpty(famIdCardImgId)) {
+						Integer[] foo = new Integer[famIdCardImgId.size()];
+						for (int i = 0; i < famIdCardImgId.size(); i++) {
+							foo[i] = NumberUtils
+									.toInt(famIdCardImgId.get(i), 0);
+						}
+						Iterable<Integer> iterable = Arrays.asList(foo);
+						Condition con = new Condition(UploadFile.class);
+						con.createCriteria().andIn("id", iterable);
+						List<UploadFile> uploadFiled = uploadFileService
+								.selectByCondition(con);
+						if (CollectionUtils.isNotEmpty(uploadFiled)) {
+							for (UploadFile fild : uploadFiled) {
+								UploadFile filePath = new UploadFile();
+								BeanUtils.copyProperties(fild, filePath);
+								famIdCardList.add(filePath);
+							}
+						}
+					}
+				}
+				if (StringUtils.isNotBlank(helpApply.getPovertyImgId())) {
+					List<String> povertyImgId = Arrays.asList(helpApply
+							.getPovertyImgId().split(","));
+					if (!CollectionUtils.isEmpty(povertyImgId)) {
+						Integer[] foo = new Integer[povertyImgId.size()];
+						for (int i = 0; i < povertyImgId.size(); i++) {
+							foo[i] = NumberUtils.toInt(povertyImgId.get(i), 0);
+						}
+						Iterable<Integer> iterable = Arrays.asList(foo);
+						Condition con = new Condition(UploadFile.class);
+						con.createCriteria().andIn("id", iterable);
+						List<UploadFile> uploadFiled = uploadFileService
+								.selectByCondition(con);
+						if (CollectionUtils.isNotEmpty(uploadFiled)) {
+							for (UploadFile fild : uploadFiled) {
+								UploadFile filePath = new UploadFile();
+								BeanUtils.copyProperties(fild, filePath);
+								povertyImgIdList.add(filePath);
+							}
+						}
+					}
+				}
+			}
+		}
+		// 整个页面，参数已经赋值（外置表单，普通表单不适用）
+		List<Dictionary> dicList = dictionaryService
+				.queryByCode("CODE_AMOUNT_SOURCE");
+		mav.addObject("dicList", JSON.toJSON(dicList));
+		mav.addObject("taskId", task.getId());
+		mav.addObject("processInstanceId", processInstanceId);
+		mav.addObject("activityId", activityId);
+		mav.addObject("helpApplyId", helpApplyId);
+		mav.addObject("data", formProperties);
+		mav.addObject("approveList", approveList);
+		mav.addObject("idcardPic", idcardPic);
+		mav.addObject("proofPic", proofPic);
+		mav.addObject("checkInfo", checkInfo);
+		mav.addObject("helpApplyDto", helpApplyDto);
+		mav.addObject("idCardImg", idCardList);
+		mav.addObject("famIdCardImg", famIdCardList);
+		mav.addObject("povertyImgId", povertyImgIdList);
+		mav.addObject("variableMapList", variableMapList);
+		mav.addObject("applyMsg", applyMsg);
+		mav.addObject("brithday", brithday);
+		mav.addObject("workYear", workYear);
+		mav.addObject("orginType", orginType);// 添加节点类型信息
+		mav.setViewName("/help/helpApply/" + formKey + ".html");
+		return mav;
+	}
+
+	/**
+	 * 获取流程审批结果
+	 *
+	 * @param request
+	 * @return
+	 */
+	public List<Map<String, Object>> getApproveList(String taskId) {
+		try {
+			List<Map<String, Object>> variableMapList = workFlowService
+					.getApproveList(taskId);
+			return variableMapList;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	/**
+	 * 批量导入
+	 *
+	 * @param model
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "import-help-member", method = RequestMethod.GET)
+	@RequiresUser
+	public String importMember(Model model, NativeWebRequest request) {
+		return "/system/member/import-help.html";
+	}
+
+	/**
+	 * 异步导入会员
+	 *
+	 * @param model
+	 * @param request
+	 * @param file
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "help-member-import", method = RequestMethod.POST)
+	@RequiresUser
+	@ResponseBody
+	public WebAsyncTask<AjaxResult> dataImport(Model model,
+			final NativeWebRequest request,
+			@RequestParam("file") final MultipartFile file)
+			throws BusinessException {
+		final Integer userId = this.getCurrentUserId();
+		final Integer baseOrgId = this.getCurrentUserBaseOrgId();
+		final Integer upOrgId = this.getCurrentUserOrgId();
+		Callable<AjaxResult> callable = new Callable<AjaxResult>() {
+			public AjaxResult call() throws BusinessException, IOException {
+				StopWatch time = new StopWatch();
+				time.start();
+				String ext = file.getOriginalFilename().substring(
+						file.getOriginalFilename().lastIndexOf(".") + 1);
+				Map<String, Object> result = new HashMap<>();
+				List<HelpMemberImportDto> listHelpMember = (List<HelpMemberImportDto>) ImportExcelUtils
+						.importExcel(file.getInputStream(), ext,
+								HelpMemberImportDto.class);
+				time.stop();
+				if (logger.isDebugEnabled()) {
+					logger.debug("解析excel文件耗时：" + time.getTotalTimeSeconds());
+				}
+				time.start();
+				if (CollectionUtils.isNotEmpty(listHelpMember)) {
+					result = helpApplyService.saveImportHelpMember(
+							listHelpMember, userId, baseOrgId, upOrgId);
+				}
+				time.stop();
+				if (logger.isDebugEnabled()) {
+					logger.debug("执行excel导入耗时：" + time.getTotalTimeSeconds());
+				}
+				return new AjaxResult(ResponseCode.success.getCode(), null,
+						result);
+			}
+		};
+		return new WebAsyncTask<>(3000 * 1000, callable);
+	}
+
+	/**
+	 * 获取Cache数据
+	 *
+	 * @param model
+	 * @param request
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/getImportCache", method = RequestMethod.POST)
+	@ResponseBody
+	public AjaxResult getCache(Model model, NativeWebRequest request)
+			throws BusinessException {
+		DecimalFormat df = new DecimalFormat("##%");
+		Object total = ehCacheService.getCache(
+				IEhCacheService.CACHE_HELP_IMPORT, "HELP_TOTAL_COUNT");
+		Object count = ehCacheService.getCache(
+				IEhCacheService.CACHE_HELP_IMPORT, "MEMBER_HELP_COUNT");
+		double total_import = 0, count_import = 0;
+		if (null != total)
+			total_import = Double.parseDouble(total.toString());
+		if (null != count)
+			count_import = Double.parseDouble(count.toString());
+		String result = "0%";
+		if (total_import != 0)
+			result = df.format(count_import / total_import);
+		return new AjaxResult(ResponseCode.success.getCode(),
+				ResponseCode.success.getMsg(), result);
+	}
+
+	/**
+	 * 办理任务，提交task的并保存form
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/doSave", method = RequestMethod.POST)
+	public AjaxResult completeTask(
+			Model model,
+			@RequestParam(required = false, defaultValue = "") String taskId,
+			@RequestParam(required = false, defaultValue = "") String processInstanceId,
+			@RequestParam(required = false, defaultValue = "") Integer helpApplyId,
+			RedirectAttributes redirectAttributes, NativeWebRequest request) {
+		Integer userId = this.getCurrentUserId();
+		Integer deptId = this.getCurrentUserDeptId();
+		String userName = this.getCurrentUserName();
+		// 审批意见
+		String applyMsg = request.getParameter("applyMsg");
+		// 审批操作
+		String resultId = request.getParameter("resultId");
+		// 资金来源
+		String moneyFrom = request.getParameter("money_from");
+		// 建议资金
+		String moneyNum = request.getParameter("money_num");
+		helpApplyService.saveApproval(applyMsg, resultId, moneyFrom, moneyNum,
+				taskId, processInstanceId, helpApplyId, userId + "", deptId,
+				userName);
+		return new AjaxResult(String.valueOf(ResponseCode.success.getCode()),
+				ResponseCode.success.getMsg(), ResponseCode.success.getMsg());
+	}
+
+	/**
+	 * 已审批列表数据
+	 *
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/getCheckedList")
+	public Map<String, Object> getCheckedList(HttpServletRequest request) {
+		Integer userId = this.getCurrentUserId();
+		// 获取前端过来的参数
+		Integer sEcho = Integer.valueOf(request.getParameter("sEcho"));// 记录操作的次数
+		Integer iDisplayStart = request.getParameter("iDisplayStart") == null ? 0
+				: Integer.valueOf(request.getParameter("iDisplayStart"));// 起始
+		Integer iDisplayLength = request.getParameter("iDisplayLength") == null ? 10
+				: Integer.valueOf(request.getParameter("iDisplayLength"));// 每页显示的size
+		List<HelpApplyApproveDto> approvelList = new ArrayList<>();
+		Map<String, Object> map = new HashMap<>();
+		try {
+			// 添加类别
+			List<HistoricTaskInstance> dataList = workFlowService
+					.getDisposeTaskList(userId + "", "knbf", iDisplayStart,
+							iDisplayLength, null);
+			for (HistoricTaskInstance his : dataList) {
+				HelpApplyApproveDto approveDto = new HelpApplyApproveDto();
+				approveDto.setInstanceId(his.getProcessInstanceId());
+				approveDto.setRemark(his.getDescription());// 备注
+				approveDto.setAssignee(his.getAssignee());// 当前经办人
+				approveDto.setDueDate(his.getStartTime());// 到期时间
+				approveDto.setWfName(his.getName());// 流程节点
+				approveDto.setId(his.getId());// id
+				List<Map<String, Object>> obj = workFlowService
+						.getAllVariablesListByProcessInstanceId(
+								his.getProcessInstanceId(), userId + "");
+				HelpApplyModel helpApply = null;
+				String approvalStatus = "";
+				OrgainModel unionChairName = null, supUnionChairName = null;
+				String helpApplyId = "";
+				for (Map<String, Object> maps : obj) {
+					if (MapUtils.isNotEmpty(maps)) {
+						helpApplyId = maps.get("helpApplyId").toString();
+						helpApply = helpApplyService.selectByKey(NumberUtils
+								.toInt(helpApplyId));
+						if (maps.get("approvalStatus") != null)
+							approvalStatus = maps.get("approvalStatus")
+									.toString();
+					}
+				}
+				approveDto.setHelpApplyId(helpApplyId);
+				if (!NumberUtils.isNull(helpApply.getMemberId())) {
+					Integer memberid = helpApply.getMemberId();
+					Member member = new Member();
+					member.setId(memberid);
+					Member memberinfo = memberService.selectOne(member);
+					unionChairName = orgainService
+							.quserUnionChairName(memberinfo.getBasicUnionId());
+					Integer parentId = unionChairName.getParentId();
+					supUnionChairName = orgainService
+							.quserySupUnionChairName(parentId);
+					approveDto
+							.setUnionChairName(unionChairName.getOrgainName());
+					approveDto.setUpOrgName(supUnionChairName.getOrgainName());
+					approveDto.setHelpType(helpApply.getHelpType());
+				}
+				approveDto.setApprovalStatus(approvalStatus);
+				approveDto.setCreateTime(helpApply.getCreateTime());
+				Map<String, Object> varMap = workFlowService
+						.getHistoricTaskVariables(his.getId());
+				List<Dictionary> queryByCode = dictionaryService
+						.queryByCode("CODE_SEX");
+				for (Dictionary dictionary : queryByCode) {
+					if (dictionary.getDictValue().equals(
+							(String) varMap.get("sex"))) {
+						approveDto.setSex(Integer.parseInt(dictionary
+								.getDictKey()));
+					}
+				}
+				if (StringUtils.isNotBlank(varMap.get("name").toString())) {
+					approveDto.setName(varMap.get("name").toString());
+				}
+				if (StringUtils.isNoneBlank(varMap.get("phone").toString())){
+				    approveDto.setPhone(varMap.get("phone").toString());
+				}
+				approveDto.setPolitical(NumberUtils.toInt(varMap.get(
+						"political").toString()));
+				approveDto.setCompany(varMap.get("company").toString());
+				if(unionChairName!=null)
+				    approveDto.setUnionChairName(unionChairName.getOrgainName());
+				else
+				    approveDto.setUnionChairName(null);
+				approvelList.add(approveDto);
+			}
+			DictoryCodeUtils.renderList(approvelList);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		// 为操作次数加1
+		int initEcho = sEcho + 1;
+		map.put("sEcho", initEcho);
+		map.put("iTotalRecords",
+				workFlowService.getDisposeTaskCount(userId + "", "knbf", null));
+		map.put("iTotalDisplayRecords",
+				workFlowService.getDisposeTaskCount(userId + "", "knbf", null));
+		map.put("aData", approvelList);
+		return map;
+	}
+
+	/**
+	 * 查询会员帮扶审批记录
+	 *
+	 * @param model
+	 * @param request
+	 * @param keyword
+	 * @param sex
+	 * @param status
+	 * @param education
+	 * @param auditStatus
+	 * @param userResource
+	 * @param political
+	 * @param orgIdList
+	 * @param sEcho
+	 * @param page
+	 * @param rows
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/queryMemberHelp", method = RequestMethod.POST)
+	@ResponseBody
+	@RequiresUser
+	@RequiresPermissions("mem:member:list")
+	public AjaxResult queryMemberHelpList(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer memberId,
+			@RequestParam(required = false, defaultValue = "") Integer sEcho,
+			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false, defaultValue = "10") int rows)
+			throws BusinessException {
+		// 当前登录者ID
+		Condition condition = new Condition(HelpApplyModel.class);
+		condition.createCriteria().andEqualTo("memberId", memberId);
+		List<HelpApplyModel> helpList = helpApplyService.selectPageByCondition(
+				condition, page, rows, true);
+		List<HelpApplyDto> listHelp = new ArrayList<>();
+		if (CollectionUtils.isNotEmpty(helpList)) {
+			for (HelpApplyModel helpApplyModel : helpList) {
+				HelpApplyDto applyDto = new HelpApplyDto();
+				BeanUtils.copyProperties(helpApplyModel, applyDto);
+				listHelp.add(applyDto);
+			}
+			DictoryCodeUtils.renderList(listHelp);
+		}
+		PageInfo<HelpApplyDto> pageInfo = new PageInfo<>(listHelp);
+		Pagination<HelpApplyDto> pagination = new Pagination<>();
+		pagination.setData(pageInfo.getList());
+		pagination.setsEcho(sEcho);
+		pagination.setiTotalDisplayRecords((int) pageInfo.getTotal());
+		pagination.setiTotalRecords((int) pageInfo.getTotal());
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+	}
+
+	/**
+	 * 查看审批页详情
+	 *
+	 * @param processInstanceId
+	 * @param request
+	 * @return
+	 * @throws Exception
+	 */
+	@RequestMapping(value = "/get-form/historytask/{processInstanceId}")
+	@ResponseBody
+	public ModelAndView findHistoryTaskForm(
+			@PathVariable("processInstanceId") String processInstanceId,
+			HttpServletRequest request) throws Exception {
+		ModelAndView mav = new ModelAndView();
+		try {
+			Integer userId = this.getCurrentUserId();
+			String fromKey = workFlowUtilService
+					.getHistoricFormKeyByProcessInstanceId(processInstanceId,
+							userId + "");
+			HelpApplyDto helpApplyDto = new HelpApplyDto();
+			List<Map<String, Object>> variableMapList = workFlowService
+					.getApproveListByProcessInstanceId(processInstanceId);
+			String helpApplyId = null;
+			String brithday = "", workYear = "";
+			List<UploadFile> idCardList = new ArrayList<>(), famIdCardList = new ArrayList<>(), povertyImgIdList = new ArrayList<>();
+			// 取帮扶id
+			for (int i = 0; i < variableMapList.size(); i++) {
+				helpApplyId = variableMapList.get(0).get("helpApplyId")
+						.toString();
+			}
+			if (StringUtils.isNotBlank(helpApplyId)) {
+				HelpApplyModel helpApply = helpApplyService
+						.selectByKey(NumberUtils.toInt(helpApplyId));
+				brithday = DateUtils.getDay(helpApply.getBrithday());
+				workYear = DateUtils.getDay(helpApply.getWorkYear());
+				if (null != helpApply) {
+					BeanUtils.copyProperties(helpApply, helpApplyDto);
+					DictoryCodeUtils.renderCode(helpApplyDto);
+					if (StringUtils.isNotBlank(helpApply.getPovertyCauses())) {
+						String[] povertyId = helpApply.getPovertyCauses()
+								.split(",");
+						if (!CollectionUtils.isEmpty(povertyId)) {
+							for (int i = 0; i < povertyId.length; i++) {
+								povertyId[i] = dictionaryService
+										.getRenderFieldValue("CODE_STUCK_REASON",
+												povertyId[i]);
+							}
+						}
+						helpApplyDto.setPovertyCausesName(StringUtils.join(
+								povertyId, ","));
+					} else {
+						helpApplyDto.setPovertyCausesName("");
+					}
+					Condition condition = new Condition(
+							HelpApplyFamilyModel.class);
+					condition.createCriteria().andEqualTo("helpApplyId",
+							helpApply.getId());
+					List<HelpApplyFamilyModel> familyList = helpApplyFamilyService
+							.selectByCondition(condition);
+					List<HelpApplyFamilyDto> familyDtoList = new ArrayList<>();
+					if (CollectionUtils.isNotEmpty(familyList)) {
+						for (HelpApplyFamilyModel family : familyList) {
+							HelpApplyFamilyDto familyDto = new HelpApplyFamilyDto();
+							BeanUtils.copyProperties(family, familyDto);
+							familyDtoList.add(familyDto);
+						}
+						DictoryCodeUtils.renderList(familyDtoList);
+						helpApplyDto.setHelpApplyFamilyList(familyDtoList);
+					}
+					if (StringUtils.isNotBlank(helpApply.getIdCardImgId())) {
+						List<String> idCardImgId = Arrays.asList(helpApply
+								.getIdCardImgId().split(","));
+						if (!CollectionUtils.isEmpty(idCardImgId)) {
+							Integer[] foo = new Integer[idCardImgId.size()];
+							for (int i = 0; i < idCardImgId.size(); i++) {
+								foo[i] = NumberUtils.toInt(idCardImgId.get(i),
+										0);
+							}
+							Iterable<Integer> iterable = Arrays.asList(foo);
+							Condition con = new Condition(UploadFile.class);
+							con.createCriteria().andIn("id", iterable);
+							List<UploadFile> uploadFiled = uploadFileService
+									.selectByCondition(con);
+							if (CollectionUtils.isNotEmpty(uploadFiled)) {
+								for (UploadFile fild : uploadFiled) {
+									UploadFile filePath = new UploadFile();
+									BeanUtils.copyProperties(fild, filePath);
+									idCardList.add(filePath);
+								}
+							}
+						}
+					}
+					if (StringUtils.isNotBlank(helpApply.getFamIdCardImgId())) {
+						List<String> famIdCardImgId = Arrays.asList(helpApply
+								.getFamIdCardImgId().split(","));
+						if (!CollectionUtils.isEmpty(famIdCardImgId)) {
+							Integer[] foo = new Integer[famIdCardImgId.size()];
+							for (int i = 0; i < famIdCardImgId.size(); i++) {
+								foo[i] = NumberUtils.toInt(
+										famIdCardImgId.get(i), 0);
+							}
+							Iterable<Integer> iterable = Arrays.asList(foo);
+							Condition con = new Condition(UploadFile.class);
+							con.createCriteria().andIn("id", iterable);
+							List<UploadFile> uploadFiled = uploadFileService
+									.selectByCondition(con);
+							if (CollectionUtils.isNotEmpty(uploadFiled)) {
+								for (UploadFile fild : uploadFiled) {
+									UploadFile filePath = new UploadFile();
+									BeanUtils.copyProperties(fild, filePath);
+									famIdCardList.add(filePath);
+								}
+							}
+						}
+					}
+					if (StringUtils.isNotBlank(helpApply.getPovertyImgId())) {
+						List<String> povertyImgId = Arrays.asList(helpApply
+								.getPovertyImgId().split(","));
+						if (!CollectionUtils.isEmpty(povertyImgId)) {
+							Integer[] foo = new Integer[povertyImgId.size()];
+							for (int i = 0; i < povertyImgId.size(); i++) {
+								foo[i] = NumberUtils.toInt(povertyImgId.get(i),
+										0);
+							}
+							Iterable<Integer> iterable = Arrays.asList(foo);
+							Condition con = new Condition(UploadFile.class);
+							con.createCriteria().andIn("id", iterable);
+							List<UploadFile> uploadFiled = uploadFileService
+									.selectByCondition(con);
+							if (CollectionUtils.isNotEmpty(uploadFiled)) {
+								for (UploadFile fild : uploadFiled) {
+									UploadFile filePath = new UploadFile();
+									BeanUtils.copyProperties(fild, filePath);
+									povertyImgIdList.add(filePath);
+								}
+							}
+						}
+					}
+				}
+			}
+			// 整个页面，参数已经赋值（外置表单，普通表单不适用）
+			List<Dictionary> dicList = dictionaryService
+					.queryByCode("CODE_AMOUNT_SOURCE");
+			mav.addObject("dicList", JSON.toJSON(dicList));
+			mav.addObject("taskId", "");
+			mav.addObject("processInstanceId", processInstanceId);
+			mav.addObject("helpApplyId", helpApplyId);
+			mav.addObject("applyMsg", "");
+			mav.addObject("helpApplyDto", helpApplyDto);
+			mav.addObject("idCardImg", idCardList);
+			mav.addObject("famIdCardImg", famIdCardList);
+			mav.addObject("povertyImgId", povertyImgIdList);
+			mav.addObject("brithday", brithday);
+			mav.addObject("workYear", workYear);
+			mav.addObject("variableMapList", variableMapList);
+			mav.addObject("orginType","1");
+			mav.setViewName("/help/helpApply/" + fromKey + ".html");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return mav;
+	}
+
+	/**
+	 * 导出excel 未审批维权申请表
+	 *
+	 * @param requsest
+	 * @param response
+	 * @throws Exception
+	 */
+	@RequestMapping(value = "/checkExport/{helpApplyId}")
+	public void checkexport(HttpServletRequest requsest,
+			HttpServletResponse response,
+			@PathVariable("helpApplyId") String helpApplyId) throws Exception {
+		HelpApplyModel helpApply = helpApplyService.selectByKey(NumberUtils
+				.toInt(helpApplyId));
+		String name = helpApply.getName();
+		String brithday = "";
+		String idCard = helpApply.getIdCard();
+		String company = helpApply.getCompany();
+		String address = helpApply.getAddress();
+		String familyNum = helpApply.getFamilyNum().toString();
+		String phone = helpApply.getPhone();
+		String incomeTotal = helpApply.getIncomeTotal().toString();
+		String incomeAvg = helpApply.getIncomeAvg().toString();
+		String helpType = helpApply.getHelpType().toString();
+		String reasons = helpApply.getReasons();
+		brithday = DateUtils.getDay(helpApply.getBrithday());
+		String sexName = dictionaryService.getRenderFieldValue("CODE_SEX",
+				helpApply.getSex().toString());
+		String cardTypeName = dictionaryService.getRenderFieldValue(
+				"CODE_CARD_TYPE", helpApply.getCardType().toString());
+		try {
+			response.setCharacterEncoding("UTF-8");
+			response.setContentType("application/x-download");
+			String filedisplay = "帮扶申请表.xls";
+			ExcelUtil excel = new ExcelUtil();
+			excel.setSrcPath(getClassResources()
+					+ "exceltemplate/helpApplyTemplate.xls");
+			excel.setSheetName("Sheet1");
+			excel.getSheet();
+			excel.setCellStrValue(2, 3, name);// 姓名
+			excel.setCellStrValue(2, 8, sexName);// 性别
+			excel.setCellStrValue(2, 11, brithday);// 生日
+			excel.setCellStrValue(2, 16, cardTypeName);// 户口类型
+			excel.setCellStrValue(3, 5, idCard);// 身份证号
+			excel.setCellStrValue(3, 11, company);// 工作单位
+			excel.setCellStrValue(4, 5, address);// 地址
+			excel.setCellStrValue(4, 11, familyNum);// 家庭人数
+			excel.setCellStrValue(4, 15, phone);// 电话号码
+			excel.setCellStrValue(5, 6, incomeTotal);// 家庭经济总收入
+			excel.setCellStrValue(5, 14, incomeAvg);// 家庭人均年收入
+			if (helpType.equals("1")) {// 帮扶类型
+				excel.setCellStrValue(8, 3, "√");
+			} else if (helpType.equals("2")) {
+				excel.setCellStrValue(8, 9, "√");
+			} else if (helpType.equals("3")) {
+				excel.setCellStrValue(8, 15, "√");
+			}
+			// excel.setCellStrValue(8, 0, "");
+			excel.setCellStrValue(9, 4, reasons);// 申请原因
+			filedisplay = URLEncoder.encode(filedisplay, "UTF-8");
+			response.addHeader("Content-Disposition", "attachment;filename="
+					+ filedisplay);
+			OutputStream output = response.getOutputStream();
+			excel.exportToNewFile(output);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 获取文件路径
+	 *
+	 * @return
+	 */
+	public static String getClassResources() {
+		String path = (String.valueOf(Thread.currentThread()
+				.getContextClassLoader().getResource("")))
+				.replaceAll("file:/", "").replaceAll("%20", " ").trim();
+		if (path.indexOf(":") != 1) {
+			path = File.separator + path;
+		}
+		return path;
+	}
+
+	/**
+	 * 更新后台会员帮扶信息
+	 *
+	 * @param model
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/updateMemberHelp", method = RequestMethod.POST)
+	@ResponseBody
+	public AjaxResult updateMemberHelp(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") String workYearName,
+			@RequestParam(required = false, defaultValue = "") String brithdayName,
+			MemberHelpDto memberHelpDto) {
+		memberHelpDto.setWorkYear(DateUtils.getDate(workYearName));
+		memberHelpDto.setBrithday(DateUtils.getDate(brithdayName));
+		MemberHelpModel memberHelp = new MemberHelpModel();
+		BeanUtils.copyProperties(memberHelpDto, memberHelp);
+		memberHelpService.updateByKey(memberHelp);
+		return new AjaxResult(ResponseCode.success.getCode(),
+				ResponseCode.success.getMsg(), ResponseCode.success.getMsg());
+	}
+}

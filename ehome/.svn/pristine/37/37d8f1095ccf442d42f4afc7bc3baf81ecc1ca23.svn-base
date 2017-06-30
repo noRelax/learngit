@@ -1,0 +1,80 @@
+<% include("/system/public/header.html",{title:'header'}){} %> <%
+layout("/system/public/aside.html",{title:'header'}){} %>
+
+
+<!-- BEGIN WRAPPER  -->
+<div class="editalbeWrap">
+	<section id="main-content">
+		<!-- BEGIN WRAPPER  -->
+		<section class="wrapper site-min-height">
+			<section class="panel">
+				<header class="panel-heading">
+					<span class="label label-primary">节点管理</span> <span
+						class="tools pull-right"> <a href="javascript:;"
+						class="fa fa-chevron-down"></a> <a href="javascript:;"
+						class="fa fa-times"></a>
+					</span>
+				</header>
+
+				<div class="panel-body">
+					<div class="modal-body">
+						<form name="orgainForm" action="addNode" method="post">
+								
+							<input
+							type="hidden" value="${obj.parent_id!}" id="parent_id" name="parent_id" /> 
+							
+							<input
+							type="hidden" value="${obj.id!}" id="id" name="id" /> 
+							
+							<div class="form-group">
+								<label for="orgain_name">机构名称:</label> <input type="text"
+									class="form-control" name="orgain_name" placeholder="机构名称"
+									value="${obj.orgain_name!}">
+							</div>
+							
+							<div class="form-group">
+								<label for="orgain_type">类型</label> <select name="orgain_type"
+									class="form-control input-sm m-bot15">
+									<option value=0 ${obj.orgain_type== 0?"selected=\"selected\""}>机构</option>
+									<option value=1 ${obj.orgain_type== 1?"selected=\"selected\""}>部门</option>
+									<option value=2 ${obj.orgain_type== 2?"selected=\"selected\""}>基层工会</option>
+								</select>
+							</div>
+							
+							<div class="form-group">
+								<label for="is_end_level">终节点</label> <select name="is_end_level"
+									class="form-control input-sm m-bot15">
+									<option value=1 ${obj.is_end_level== 1?"selected=\"selected\""}>是</option>
+									<option value=0 ${obj.is_end_level== 0?"selected=\"selected\""}>不是</option>
+								</select>
+							</div>
+
+							<div class="form-group">
+								<label for="sort">排序:</label> <input type="text"
+									class="form-control" name="sort" placeholder="排序从1开始"
+									value="${obj.sort!}">
+							</div>
+
+							<div class="form-group">
+								<label for="remark">备注:</label> <input type="text"
+									class="form-control" name="remark" placeholder="备注"
+									value="${obj.remark!}">
+							</div>
+
+							<div
+								style="margin: 0 auto; width: 100px; height: 100px; border: 0px;">
+								<input type="submit" name="submitBtn" value="保存"
+									class="btn btn-info"></input>
+							</div>
+						</form>
+					</div>
+				</div>
+			</section>
+		</section>
+		<!-- END WRAPPER  -->
+	</section>
+</div>
+<script type="text/javascript">
+</script>
+<!-- END MAIN CONTENT -->
+<% layout("/system/public/footer.html",{title:'header'}){} %>

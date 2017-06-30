@@ -1,0 +1,259 @@
+package com.ehome.cloud.marry.service.impl;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Resource;
+
+import org.activiti.editor.language.json.converter.util.CollectionUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.springframework.stereotype.Service;
+
+import redis.clients.jedis.Jedis;
+import tk.mybatis.mapper.entity.Condition;
+
+import com.ehome.cloud.marry.dto.GoldCoinDto;
+import com.ehome.cloud.marry.mapper.GoldCoinMapper;
+import com.ehome.cloud.marry.model.GoldCoinModel;
+import com.ehome.cloud.marry.model.GoldCoinRulesModel;
+import com.ehome.cloud.marry.model.MarryPhoto;
+import com.ehome.cloud.marry.service.IAppMarryPhotoService;
+import com.ehome.cloud.marry.service.IGoldCoinRulesService;
+import com.ehome.cloud.marry.service.IGoldCoinService;
+import com.ehome.cloud.sys.model.AppUserModel;
+import com.ehome.cloud.sys.service.IAppUserService;
+import com.ehome.core.frame.BaseService;
+import com.ehome.core.util.DateUtils;
+import com.ehome.core.util.StringUtils;
+import com.ehome.core.util.redis.JedisUtils;
+import com.github.pagehelper.PageHelper;
+
+/**
+ * @Title: IGoldCoinServiceImpl.java
+ * @Description: TODO
+ * @author hl@diandianwifi.com
+ * @date 2017年4月14日 上午10:34:04
+ * @version
+ */
+@Service("goldCoinService")
+public class GoldCoinServiceImpl extends BaseService<GoldCoinModel> implements
+		IGoldCoinService {
+
+	@Resource
+	public GoldCoinMapper goldCoinMapper;
+
+	@Resource
+	public IAppUserService appUserService;
+
+	@Resource
+	public IGoldCoinRulesService goldCoinRulesService;
+
+	@Resource
+	private IAppMarryPhotoService appMarryPhotoService;
+
+	@Override
+	public String getGoldCoinTotalNum(Integer appUserId) {
+		// 增加的金币总和
+		Integer increaseTotal = goldCoinMapper.queryTotalByDerectionAndId(
+				appUserId, 1);
+		// 减少的金币总和
+		Integer decreaseTotal = goldCoinMapper.queryTotalByDerectionAndId(
+				appUserId, 2);
+		if (decreaseTotal == null) {
+			decreaseTotal = 0;
+		}
+		if (increaseTotal == null) {
+			increaseTotal = 0;
+		}
+		return (increaseTotal - decreaseTotal) + "";
+	}
+
+	@Override
+	public String getAddGoldCoinTotalNum() {
+		Condition condition = new Condition(GoldCoinModel.class);
+		condition.createCriteria().andEqualTo("goldCoinsChangeDerection", 1);
+		List<GoldCoinModel> goldCoinModelList = this
+				.selectByCondition(condition);
+		Long addTotal = 0L;
+		for (GoldCoinModel goldCoinModel : goldCoinModelList) {
+			addTotal = addTotal + goldCoinModel.getGoldCoinsChangeNum();
+		}
+		return addTotal.toString();
+	}
+
+	@Override
+	public String getExpendGoldCoinTotalNum() {
+		Condition condition = new Condition(GoldCoinModel.class);
+		condition.createCriteria().andEqualTo("goldCoinsChangeDerection", 2);
+		List<GoldCoinModel> goldCoinModelList = this
+				.selectByCondition(condition);
+		Long addTotal = 0L;
+		for (GoldCoinModel goldCoinModel : goldCoinModelList) {
+			addTotal = addTotal + goldCoinModel.getGoldCoinsChangeNum();
+		}
+		return addTotal.toString();
+	}
+
+	@Override
+	public String getWaterTotalNum() {
+		return Integer.parseInt(this.getAddGoldCoinTotalNum())
+				+ Integer.parseInt(this.getExpendGoldCoinTotalNum()) + "";
+	}
+
+	@Override
+	public List<GoldCoinDto> selectPageByAppUserId(Integer appUserId,
+			Integer page, Integer rows) throws Exception {
+		PageHelper.startPage(page, rows, false);
+		return goldCoinMapper.selectPageByAppUserId(appUserId);
+	}
+
+	@Override
+	public Integer uploadPortraitAddGoldCoins(Integer appUserId) {
+		AppUserModel appUserModel = appUserService.selectByKey(appUserId);
+		if (StringUtils.isNotBlank(appUserModel.getPortrait())) {
+			return null;
+		} else {
+			return this.saveGoldCoinModel(1, 1, appUserId);
+		}
+	}
+
+	@Override
+	public Integer memberVerifiedAddGoldCoins(Integer appUserId) {
+
+		return this.saveGoldCoinModel(2, 1, appUserId);
+	}
+
+	@Override
+	public Integer completeInfoAddGoldCoins(Integer appUserId) {
+
+		return this.saveGoldCoinModel(3, 1, appUserId);
+
+	}
+
+	@Override
+	public Integer loveAtherAddGoldCoins(Integer currentAppUserId,
+			Integer beiLoveAppUserId) {
+		return this.jedisForTimeslimit("marry:love:login:id:",
+				beiLoveAppUserId, 4, 1);
+	}
+
+	@Override
+	public Map<String, Integer> thumpUpAddGoldCoins(Integer thumpUpAppUserId,
+			Integer photoId) {
+		Map<String, Integer> map = new HashMap<String, Integer>();
+		MarryPhoto marryPhoto = appMarryPhotoService.selectByKey(photoId);
+		Integer toAppUserId = marryPhoto.getAppUserId();
+		Integer thumpUpAppUserAddNum = 0; // 点赞人增加金币
+		Integer toAppUserAddNum = 0; // 点赞人增加金币
+
+		thumpUpAppUserAddNum = this.jedisForTimeslimit(
+				"marry:thumpUpAppUser:login:id:", thumpUpAppUserId, 6, 1);
+		map.put("thumpUpAppUserAddNum", thumpUpAppUserAddNum);
+
+		toAppUserAddNum = this.jedisForTimeslimit(
+				"marry:toThumpUpAppUser:login:id:", toAppUserId, 5, 1);
+		map.put("beiThumpUpAppUserAddNum", toAppUserAddNum);
+
+		return map;
+	}
+
+	@Override
+	public Map<String, Integer> commentAddGoldCoins(Integer commentAppUserId,
+			Integer photoId) {
+		Map<String, Integer> map = new HashMap<String, Integer>();
+		MarryPhoto marryPhoto = appMarryPhotoService.selectByKey(photoId);
+		Integer beiCommentAppUserId = marryPhoto.getAppUserId();
+		Integer commentAppUserAddNum = 0; // 评论人增加金币
+		Integer toAppUserAddNum = 0; // 被评论人增加金币
+
+		commentAppUserAddNum = this.jedisForTimeslimit(
+				"marry:commentAppUserId:login:id:", commentAppUserId, 8, 1);
+		map.put("commentAppUserAddNum", commentAppUserAddNum);
+		toAppUserAddNum = this.jedisForTimeslimit(
+				"marry:beiCommentAppUserId:login:id:", beiCommentAppUserId, 8,
+				1);
+		map.put("beiCommentAppUserAddNum", toAppUserAddNum);
+		return map;
+	}
+
+	private Integer jedisForTimeslimit(String jedisKey, Integer appUserId,
+			Integer goldCoinChangeType, Integer goldCoinChangeDerection) {
+		Jedis jedis = JedisUtils.getJedis();
+		Integer addNum = 0;
+		if (jedis.get(jedisKey + appUserId) == null) {
+
+			GoldCoinRulesModel coinRulesModel = goldCoinRulesService
+					.selectByKey(goldCoinChangeType);
+			int times = coinRulesModel.getDayLimit()
+					/ coinRulesModel.getGoldCoinChangeNum(); // 递减次数，每日金币增加次数上限！
+			jedis.set(jedisKey + appUserId, String.valueOf(times));
+			int restSecond = DateUtils.getRestMiao();
+			jedis.expire(jedisKey + appUserId, restSecond);
+
+			addNum = this.saveGoldCoinModel(goldCoinChangeType,
+					goldCoinChangeDerection, appUserId);
+
+		} else {
+			jedis.decr(jedisKey + appUserId);
+			Integer count = Integer.parseInt(jedis.get(jedisKey + appUserId));
+			if (count > 0) {
+				addNum = this.saveGoldCoinModel(goldCoinChangeType,
+						goldCoinChangeDerection, appUserId);
+			}
+		}
+		jedis.close();
+		return addNum;
+	}
+
+	/**
+	 * 保存一次金币明细
+	 * 
+	 * @param goldCoinsChangeType
+	 * @param setGoldCoinsChangeDerection
+	 * @param appUserId
+	 * @return
+	 */
+	private Integer saveGoldCoinModel(Integer goldCoinsChangeType,
+			Integer setGoldCoinsChangeDerection, Integer appUserId) {
+
+		GoldCoinModel coinModel = new GoldCoinModel();
+		coinModel.setAppUserId(appUserId);
+		coinModel.setGoldCoinsChangeType(goldCoinsChangeType);
+		coinModel.setGoldCoinsChangeDerection(setGoldCoinsChangeDerection);
+		coinModel.setChangeTime(new Date());
+		///coinModel.setSourceDevice(appUserService.selectByKey(appUserId).getSourceDevice());
+		Integer number = goldCoinRulesService.selectByKey(goldCoinsChangeType)
+				.getGoldCoinChangeNum();
+		coinModel.setGoldCoinsChangeNum(number);
+		this.save(coinModel);
+		return number;
+	}
+
+	/**
+	 *  
+	 * @see com.ehome.cloud.marry.service.IGoldCoinService#chatAtherExpendGoldCoins(java.lang.Integer, java.lang.Integer)
+	 **/
+	@Override
+	public Integer chatAtherExpendGoldCoins(String fromUserId, String toUserId) {
+		Integer number = 0;
+		number = this.saveGoldCoinModel(9, 2, Integer.valueOf(fromUserId));
+		//婚恋统计相互喜欢且成功私聊用户 第一次私聊时记录
+		if (JedisUtils.exist("mutual")) {
+			Set<String> mutualSet = JedisUtils.zRange("mutual", 0, -1);
+			if (CollectionUtils.isNotEmpty(mutualSet)) {
+				if (mutualSet.contains(fromUserId + "-" + toUserId)
+						|| mutualSet.contains(toUserId + "-" + fromUserId)) {
+					JedisUtils.zAdd(
+							"marry:mutual:privateChat",
+							new Date().getTime(),
+							(NumberUtils.toInt(fromUserId) + NumberUtils
+									.toInt(toUserId)) + "");
+				}
+			}
+		}
+		return number;
+	}
+}

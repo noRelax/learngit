@@ -1,0 +1,235 @@
+package com.ehome.cloud.sys.service.impl;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.stereotype.Service;
+
+import com.ehome.cloud.app.marry.service.IAppMarryService;
+import com.ehome.cloud.marry.model.MarryMemberModel;
+import com.ehome.cloud.marry.service.IGoldCoinService;
+import com.ehome.cloud.member.model.Member;
+import com.ehome.cloud.member.service.IMemberService;
+import com.ehome.cloud.sys.dto.AppUserDto;
+import com.ehome.cloud.sys.mapper.AppUserMapper;
+import com.ehome.cloud.sys.model.AppUserModel;
+import com.ehome.cloud.sys.service.IAppUserService;
+import com.ehome.core.frame.BaseService;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.util.HttpUtils;
+import com.ehome.core.util.MapUtils;
+import com.ehome.core.util.SpringPropertiesUtil;
+import com.ehome.core.util.StringUtil;
+import com.ehome.core.util.StringUtils;
+import com.github.pagehelper.PageHelper;
+
+/**
+ * app用户服务
+ * 
+ * @Title:AppUserServiceImpl
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年2月13日 上午10:43:51
+ * @version:
+ */
+@Service("appUserService")
+public class AppUserServiceImpl extends BaseService<AppUserModel> implements IAppUserService {
+
+	@Resource
+	private AppUserMapper appUserMapper;
+
+	@Resource
+	private IMemberService memberService;
+	
+	@Resource
+	private IAppMarryService appMarryService;
+	
+	@Resource
+    private IGoldCoinService goldCoinService;
+	
+	
+	@Override
+	public AppUserDto queryByLoginName(String userAccount) {
+		return appUserMapper.queryLoginAccount(userAccount);
+	}
+
+	/**
+	 * 
+	 * @param roleMap
+	 * @return
+	 */
+	@Override
+	public int saveAppRole(Map<String, Object> roleMap) {
+		return appUserMapper.saveAppRole(roleMap);
+	}
+
+	@Override
+	public List<Map<String, Object>> queryForList(String keyword, Integer blackTypeId, Integer start, Integer pageSize)
+			throws BusinessException {
+		PageHelper.startPage(start, pageSize, true);
+		List<Map<String, Object>> appUserList = appUserMapper.queryForList(keyword, blackTypeId);
+		return appUserList;
+	}
+
+	/**
+	 * 
+	 * @param app_user_id
+	 * @return
+	 */
+	@Override
+	public int deleteAppRole(Integer app_user_id) {
+		return appUserMapper.deleteAppRole(app_user_id);
+	}
+
+	/**
+	 * 
+	 * @param map
+	 * @return
+	 */
+	@Override
+	public int deleteCode(Map<String, Object> map) {
+		return appUserMapper.deleteCode(map);
+	}
+
+	/**
+	 * 
+	 * @param map
+	 * @return
+	 */
+	@Override
+	public int insertCode(Map<String, Object> map) {
+		return appUserMapper.insertCode(map);
+	}
+
+	/**
+	 * 
+	 * @param map
+	 * @return
+	 */
+	@Override
+	public List<Map<String, Object>> querySysUser(Map<String, String> map) {
+		return appUserMapper.querySysUser(map);
+	}
+
+	/**
+	 * 
+	 * @param map
+	 * @return
+	 */
+	@Override
+	public int insertSysUser(Map<String, String> map) {
+		return appUserMapper.insertSysUser(map);
+	}
+
+	/**
+	 * 
+	 * @param map
+	 * @return
+	 */
+	@Override
+	public int updateSysUser(Map<String, String> map) {
+		return appUserMapper.updateSysUser(map);
+	}
+
+	@Override
+	public void workForLogin(AppUserDto appUserModel, String imei) {
+		// 登录后更新用户登录状态
+		final Integer userId = appUserModel.getId();
+		if (null != appUserModel.getCurLoginTime())
+			appUserModel.setLastLoginTime(appUserModel.getCurLoginTime());// 非第一次登录则记录上次登录时间
+		appUserModel.setCurLoginTime(new Date());// 每次登录都记录本次登录时间
+		appUserModel.setImei(imei);
+		AppUserModel appUser = new AppUserModel();
+		BeanUtils.copyProperties(appUserModel, appUser);
+		this.updateNotNull(appUser);
+		if (null == appUserModel.getLastLoginTime()
+				&& appUserModel.getIsMember().intValue() == 1) {// 第一次登录的时候且是会员用户
+			// 异步更新会员激活状态
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					Member member = memberService
+							.queryMemberByAppUserId(userId);
+					if (null != member && member.getIsActive().intValue() == 0) {
+						member.setIsActive(1);
+						memberService.updateNotNull(member);
+					}
+				};
+			}).start();
+		}
+	}
+
+	
+	 /**
+	  * 
+	  * @param map
+	  * @return 
+	  */
+	@Override
+	public void updateUserInfo(Map<String, Object> map,AppUserModel appUserModel,MarryMemberModel marryMemberModel) {
+		String defaultValue = null;
+        String oldOsIp = StringUtil.obj2String(SpringPropertiesUtil.get("oldOsIp"), null);
+		if(StringUtils.isNotBlank(appUserModel.getPortrait())){
+		    goldCoinService.uploadPortraitAddGoldCoins(appUserModel.getId());
+		}
+		updateNotNull(appUserModel);//更新t_app_user个人信息
+		MarryMemberModel marryMemberModelTemp= appMarryService.selectOne(new MarryMemberModel(appUserModel.getId()));
+		if(marryMemberModelTemp==null){
+		    goldCoinService.completeInfoAddGoldCoins(appUserModel.getId());
+			appMarryService.save(marryMemberModel);
+		}else{
+			marryMemberModel.setId(marryMemberModelTemp.getId());
+			appMarryService.updateNotNull(marryMemberModel);//更新婚恋信息
+		}
+		appMarryService.insertInterests(map);//插入兴趣爱好表
+		
+		Map<String,String> sysMap = new HashMap<String, String>();
+		sysMap.put("nickname", MapUtils.getString(map, "nick_name", defaultValue));
+		if(MapUtils.getString(map, "sex", defaultValue)!=null && MapUtils.getString(map, "sex", defaultValue).equals("2")){sysMap.put("sex","0");}
+		sysMap.put("cityId", MapUtils.getString(map, "city", defaultValue));
+		sysMap.put("cityName", MapUtils.getString(map, "cityName", defaultValue));
+		sysMap.put("signature", MapUtils.getString(map, "signature", defaultValue));
+		sysMap.put("userId", MapUtils.getString(map, "user_account",defaultValue));
+		sysMap.put("portrait", MapUtils.getString(map, "portrait",defaultValue));
+//		updateSysUser(sysMap);//更新sys_user表
+        HttpUtils.URLGet("http://"+oldOsIp+":8080/ehome/appMyhome/updateUserinfo.do", sysMap, "UTF-8");
+//		if(StringUtils.isNoneBlank(result)){
+//			HashMap<String,String> resultMap = JSON.parseObject(result, new TypeReference<HashMap<String,String>>() {});
+//			System.out.println(resultMap);
+//			if(!"2000000".equals(MapUtils.getString(resultMap, "status", defaultValue))){
+//				//throw new Exception("调用更新旧库接口出错");
+//			}
+//		}
+//		System.out.println("syso:"+result);
+	}
+
+	/**
+	 * 更新状态
+	 */
+	@Override
+	public int updateStatus(String status, String[] ids) {
+		// TODO Auto-generated method stub
+		return appUserMapper.updateStatus(status, ids);
+	}
+
+	/**
+	 * 查询前端用户信息
+	 */
+	@Override
+	public Map<String, Object> queryInfo(int id) {
+		// TODO Auto-generated method stub
+		return appUserMapper.queryInfo(id);
+	}
+
+	@Override
+	public int updateBlackType(int id, int blackType) {
+		// TODO Auto-generated method stub
+		return appUserMapper.updateBlackType(id, blackType);
+	}
+
+}

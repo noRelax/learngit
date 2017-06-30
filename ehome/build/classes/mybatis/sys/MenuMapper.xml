@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.sys.mapper.MenuMapper">
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.sys.model.MenuModel">
+		<id column="Id" property="id" jdbcType="INTEGER" />
+		<result column="menu_code" property="menuCode" jdbcType="VARCHAR" />
+		<result column="menu_name" property="menuName"
+			jdbcType="VARCHAR" />
+		<result column="parent_id" property="parentId" jdbcType="INTEGER" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="menu_url" property="menuUrl" jdbcType="VARCHAR" />
+		<result column="is_end_level" property="isEndLevel" jdbcType="INTEGER" />
+		<result column="level_num" property="levelNum" jdbcType="INTEGER" />
+		<result column="is_button" property="isButton" />
+		<result column="status" property="status" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	
+	<sql id="commonSQL">
+         SELECT u.id,u.menu_code,u.menu_name,u.parent_id,u.sort,u.menu_url,
+         u.is_end_level,u.level_num,u.is_button,u.status,u.create_time
+	</sql>
+	
+	<insert id="insertMenu" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO t_menu (
+			menu_code,
+			menu_name,
+			parent_id,
+			sort,
+			menu_url,
+			is_end_level,
+			level_num,
+			is_button,
+			status,
+			create_time
+		) VALUES (
+			#{menuCode},
+			#{menuName},
+			#{parentId},
+			#{sort},
+			#{menuUrl},
+			#{isEndLevel},
+			#{levelNum},
+			#{isButton},
+			#{status},
+			now()
+		)
+	</insert>
+	
+	<update id="updateMenu">
+		UPDATE t_menu SET
+			menu_code = #{menuCode},
+			menu_name = #{menuName},
+			parent_id = #{parentId},
+			sort = #{sort},
+			menu_url = #{menuUrl},
+			is_end_level = #{isEndLevel},
+			level_num = #{levelNum},
+			is_button = #{isButton},
+			status = #{status},
+			create_time = now()
+		WHERE 
+			id = #{id}
+	</update>
+	
+	<delete id="deleteMenuById" parameterType="java.lang.Integer">
+	    DELETE FROM t_menu WHERE id = #{id}
+	</delete>
+	
+	<select id="queryMenuList" resultMap="BaseResultMap">
+		 <include refid="commonSQL"></include>
+	     FROM t_menu u 
+	     <where>
+	         <if test="keyword!=null and keyword!=''">
+	             u.menu_name != #{keyword}
+	         </if>
+	     </where>
+	</select>
+	
+	<select id="queryAuthPermissByRoleId" resultMap="BaseResultMap">
+	    SELECT distinct m.* FROM t_role_menu t JOIN t_menu m ON t.menu_id = m.id
+	    <where>
+	    <if test="rolesId != null and rolesId.size() != 0">
+                AND t.role_id IN 
+     	        <foreach collection="rolesId" item="item" index="index" open="("
+               separator="," close=")">
+                   #{item}
+               </foreach>
+	    </if>
+	    </where>
+	</select>
+	
+	<select id="queryListAllParentMenu" resultType="java.util.HashMap">
+		select * from t_menu 
+		where parent_id = 0 order by sort asc 
+	</select>
+	<select id="queryListAllParentMenuByRole" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+	   SELECT DISTINCT
+		    m.id, m.menu_code, m.menu_name, m.parent_id, m.sort, m.menu_url, m.is_end_level, m.level_num, m.is_button, m.status, m.create_time, m.remark
+		FROM
+		    t_role_menu r
+		JOIN t_menu m ON m.id = r.menu_id
+		WHERE
+		     r.role_id in 
+		    <foreach item="item" collection="list" open="(" separator="," close=")">  
+		          #{item}
+		    </foreach>  
+		AND m.parent_id = 0
+		ORDER BY
+		    m.sort ASC
+	</select>
+	
+	<select id="queryListSubMenuByParentId" parameterType="java.lang.Integer" resultType="java.util.HashMap">
+		select  * from t_menu
+		where parent_id = #{parentId} order by sort asc 
+	</select>
+	
+	<select id="queryListSubMenuByParentIdByRole" resultType="java.util.HashMap" parameterType="java.util.HashMap">
+		 SELECT DISTINCT
+            m.id, m.menu_code, m.menu_name, m.parent_id, m.sort, m.menu_url, m.is_end_level, m.level_num, m.is_button, m.status, m.create_time, m.remark
+        FROM
+            t_role_menu r
+        JOIN t_menu m ON m.id = r.menu_id
+        WHERE
+             r.role_id in 
+            <foreach item="item" collection="list" open="(" separator="," close=")">  
+                  #{item}
+            </foreach>
+        AND m.parent_id = #{parentId}
+        ORDER BY
+            m.sort ASC
+	</select>
+	
+	<select id="queryListAllMenu"  resultType="java.util.HashMap">
+	     select id,menu_code,menu_name name,parent_id,sort,menu_url,is_end_level,level_num,is_button,status
+	     from t_menu 
+     where  FIND_IN_SET(id, getAuthChildLst(1)) order by sort asc
+	</select>
+	
+	<delete id="deleteMenusByRoleId" parameterType="java.lang.Integer">
+	    DELETE FROM t_role_menu WHERE role_id = #{roleId}
+	</delete>
+	
+	<insert id="saveMenus"  parameterType="java.util.HashMap">
+		insert into t_role_menu (role_id,menu_id)   
+ 		   values
+		<foreach item="item" collection="list" index="index" separator=",">  
+	      (#{item.role_id},#{item.menu_id})    
+		</foreach>   
+	</insert>  
+	
+	<select id="queryTreelist"  resultType="java.util.HashMap">
+	     select id,menu_code,menu_name name,parent_id pId,sort,is_end_level endLeve,remark,is_button type,level_num,status
+	     from t_menu 
+     where  FIND_IN_SET(id, getMenuChildList(0)) order by sort asc
+	</select>
+	
+	<!-- 查询子节点-->
+	<select id="getChilds" resultType="java.util.HashMap" parameterType="java.lang.String">
+		select 
+				a.id,
+				a.parent_id pId,
+				a.menu_name name,
+				a.menu_code code,
+				a.is_button type,
+				a.is_end_level endLeve,
+				a.remark,
+				a.sort orderby,
+				a.menu_url,
+				a.level_num,
+				a.status
+		from t_menu a
+		where a.parent_id=#{pid} 
+		order by a.sort asc;
+	</select>
+	
+	<insert id="insertMenuByMap"  parameterType="java.util.HashMap" 
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO t_menu (
+		   	menu_code,menu_name,parent_id,sort,menu_url,is_end_level,level_num,is_button,status,create_time,remark
+		) VALUES (
+		    #{menu_code},#{menu_name},#{parent_id},#{sort},#{menu_url},#{is_end_level},#{level_num},#{is_button},0,now(),#{remark}
+		)
+	</insert>
+	
+	<update id="updateMenuByMap" parameterType="java.util.HashMap">
+		update t_menu set 
+		menu_code=#{menu_code},
+		menu_name=#{menu_name},
+		parent_id=#{parent_id},
+		sort=#{sort},
+		menu_url=#{menu_url},
+		is_end_level=#{is_end_level},
+		level_num=#{level_num},
+		is_button=#{is_button},
+		status=#{status},
+		remark=#{remark}
+		WHERE 
+		id = #{id}
+	</update>
+
+	
+	<select id="queryByIdReturnMap" resultType="java.util.HashMap" parameterType="java.lang.Integer">
+		select 
+				a.id,
+				a.parent_id,
+				a.menu_name,
+				a.menu_code,
+				a.sort,
+				a.menu_url,
+				a.is_end_level,
+				a.is_button,
+				a.level_num,
+				a.is_button,
+				a.status,
+				a.remark 
+		from t_menu a
+		where a.id=#{id} 
+		
+	</select>
+	
+	
+	
+	
+	
+</mapper>

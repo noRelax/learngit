@@ -1,0 +1,259 @@
+<% include("/system/public/header.html",{title:'header'}){} %> <%
+layout("/system/public/aside.html",{title:'header'}){} %>
+<script type="text/javascript"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="http://cdn.static.runoob.com/libs/bootstrap/3.3.7/css/bootstrap.min.css">
+<link rel="stylesheet" href="${ctxPath}/static/ui/xq-mirror/css/mirror.css"  type="text/css" />
+<!-- BEGIN WRAPPER  -->
+<div class="editalbeWrap">
+	<section id="main-content">
+		<!-- BEGIN WRAPPER  -->
+		<section class="wrapper site-min-height">
+			<section class="panel">
+				<header class="panel-heading">
+					<span class="label label-primary">照片管理</span> <span
+						class="tools pull-right"> <a href="javascript:;"
+						class="fa fa-chevron-down"></a> <a href="javascript:;"
+						class="fa fa-times"></a>
+					</span>
+				</header>
+				<div class="panel-body">
+					<div class="adv-table editable-table ">
+						<div class="clearfix">
+							<form class="form-inline" role="form" name="searchForm">
+							    <input type="hidden" name="uid" value="${uid}"/>
+							    <input type="hidden" name="fieldName"/>
+                                <input type="hidden" name="fieldSort"/>
+								<div class="form-group">
+										<select class="form-control " name="searchType">
+											<option value="1">UID</option>
+											<option value="2">想法</option>
+										</select>
+								</div>
+								<div class="form-group">
+									<input type="text" class="form-control" name="keyword"
+										placeholder="请输入关键字">
+								</div>
+								<div class="form-group">
+										<select class="form-control " name="isRecommended">
+											<option value="">是否推荐</option>
+											<option value="0">否</option>
+											<option value="1">是</option>
+										</select>
+								</div>
+								<div class="form-group">
+										<select class="form-control " name="isShielding">
+											<option value="">是否屏蔽</option>
+											<option value="0">否</option>
+											<option value="1">是</option>
+										</select>
+								</div>
+								<div class="form-group">
+										<select class="form-control " name="selectRequire">
+											<option value="0">选择需求</option>
+										</select>
+								</div>
+								<div class="layui-input-inline"  style="padding:0 10px;">
+									<span>&nbsp;发布时间</span>
+								</div>
+								<div class="form-group"  style="width:150px">
+									<input name="starttime" id="startPublictTime" placeholder="开始时间" readonly onclick="layui.laydate({elem: this, istime: true, format: 'YYYY-MM-DD hh:mm:ss'})"
+									class="layui-input" >
+								</div>
+								<div class="layui-input-inline"  style="padding:0 10px;">
+									<span>至</span>
+								</div>
+								<div class="form-group"  style="width:150px">
+									<input name="endtime" id="endPublicTime" placeholder="结束时间" readonly onclick="layui.laydate({elem: this, istime: true, format: 'YYYY-MM-DD hh:mm:ss'})"
+									class="layui-input" >
+								</div>
+								<button type="submit" name="search" class="btn btn-success">检索</button>
+								<button type="submit" name="reset" class="btn btn-success">重置检索</button>
+								<div class="btn-group">
+									<a href="javascript:;" name="set"
+										class="btn btn-success green"> 设为屏蔽 <i
+										class="fa fa-plus"></i>
+									</a>
+								</div>
+								<div class="btn-group">
+								<a href="javascript:;" name="cancel"
+									class="btn btn-success green"> 取消屏蔽 <i class="fa fa-plus"></i>
+								</a>
+							</div>
+							</form>
+							</br>
+						</div>
+						<div class="space15"></div>
+						<table class="table table-striped table-hover table-bordered"
+							id="life-tableList">
+							<thead>
+								<tr>
+                                    <th width="5%" class="center" onclick="selectAll()">
+                                      <label><input type="checkbox" id="zcheckbox" /><span class="lbl"></span></label>
+                                    </th>
+									<th width="5%" class="hidden-phone">序号</th>
+									<th width="5%" class="hidden-phone">照片</th>
+									<th width="6%" class="hidden-phone">想法</th>
+									<th width="5%" class="hidden-phone">位置</th>
+									<th width="10%" class="hidden-phone">UID</th>
+									<th width="10%" class="hidden-phone">点赞
+									   <a href='javascript:;' name="thumb_up" data-field="t.thumb_up_num" data-sort="DESC">
+                                          <span class="glyphicon glyphicon-chevron-up"></span>
+                                       </a>   
+                                       <a href='javascript:;' name="thumb_down" data-field="t.thumb_up_num" data-sort="ASC">
+                                          <span class="glyphicon glyphicon-chevron-down" style="margin-top:5px"></span>
+                                       </a>
+									</th>
+									<th width="10%" class="hidden-phone">评论
+									   <a href='javascript:;' name="comment_up" data-field="t.comment_num" data-sort="DESC">
+                                          <span class="glyphicon glyphicon-chevron-up"></span>
+                                       </a>   
+                                       <a href='javascript:;' name="comment_down" data-field="t.comment_num" data-sort="ASC">
+                                          <span class="glyphicon glyphicon-chevron-down"></span>
+                                       </a>
+									</th>
+									<th width="10%" class="hidden-phone">发布时间
+									   <a href='javascript:;' name="time_up" data-field="t.public_time" data-sort="DESC">
+                                          <span class="glyphicon glyphicon-chevron-up"></span>
+                                       </a>   
+                                       <a href='javascript:;' name="time_down" data-field="t.public_time" data-sort="ASC">
+                                          <span class="glyphicon glyphicon-chevron-down"></span>
+                                       </a>
+									</th>
+									<th width="10%" class="hidden-phone">推荐</th>
+									<th width="10%" class="hidden-phone">屏蔽</th>
+									<th width="14%" class="hidden-phone">操作</th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</section>
+		</section>
+		<!-- END WRAPPER  -->
+	</section>
+</div>
+
+<script src="${ctxPath}/static/system/olive/all/js/jquery.form.js"></script>
+<script src="${ctxPath}/static/system/olive/all/js/jquery.validate.min.js"></script>
+<script src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script>
+<script src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script>
+<script src="${ctxPath}/static/ui/tips/jquery.tips.js"></script>
+<script src="${ctxPath}/static/ui/xq-mirror/jquery.imagezoom.min.js"></script>
+<script src="${ctxPath}/static/web/marry/js/index.js"></script>
+<script type="text/javascript">
+jQuery(document).ready(function() {
+	    var require = jQuery('select[name=selectRequire]');
+	    var dictRequire = '${dictRequire}';
+		if (dictRequire != null) {
+			dictRequire = jQuery.parseJSON(dictRequire);
+			for ( var x in dictRequire)
+				require.append("<option value='"+dictRequire[x].dictKey+"'>"
+								+ dictRequire[x].dictValue
+								+ "</option>");
+		}
+		layui.use(['layer', 'laydate'], function() {
+			var layer = layui.layer;
+			jQuery('a[name=cancel]').on('click',function(e) {
+				e.preventDefault();
+				var idList = new Array();
+				jQuery('input[class=checkchild]').each(function(index,element) {
+						if (jQuery(this).is(':checked')) {
+							var pkId = Number(jQuery(this).val());
+								idList.push(pkId);
+						}
+				});
+				if (idList.length <= 0) {
+					layer.alert('请先选择记录',{title : '操作提示',icon : 2});
+				} else {
+					parent.layer.open({content : '确定要取消屏蔽?',
+						btn : ['是' ],
+						yes : function(index,layero) {
+							jQuery.post('../../marry/photo/shielding',{
+								'photoIds' : idList,
+								"isShielding" : 0
+							},function(data) {
+								if (data.status == 10000) {
+									parent.layer.alert(data.data,{title : '操作提示',icon : 1,time : 2000,
+										end : function() {parent.layer.closeAll();window.location.reload();}});
+								} else {layer.alert(data.data,{title : '操作提示',icon : 2});
+								}
+							},'json');
+					    },cancel : function() {}
+					});
+				}
+			});
+			
+			jQuery('a[name=set]').on('click',function(e) {
+				e.preventDefault();
+				var idList = new Array();
+				jQuery('input[class=checkchild]').each(function(index,element) {
+						if (jQuery(this).is(':checked')) {
+							var pkId = Number(jQuery(this).val());
+								idList.push(pkId);
+						}
+				});
+				if (idList.length <= 0) {
+					layer.alert('请先选择记录',{title : '操作提示',icon : 2});
+				} else {
+					parent.layer.open({content : '确定要屏蔽?',
+						btn : ['是' ],
+						yes : function(index,layero) {
+							jQuery.post('../../marry/photo/shielding',{
+								'photoIds' : idList,
+								"isShielding" : 1
+							},function(data) {
+								if (data.status == 10000) {
+									parent.layer.alert(data.data,{title : '操作提示',icon : 1,time : 2000,
+										end : function() {parent.layer.closeAll();window.location.reload();}});
+								} else {layer.alert(data.data,{title : '操作提示',icon : 2});
+								}
+							},'json');
+					    },cancel : function() {}
+					});
+				}
+			});
+		});
+		marryPhotoTable.init();//初始化表格
+	});
+//全选 （是/否）
+function selectAll(){
+     var checklist = document.getElementsByName ("key");
+       if(document.getElementById("zcheckbox").checked){
+       for(var i=0;i<checklist.length;i++){
+          checklist[i].checked = 1;
+       } 
+     }else{
+      for(var j=0;j<checklist.length;j++){
+         checklist[j].checked = 0;
+      }
+     }
+}
+function mouseOver(obj,data){
+    
+    $(obj).tips({
+        side:3,
+        msg:data,
+        bg:'#AE81FF',
+        time:1
+    });
+    
+    $(obj).focus();
+}
+
+function jqzoom(obj){
+	$(obj).imagezoom();
+}
+
+function errorImg(obj){
+   obj.src="../../static/ui/xq-mirror/image/u4952.png";
+   obj.rel="../../static/ui/xq-mirror/image/u4952.png";
+   obj.onmousemove='';
+}
+	
+</script>
+<!-- END MAIN CONTENT -->
+
+<% layout("/system/public/footer.html",{title:'header'}){} %>

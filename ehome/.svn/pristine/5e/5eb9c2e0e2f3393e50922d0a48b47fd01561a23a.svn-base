@@ -1,0 +1,8 @@
+
+package com.ehome.cloud.demo.mapper;
+
+import com.ehome.cloud.demo.model.UserInfo;
+import com.ehome.core.frame.MyMapper;
+
+public interface UserInfoMapper extends MyMapper<UserInfo> {
+}

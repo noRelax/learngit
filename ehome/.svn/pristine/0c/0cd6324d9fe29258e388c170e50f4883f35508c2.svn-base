@@ -1,0 +1,282 @@
+package com.ehome.cloud.marry.controller;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.annotation.Resource;
+
+import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.apache.shiro.authz.annotation.RequiresUser;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.NativeWebRequest;
+
+import tk.mybatis.mapper.entity.Condition;
+
+import com.alibaba.fastjson.JSON;
+import com.ehome.cloud.marry.dto.MarryPhotoDto;
+import com.ehome.cloud.marry.dto.MarryPhotoLogDto;
+import com.ehome.cloud.marry.model.MarryPhoto;
+import com.ehome.cloud.marry.model.MarryPhotoLog;
+import com.ehome.cloud.marry.model.MarryShielding;
+import com.ehome.cloud.marry.service.IMarryPhotoLogService;
+import com.ehome.cloud.marry.service.IMarryPhotoService;
+import com.ehome.cloud.marry.service.IMarryShieldingService;
+import com.ehome.cloud.sys.dto.AppUserDto;
+import com.ehome.cloud.sys.model.AppUserModel;
+import com.ehome.cloud.sys.model.Dictionary;
+import com.ehome.cloud.sys.service.IAppUserService;
+import com.ehome.cloud.sys.service.IDictionaryService;
+import com.ehome.core.dict.ResponseCode;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.frame.Pagination;
+import com.ehome.core.model.AjaxResult;
+import com.ehome.core.util.CollectionUtils;
+import com.ehome.core.util.DateUtils;
+import com.ehome.core.util.DictoryCodeUtils;
+import com.ehome.core.util.EntityUtils;
+import com.ehome.core.util.NumberUtils;
+import com.github.pagehelper.PageInfo;
+
+/**
+ * 照片管理
+ * 
+ * @Title:MarryPhotoController
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年4月17日 上午11:08:24
+ * @version:
+ */
+@Controller
+@RequestMapping(value = "/marry/photo")
+public class MarryPhotoController extends BaseController {
+
+	@Resource
+	private IMarryPhotoService marryPhotoService;
+
+	@Resource
+	private IDictionaryService dictionaryService;
+
+	@Resource
+	private IMarryPhotoLogService marryPhotoLogService;
+
+	@Resource
+	private IAppUserService appUserService;
+
+	@Resource
+	private IMarryShieldingService marryShieldingService;
+
+	/**
+	 * 首页
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/index")
+	@RequiresUser
+	@RequiresPermissions("marry:photo:list")
+	public String index(Model model, NativeWebRequest request) {
+		List<Dictionary> dictRequire = dictionaryService
+				.queryByCode("CODE_SELECT_REQUIRE");
+		if (CollectionUtils.isNotEmpty(dictRequire))
+			model.addAttribute("dictRequire", JSON.toJSON(dictRequire));
+		return "/marry/list.html";
+	}
+
+	/**
+	 * 照片管理
+	 * 
+	 * @param model
+	 * @param request
+	 * @param marryPhotoDto
+	 * @param sEcho
+	 * @param page
+	 * @param rows
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/list", method = RequestMethod.POST)
+	@RequiresUser
+	@RequiresPermissions("marry:photo:list")
+	@ResponseBody
+	public AjaxResult list(Model model, NativeWebRequest request,
+			MarryPhotoDto marryPhotoDto,
+			@RequestParam(required = false, defaultValue = "") Integer sEcho,
+			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false, defaultValue = "10") int rows)
+			throws BusinessException {
+		// 当前登录者ID
+		// Integer userId = this.getCurrentUserId();
+		List<MarryPhotoDto> list = marryPhotoService.queryForList(
+				marryPhotoDto, page, rows);
+		DictoryCodeUtils.renderList(list);
+		PageInfo<MarryPhotoDto> pageInfo = new PageInfo<>(list);
+		Pagination<MarryPhotoDto> pagination = new Pagination<>();
+		pagination.setData(pageInfo.getList());
+		pagination.setsEcho(sEcho);
+		pagination.setiTotalDisplayRecords((int) pageInfo.getTotal());
+		pagination.setiTotalRecords((int) pageInfo.getTotal());
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+	}
+
+	/**
+	 * 设为屏蔽/取消屏蔽
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/shielding", method = RequestMethod.POST)
+	@RequiresUser
+	@RequiresPermissions("marry:photo:shielding")
+	@ResponseBody
+	public AjaxResult shielding(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer isShielding,
+			@RequestParam(name = "photoIds[]", required = false) Integer[] photoIds)
+			throws BusinessException {
+		List<Integer> photoIdsList = new ArrayList<>();
+		if (!CollectionUtils.isEmpty(photoIds)) {
+			photoIdsList = CollectionUtils.removeNull(new ArrayList<>(Arrays
+					.asList(photoIds)));
+			marryPhotoService.updateShielding(isShielding, photoIdsList);
+		}
+		return new AjaxResult(ResponseCode.success.getCode(),
+				ResponseCode.success.getMsg(), ResponseCode.success.getMsg());
+	}
+
+	/**
+	 * 编辑页面
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/edit", method = RequestMethod.GET)
+	@RequiresUser
+	@RequiresPermissions("marry:photo:edit")
+	public String edit(Model model, NativeWebRequest request)
+			throws BusinessException {
+		Integer id = NumberUtils.toInt(request.getParameter("id"));
+		// 照片实体
+		MarryPhoto photo = marryPhotoService.selectByKey(id);
+		MarryPhotoDto dto = EntityUtils.convert(photo, MarryPhotoDto.class);
+		// 黑名单
+		List<Dictionary> dictblacklist = dictionaryService
+				.queryByCode("CODE_BLACKLIST");
+		if (CollectionUtils.isNotEmpty(dictblacklist))
+			model.addAttribute("dictblacklist", JSON.toJSON(dictblacklist));
+		// 举报次数
+		Condition con = new Condition(MarryShielding.class);
+		con.createCriteria().andEqualTo("marryUserId", photo.getAppUserId())
+				.andEqualTo("operatorType", 1);
+		List<MarryShielding> list = marryShieldingService
+				.selectByCondition(con);
+		if (CollectionUtils.isNotEmpty(list)) {
+			model.addAttribute("shieldingNum", list.size());
+		} else {
+			model.addAttribute("shieldingNum", 0);
+		}
+		// 日志信息
+		Condition logCon = new Condition(MarryPhotoLog.class);
+		logCon.createCriteria().andEqualTo("photoId", id);
+		List<MarryPhotoLog> logList = marryPhotoLogService
+				.selectByCondition(logCon);
+		if (CollectionUtils.isNotEmpty(logList)) {
+			// 日志列表
+			List<MarryPhotoLogDto> logDtoList = EntityUtils.entityConvertDto(
+					logList, MarryPhotoLogDto.class);
+			model.addAttribute("logDtoList", JSON.toJSONString(logDtoList));
+			// 是否推荐
+			List<MarryPhotoLogDto> recomList = logDtoList
+					.stream()
+					.filter(p -> !NumberUtils.isNull(p.getIsRecommended()))
+					.sorted((r1, r2) -> r2.getCreateTime().compareTo(
+							r1.getCreateTime())).collect(Collectors.toList());
+			if (CollectionUtils.isNotEmpty(recomList)) {
+				Optional<MarryPhotoLogDto> optional = recomList.stream()
+						.findFirst();
+				if (optional.isPresent())
+					model.addAttribute("recommendedDto", optional.get());
+			}
+			// 是否屏蔽
+			List<MarryPhotoLogDto> shieldList = logDtoList
+					.stream()
+					.filter(p -> !NumberUtils.isNull(p.getIsShielding()))
+					.sorted((s1, s2) -> s2.getCreateTime().compareTo(
+							s1.getCreateTime())).collect(Collectors.toList());
+			if (CollectionUtils.isNotEmpty(shieldList)) {
+				Optional<MarryPhotoLogDto> optional = shieldList.stream()
+						.findFirst();
+				if (optional.isPresent())
+					model.addAttribute("shieldingDto", optional.get());
+			}
+		} else {
+			model.addAttribute("logDtoList", Collections.EMPTY_LIST);
+		}
+		// 用户信息
+		AppUserModel appUser = appUserService.selectByKey(dto.getAppUserId());
+		AppUserDto appUserDto = EntityUtils.convert(appUser, AppUserDto.class);
+		model.addAttribute("dto", dto);
+		model.addAttribute("appUserDto", appUserDto);
+		return "/marry/edit_new.html";
+	}
+
+	/**
+	 * 新增事件
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/addEvent", method = RequestMethod.POST)
+	@RequiresUser
+	@ResponseBody
+	public AjaxResult addEvent(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer blacklist,
+			@RequestParam(required = false, defaultValue = "") Integer photoId,
+			@RequestParam(required = false, defaultValue = "") Integer isShielding,
+			@RequestParam(required = false, defaultValue = "") Integer isRecommended,
+			@RequestParam(required = false, defaultValue = "") String shieldingReason,
+			@RequestParam(required = false, defaultValue = "") String startDate,
+			@RequestParam(required = false, defaultValue = "") String endDate)
+			throws BusinessException {
+		Integer userId = this.getCurrentUserId();
+		MarryPhotoLogDto marryPhotoLogDto = new MarryPhotoLogDto();
+		marryPhotoLogDto.setPhotoId(photoId);
+		marryPhotoLogDto.setIsShielding(isShielding);
+		marryPhotoLogDto.setIsRecommended(isRecommended);
+		marryPhotoLogDto.setShieldingReason(shieldingReason);
+		marryPhotoLogDto.setStartDate(DateUtils.getDate(startDate));
+		marryPhotoLogDto.setEndDate(DateUtils.getDate(endDate));
+		marryPhotoService.saveEvent(userId, blacklist, marryPhotoLogDto);
+		return new AjaxResult(ResponseCode.success.getCode(), "",
+				ResponseCode.success.getMsg());
+	}
+
+	// @RequestMapping(value = "/test")
+	// public void test(Model model, NativeWebRequest request) throws Exception
+	// {
+	// marryPhotoService.test(22);
+	// RetryUtils.retry(3,()-> {
+	// marryPhotoService.test(22);
+	// });
+	// }
+
+}

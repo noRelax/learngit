@@ -1,0 +1,10 @@
+/*-------------------------------------
+version:	1.0
+author:		zsh
+-------------------------------------*/
+
+td {text-align: center}
+#editable-sample td .update,#editable-sample td .delete{
+	display: inline-block;
+	margin: 5px 0;
+}

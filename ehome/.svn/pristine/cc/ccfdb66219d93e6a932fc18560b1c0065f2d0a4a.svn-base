@@ -1,0 +1,88 @@
+package com.ehome.cloud.sys.mapper;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Param;
+
+import com.ehome.cloud.sys.model.UserModel;
+import com.ehome.core.frame.MyMapper;
+
+/**
+ * 用户管理Mapper
+ * 
+ * @Title:UserMapper
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年1月20日 上午10:46:05
+ * @version:
+ */
+public interface UserMapper extends MyMapper<UserModel> {
+
+	int insertUser(UserModel userModel);
+
+	int updateUser(UserModel userModel);
+
+	int deleteUserById(@Param("id") Integer id);
+
+	List<UserModel> queryForList(@Param("userName") String userName,
+			@Param("roleName") String roleName,
+			@Param("orgName") String orgName, @Param("deptId") Integer deptId,
+			@Param("userId") Integer userId);
+
+	UserModel queryByLoginName(@Param("loginName") String loginName);
+
+	UserModel queryById(@Param("id") Integer id);
+
+	UserModel checkUserAndPassWord(@Param("loginName") String loginName,
+			@Param("password") String password);
+
+	int updateStatus(@Param("status") Integer status, @Param("id") Integer id);
+
+	int updatePassword(@Param("id") Integer id,
+			@Param("userPassword") String userPassword,
+			@Param("salt") String salt);
+
+	void insertMember(@Param("groupId") Integer groupId,
+			@Param("List") Integer[] list);
+
+	List<UserModel> queryMemberList(
+			@Param("userIdList") List<Integer> userIdList,
+			@Param("groupId") Integer groupId);
+
+	void insertAppMember(@Param("groupId") Integer groupId,
+			@Param("List") Integer[] List);
+
+	List<UserModel> queryAppMemberList(
+			@Param("userIdList") List<Integer> userIdList,
+			@Param("groupId") Integer groupId);
+
+	void insertAppMembers(@Param("groupId") Integer groupId,
+			@Param("USER_IDS") Integer[] USER_IDS);
+
+	void insertMembers(@Param("groupId") Integer groupId,
+			@Param("USER_IDS") Integer[] USER_IDS);
+
+	List<UserModel> queryForUserGroupList(@Param("userName") String userName);
+
+	List<UserModel> queryHTMemberList(
+			@Param("userIdList") List<Integer> userIdList,
+			@Param("userName") String userName,
+			@Param("groupId") Integer groupId);
+
+	List<UserModel> queryQTMemberList(
+			@Param("userIdList") List<Integer> userIdList,
+			@Param("userName") String userName,
+			@Param("groupId") Integer groupId);
+
+	UserModel selectById(@Param("userId") Integer userId);
+
+	List<String> selectByBaseUnionId(@Param("baseUnionId") Integer baseUnionId);
+
+	int seletctUpperUnionId(@Param("baseUnionId") Integer baseUnionId);
+
+	List<String> selectUserByDeptId(@Param("deptIdList") List<String> deptIdList);
+
+	Integer selectByDeptId(@Param("id") Integer id);
+
+	Integer selectSuperUserId(@Param("deptId") Integer deptId);
+}

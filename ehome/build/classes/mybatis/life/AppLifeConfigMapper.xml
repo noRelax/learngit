@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.life.mapper.AppLifeConfigMapper">
+
+	<!-- 根据城市ID查询服务列表-->
+	<select id="queryLifeConfigByCityId" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		SELECT
+			c.city_id,
+			c.province_id,
+			a.area_name AS city_name,
+			t.id AS life_config_pid,
+			t.parent_id,
+			t.icon,
+			t.life_name,
+			t.url,
+			t.is_index,
+			t.life_dept,
+			t.sort,
+			t.status,
+			t.remark,
+			t.create_time
+		FROM
+			t_life_config t
+		INNER JOIN t_life_city c ON t.id = c.life_config_id
+		INNER JOIN t_area a ON a.id = c.city_id
+		WHERE
+			c.city_id = #{city_id}
+		AND  t.status  = 1
+		<if test="is_index!=null and is_index!=''">
+            AND t.is_index  = #{is_index}
+        </if>
+     	order by convert(t.life_name using gbk)
+    	limit #{page},#{rows}
+	</select>
+
+	<!--根据服务pid查询服务详情-->
+	<select id="queryLifeConfigByPId"  parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		SELECT
+			c.id as life_config_id,
+			c.parent_id,
+			c.icon,
+			c.life_name,
+			c.url,
+			c.is_index,
+			c.life_dept,
+			c.sort,
+			c.status,
+			c.remark,
+			c.create_time
+		FROM
+			t_life_config c where c.parent_id=#{life_config_pid} order by c.sort,c.create_time desc
+	    	limit #{page},#{rows}
+	</select>
+
+	<!--根据服务pid查询服务详情-->
+	<select id="queryCityInfo"  parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		SELECT
+			id as city_id
+		FROM
+			t_area  where area_name LIKE CONCAT('%', #{city_name},'%')  and level=2
+	</select>
+
+	<!--根据服务pid查询服务详情-->
+	<select id="queryLifeConfigById"  parameterType="java.lang.Integer" resultType="java.util.HashMap">
+		SELECT
+			c.id,
+			c.parent_id,
+			c.icon,
+			c.life_name,
+			c.url,
+			c.is_index,
+			c.life_dept,
+			c.sort,
+			c.status,
+			c.remark,
+			c.create_time
+		FROM
+			t_life_config c where c.id=#{life_config_id}
+	</select>
+
+	<!--查询入门城市-->
+	<select id="queryHotCitys"  parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		SELECT
+			id,life_config_id,province_id,city_id,province_name,city_name from t_life_city  group by city_name order by id desc
+	    	limit #{page},#{rows}
+	</select>
+	
+	<select id="queryChilds" parameterType="java.lang.Object" resultType="java.util.HashMap">
+		SELECT
+			c.id as life_config_id,
+			c.parent_id,
+			c.icon,
+			c.life_name,
+			c.url,
+			c.is_index,
+			c.life_dept,
+			c.sort,
+			c.status,
+			c.remark,
+			c.create_time
+		FROM
+			t_life_config c where c.parent_id=#{object} and status=1
+	</select>
+
+</mapper>

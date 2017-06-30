@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ehome.cloud.puhui.mapper.ClassifyMapper">
+  <resultMap id="BaseResultMap" type="com.ehome.cloud.puhui.model.ClassifyModel">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="sort" jdbcType="INTEGER" property="sort" />
+    <result column="createTime" jdbcType="TIMESTAMP" property="createtime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, name, sort, createTime
+  </sql>
+    <select id="selectPageList" resultType="java.util.Map">
+    SELECT pc.*, ifnull(pn.countNum, 0) countNum
+	 from t_ph_classify pc
+	LEFT JOIN
+	(SELECT pm.classify_id classifyId, count(pm.id) countNum
+	from t_ph_merchant pm
+	GROUP BY pm.classify_id
+	) pn
+	ON pc.id = pn.classifyId
+	where 1=1 
+	<if test="name != ''">
+		and pc.name like concat('%', #{name}, '%')
+	</if>
+	order by pc.sort desc
+  </select>
+  <!-- 
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_ph_classify
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.ehome.cloud.puhui.model.Classify">
+    insert into t_ph_classify (id, name, sort, 
+      createTime)
+    values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{sort,jdbcType=INTEGER}, 
+      #{createtime,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="com.ehome.cloud.puhui.model.Classify">
+    insert into t_ph_classify
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="name != null">
+        name,
+      </if>
+      <if test="sort != null">
+        sort,
+      </if>
+      <if test="createtime != null">
+        createTime,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="name != null">
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="sort != null">
+        #{sort,jdbcType=INTEGER},
+      </if>
+      <if test="createtime != null">
+        #{createtime,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.ehome.cloud.puhui.model.Classify">
+    update t_ph_classify
+    <set>
+      <if test="name != null">
+        name = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="sort != null">
+        sort = #{sort,jdbcType=INTEGER},
+      </if>
+      <if test="createtime != null">
+        createTime = #{createtime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.ehome.cloud.puhui.model.Classify">
+    update t_ph_classify
+    set name = #{name,jdbcType=VARCHAR},
+      sort = #{sort,jdbcType=INTEGER},
+      createTime = #{createtime,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  -->
+</mapper>

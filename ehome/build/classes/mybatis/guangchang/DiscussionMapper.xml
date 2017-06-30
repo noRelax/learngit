@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ehome.cloud.guangchang.mapper.DiscussionMapper">
+  <resultMap id="BaseResultMap" type="com.ehome.cloud.guangchang.model.DiscussionModel">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="content" jdbcType="VARCHAR" property="content" />
+    <result column="topic_id" jdbcType="INTEGER" property="topicId" />
+    <result column="isanonymous" jdbcType="TINYINT" property="isanonymous" />
+    <result column="address" jdbcType="VARCHAR" property="address" />
+    <result column="pic_ids" jdbcType="VARCHAR" property="picIds" />
+    <result column="pic_urls" jdbcType="VARCHAR" property="picUrls" />
+    <result column="isshowposition" jdbcType="TINYINT" property="isshowposition" />
+    <result column="lat" jdbcType="VARCHAR" property="lat" />
+    <result column="lng" jdbcType="VARCHAR" property="lng" />
+    <result column="user_id" jdbcType="INTEGER" property="userId" />
+    <result column="commenttimes" jdbcType="INTEGER" property="commenttimes" />
+    <result column="upvotetimes" jdbcType="INTEGER" property="upvotetimes" />
+    <result column="createtime" jdbcType="TIMESTAMP" property="createtime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, content, topic_id, isanonymous, address, pic_ids, pic_urls, isshowposition, lat, lng, user_id, 
+    commenttimes, upvotetimes, createtime
+  </sql>
+  
+  <update id="addCommenttimes" parameterType="java.lang.Integer">
+    update t_gc_discussion
+    set commenttimes = commenttimes + 1
+    where id = #{id}
+  </update>
+  
+  <update id="reduceCommenttimes" parameterType="java.lang.Integer">
+    update t_gc_discussion
+    set commenttimes = commenttimes - 1
+    where id = #{id}
+  </update>
+  
+  <update id="addUpvotetimes" parameterType="java.lang.Integer">
+    update t_gc_discussion
+    set upvotetimes = upvotetimes + 1
+    where id = #{id}
+  </update>
+  
+  <update id="reduceUpvotetimes" parameterType="java.lang.Integer">
+    update t_gc_discussion
+    set upvotetimes = upvotetimes - 1
+    where id = #{id}
+  </update>
+  
+  <select id="FindDiscussionList" parameterType="com.ehome.core.util.PageData" resultType="java.util.Map">
+   	select 
+		gd.id,
+		gd.content,
+		gd.topic_id as topicId,
+		gd.isanonymous,
+		gd.pic_ids as picIds,
+		gd.pic_urls as picUrls,
+		gd.isshowposition,
+		gd.lat,
+		gd.lng,
+		gd.user_id as userId,
+		gd.commenttimes,
+		gd.upvotetimes,
+		gd.createtime,
+		us.USERNAME as username
+		<if test="userId != null">
+		,IF(gu.user_id is null, 0, 1) isupvote
+		</if>
+		<if test="userId == null">
+		,'0' isupvote
+		</if>
+	from t_gc_discussion gd
+		<if test="userId != null">
+		LEFT JOIN (
+			SELECT * from t_gc_upvote gu2
+			where gu2.user_id = #{userId}) gu
+		ON gd.id = gu.discussion_id
+		</if>
+	left join sys_user us ON us.ID=gd.user_id
+	where 1=1 
+	<if test="topicId != null">
+		and gd.topic_id = #{topicId}
+	</if>
+	<if test="isanonymous != null">
+		and gd.isanonymous = #{isanonymous}
+	</if>
+	ORDER BY gd.createtime DESC
+  </select>
+  
+  <select id="selectForList" parameterType="com.ehome.core.util.PageData" resultType="com.ehome.core.util.PageData">
+   	select 
+		gd.id discussionId,
+		gd.content,
+		gd.topic_id topicId,
+		gd.isanonymous,
+		gd.pic_ids picIds,
+		gd.pic_urls picUrls,
+		gd.isshowposition,
+		gd.lat,
+		gd.lng,
+		gd.user_id userId,
+		gd.commenttimes,
+		gd.upvotetimes,
+		gd.createtime
+		<if test="userId != null">
+		,IF(gu.user_id is null, 0, 1) isupvote
+		</if>
+		<if test="userId == null">
+		,'0' isupvote
+		</if>
+	from t_gc_discussion gd
+		<if test="userId != null">
+		LEFT JOIN (
+			SELECT * from t_gc_upvote gu2
+			where gu2.user_id = #{userId}) gu
+		ON gd.id = gu.discussion_id
+		</if>
+	where 1=1 
+	<if test="topicId != null">
+		and gd.topic_id = #{topicId}
+	</if>
+	<if test="isanonymous != null">
+		and gd.isanonymous = #{isanonymous}
+	</if>
+	ORDER BY gd.createtime DESC
+  </select>
+  
+  <select id="selectByDiscussion" parameterType="java.lang.Integer" resultType="com.ehome.core.util.PageData">
+   	select 
+		gd.id discussionId,
+		gd.content,
+		gd.topic_id topicId,
+		gd.isanonymous,
+		gd.pic_ids picIds,
+		gd.pic_urls picUrls,
+		gd.isshowposition,
+		gd.lat,
+		gd.lng,
+		gd.user_id userId,
+		gd.commenttimes,
+		gd.upvotetimes,
+		gd.createtime
+	from t_gc_discussion gd
+	where 1=1 
+		and gd.id = #{id}
+  </select>
+  <!-- 
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_gc_discussion
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.ehome.cloud.guangchang.model.Discussion">
+    insert into t_gc_discussion (id, content, topic_id, 
+      isanonymous, address, fileIds, 
+      isshowposition, lat, lng, 
+      user_id, commenttimes, upvotetimes, 
+      createtime)
+    values (#{id,jdbcType=INTEGER}, #{content,jdbcType=VARCHAR}, #{topicId,jdbcType=INTEGER}, 
+      #{isanonymous,jdbcType=VARCHAR}, #{address,jdbcType=VARCHAR}, #{fileids,jdbcType=VARCHAR}, 
+      #{isshowposition,jdbcType=TINYINT}, #{lat,jdbcType=VARCHAR}, #{lng,jdbcType=VARCHAR}, 
+      #{userId,jdbcType=INTEGER}, #{commenttimes,jdbcType=INTEGER}, #{upvotetimes,jdbcType=INTEGER}, 
+      #{createtime,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="com.ehome.cloud.guangchang.model.Discussion">
+    insert into t_gc_discussion
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="content != null">
+        content,
+      </if>
+      <if test="topicId != null">
+        topic_id,
+      </if>
+      <if test="isanonymous != null">
+        isanonymous,
+      </if>
+      <if test="address != null">
+        address,
+      </if>
+      <if test="fileids != null">
+        fileIds,
+      </if>
+      <if test="isshowposition != null">
+        isshowposition,
+      </if>
+      <if test="lat != null">
+        lat,
+      </if>
+      <if test="lng != null">
+        lng,
+      </if>
+      <if test="userId != null">
+        user_id,
+      </if>
+      <if test="commenttimes != null">
+        commenttimes,
+      </if>
+      <if test="upvotetimes != null">
+        upvotetimes,
+      </if>
+      <if test="createtime != null">
+        createtime,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="content != null">
+        #{content,jdbcType=VARCHAR},
+      </if>
+      <if test="topicId != null">
+        #{topicId,jdbcType=INTEGER},
+      </if>
+      <if test="isanonymous != null">
+        #{isanonymous,jdbcType=VARCHAR},
+      </if>
+      <if test="address != null">
+        #{address,jdbcType=VARCHAR},
+      </if>
+      <if test="fileids != null">
+        #{fileids,jdbcType=VARCHAR},
+      </if>
+      <if test="isshowposition != null">
+        #{isshowposition,jdbcType=TINYINT},
+      </if>
+      <if test="lat != null">
+        #{lat,jdbcType=VARCHAR},
+      </if>
+      <if test="lng != null">
+        #{lng,jdbcType=VARCHAR},
+      </if>
+      <if test="userId != null">
+        #{userId,jdbcType=INTEGER},
+      </if>
+      <if test="commenttimes != null">
+        #{commenttimes,jdbcType=INTEGER},
+      </if>
+      <if test="upvotetimes != null">
+        #{upvotetimes,jdbcType=INTEGER},
+      </if>
+      <if test="createtime != null">
+        #{createtime,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.ehome.cloud.guangchang.model.Discussion">
+    update t_gc_discussion
+    set content = #{content,jdbcType=VARCHAR},
+      topic_id = #{topicId,jdbcType=INTEGER},
+      isanonymous = #{isanonymous,jdbcType=VARCHAR},
+      address = #{address,jdbcType=VARCHAR},
+      fileIds = #{fileids,jdbcType=VARCHAR},
+      isshowposition = #{isshowposition,jdbcType=TINYINT},
+      lat = #{lat,jdbcType=VARCHAR},
+      lng = #{lng,jdbcType=VARCHAR},
+      user_id = #{userId,jdbcType=INTEGER},
+      commenttimes = #{commenttimes,jdbcType=INTEGER},
+      upvotetimes = #{upvotetimes,jdbcType=INTEGER},
+      createtime = #{createtime,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  -->
+</mapper>

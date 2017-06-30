@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+<link href="${ctxPath}/static/ui/layui/css/layui.css" rel="stylesheet">
+</head>
+<body>
+	<form class="layui-form" style="padding:15px" action="">
+		    <div class="layui-form-item">
+			    <label class="layui-form-label">用户编号</label>
+			    <div class="layui-input-block">
+		    	<input type="text" readonly value="${info.id}" style="margin-top: 7px"></input>
+			    </div>
+			</div>
+			<div class="layui-form-item">
+			    <label class="layui-form-label">用户名</label>
+			    <div class="layui-input-block">
+		    	<input type="text" readonly value="${info.userName}" style="margin-top: 7px"></input>
+			    </div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">用户昵称</label>
+				<div class="layui-input-block">
+		    	<input type="text" readonly value="${info.nickName}" style="margin-top: 7px"></input>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">性别</label>
+				<div class="layui-input-block">
+		    	<input type="text" readonly value="${info.sex}" style="margin-top: 7px"></input>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">手机号码</label>
+				<div class="layui-input-block">
+		    	<input type="text" readonly value="${info.mobile}" style="margin-top: 7px"></input>
+				</div>
+			</div>	
+			<div class="layui-form-item">
+				<label class="layui-form-label">邮箱</label>
+				<div class="layui-input-block">
+		    	<input type="text" readonly value="${info.email}" style="margin-top: 7px"></input>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">地址</label>
+				<div class="layui-input-block">
+		    	<input type="text" readonly value="${info.address}" style="margin-top: 7px"></input>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">是否会员</label>
+				<div class="layui-input-inline">
+		    	<input type="text" readonly value="${info.isMember}" style="margin-top: 7px"></input>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">邀请码</label>
+				<div class="layui-input-inline">
+		    	<input type="text" readonly value="${info.invitationCode}" style="margin-top: 7px"></input>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">基层工会</label>
+				<div class="layui-input-inline">
+		    	<input type="text" readonly value="${info.orgainName}" style="margin-top: 7px"></input>
+		    	</div>
+			</div>
+			<div class="layui-form-item layui-form-text">
+				<label class="layui-form-label">备注</label>
+				<div class="layui-input-block">
+					<textarea class="layui-textarea" readonly style="margin-top: 7px" >${info.userDesc}</textarea>
+				</div>
+			</div>
+		</form>
+</body>
+
+</html>

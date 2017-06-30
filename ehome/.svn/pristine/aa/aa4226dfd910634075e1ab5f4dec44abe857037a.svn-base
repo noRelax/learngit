@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.help.mapper.HelpRightExplainMapper">
+	
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.help.dto.HelpRightExplainDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="title" property="title" jdbcType="VARCHAR" />
+		<result column="explain_type" property="explainType" jdbcType="INTEGER"/>
+		<result column="province_id" property="provinceId" jdbcType="INTEGER"/>
+		<result column="city_id" property="cityId" jdbcType="INTEGER"/>
+		<result column="income_limit" property="incomeLimit" jdbcType="DECIMAL"/>
+		<result column="right_or_help_type" property="rightOrHelpType" jdbcType="VARCHAR" />
+		<result column="service_buttun_type" property="serviceButtunType" jdbcType="VARCHAR" />
+		<result column="phone" property="phone" jdbcType="VARCHAR" />
+		<result column="content" property="content" jdbcType="VARCHAR" />
+		<result column="create_date" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="createPerson" property="create_person" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<sql id="commonSQL">
+		SELECT
+		t.id,t.title,t.explain_type,t.create_person,t.right_or_help_type,t.service_buttun_type,t.phone,t.create_date,t.create_person
+		FROM
+		t_help_right_explain t
+	</sql>
+
+	<select id="queryForList" resultMap="BaseResultMap" >
+		<include refid="commonSQL"></include>
+		<where>
+			<if test="title!=null and title!=''">
+				AND t.title=#{title}
+			</if>
+			<if test="explainType!=null and explainType!='' and explainType!=0">
+				AND t.explain_type=#{explainType}
+			</if>
+		</where>
+		ORDER BY t.create_date DESC
+	</select>
+
+</mapper>

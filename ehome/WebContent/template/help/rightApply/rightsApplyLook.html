@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>维权审批</title>
+	<link href="${ctxPath}/static/system/public/css/bootstrap-3.3.4.css" rel="stylesheet"><!-- BOOTSTRAP CSS -->
+    
+<script type="text/javascript" src="${ctxPath}/static/system/olive/all/js/jquery.js"></script>
+<style>
+.scrollContent{
+	padding: 10px;
+	line-height: 27px;
+	height: auto;
+	max-height: 500px;
+	overflow-y: auto;
+}
+</style>
+</head>
+<body style="margin:20px">
+	<table width="90%"  border="0" style="margin-left:50px">
+		<caption align="top"><p style="text-align:center;">法 律 援 助 申 请 表</p></caption> 
+		<tr>
+			<td align="right">${data.applicationTime}</td>
+		</tr>
+	</table>
+	<table width="751" height="500" border="1" cellspacing="0" style="text-align: center; margin-left:30px">
+		<tr height="22">
+			<td colspan="2" width="187">姓名</td>
+			<td colspan="2" width="187">${data.name}</td>
+			<td width="94">性别</td>
+			<td width="94">${data.sex}</td>
+			<td width="94">民族</td>
+			<td width="94" >${data.nation}</td>
+		</tr>
+		<tr>
+			<td colspan="2" >出生日期</td>
+			<td colspan="2" >${data.birthday }</td>
+			<td colspan="2" >身份证号码</td>
+			<td colspan="2" >${data.IDcard }</td>
+		</tr>
+		<tr>
+			<td colspan="2" >户籍所在地</td>
+			<td colspan="2" >${data.registered }</td>
+			<td colspan="2" >住宅电话</td>
+			<td colspan="2" >${data.homeTel }</td>
+		</tr>
+		<tr>
+			<td colspan="2" >工作单位</td>
+			<td colspan="2" >${data.company }</td>
+			<td colspan="2" >工作电话</td>
+			<td colspan="2" >${data.workPhone }</td>
+		</tr>
+		<tr>
+			<td colspan="2" >通讯地址</td>
+			<td colspan="4" >${data.address }</td>
+			<td >邮政编码</td>
+			<td >${data.postcode }</td>
+		</tr>
+		<tr>
+			<td colspan="2" >文化程度</td>
+			<td width="93">${data.education }</td>
+			<td width="94">职业</td>
+			<td colspan="2" >${data.industry }</td>
+			<td >健康状况</td>
+			<td >${data.health }</td>
+		</tr>
+		<tr >
+			<td colspan="8" style="text-align: left;">
+			<div class="scrollContent">
+				申请事项及主要理由：<br/>
+				&nbsp;&nbsp;${data.reasons }
+					<br />
+			</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="3" width="282">申请事项现所处法律程序</td>
+			<td colspan="5" width="465">${data.legalProceedings }</td>
+		</tr>
+		<!-- <tr>
+			<td colspan="8">提交材料目录</td>
+		</tr>
+		<tr>
+			<td colspan="2" >材料名称</td>
+			<td colspan="2" >页数</td>
+			<td colspan="2" >材料名称</td>
+			<td colspan="2" >页数</td>
+		</tr>
+		<tr height="22">
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2"></td>
+		</tr>
+		<tr height="22">
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2"></td>
+		</tr>
+		<tr height="22">
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2"></td>
+		</tr>
+		<tr height="22">
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2"></td>
+		</tr> -->
+	</table>
+	<br>
+	 <div>
+		 <%
+		     if(!isEmpty(idcardPic)){
+		%>
+		    <p>本人身份证：</p>
+			 <%
+			     for(pic in idcardPic){
+			%>
+			    <img src="${ctxPath}${pic.url}"  onclick="javascript:window.open(this.src);" title="查看图片" width="50" height="50">
+			<%}%>
+		<%}%>
+		
+		 <%
+		     if(!isEmpty(proofPic)){
+		%>
+		    <p>困难证明：</p>
+			 <%
+			     for(pic in proofPic){
+			%>
+			    <img src="${ctxPath}${pic.url}"  onclick="javascript:window.open(this.src);" title="查看图片" width="50" height="50">
+			<%}%>
+		<%}%>
+	</div>
+	<table border="1" width="100%">
+		<tr>
+			<td>审批机构</td>
+			<td>审批人</td>
+			<td>审批意见</td>
+			<td>审批结果</td>
+			<td>审批时间</td>
+		</tr>
+		<%
+			     for(var i=0;i<approve.~size;i++){
+		%>
+		   <tr>
+		     <td>${approve[i].taskName} </td>
+		      <td>${approve[i].approveUserName}</td>
+		      <td>${approve[i].applyMsg}</td>
+		      <td>
+		         ${approve[i].direction}
+		      </td>
+		      <td>${approve[i].approveTime}</td>
+		   </tr>
+	   <%}%>
+	</table>
+	
+</body>
+
+<script type="text/javascript">
+	
+	
+</script>
+</html>

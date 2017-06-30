@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ehome.cloud.puhui.mapper.MerchantMapper">
+  <resultMap id="BaseResultMap" type="com.ehome.cloud.puhui.model.MerchantModel">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="province" jdbcType="INTEGER" property="province" />
+    <result column="city" jdbcType="INTEGER" property="city" />
+    <result column="county" jdbcType="INTEGER" property="county" />
+    <result column="address" jdbcType="VARCHAR" property="address" />
+    <result column="longitude" jdbcType="VARCHAR" property="longitude" />
+    <result column="latitude" jdbcType="VARCHAR" property="latitude" />
+    <result column="phone" jdbcType="VARCHAR" property="phone" />
+    <result column="business_time" jdbcType="VARCHAR" property="businessTime" />
+    <result column="normal_discount" jdbcType="REAL" property="normalDiscount" />
+    <result column="member_discount" jdbcType="REAL" property="memberDiscount" />
+    <result column="initial_value" jdbcType="INTEGER" property="initialValue" />
+    <result column="classify_id" jdbcType="INTEGER" property="classifyId" />
+    <result column="keywords" jdbcType="VARCHAR" property="keywords" />
+    <result column="labels" jdbcType="VARCHAR" property="labels" />
+    <result column="intro" jdbcType="VARCHAR" property="intro" />
+    <result column="linkman" jdbcType="VARCHAR" property="linkman" />
+    <result column="linkman_phone" jdbcType="VARCHAR" property="linkmanPhone" />
+    <result column="settlement_name" jdbcType="VARCHAR" property="settlementName" />
+    <result column="settlement_account" jdbcType="VARCHAR" property="settlementAccount" />
+    <result column="settlement_holder" jdbcType="VARCHAR" property="settlementHolder" />
+    <result column="sms_number" jdbcType="VARCHAR" property="smsNumber" />
+    <result column="mail_site" jdbcType="VARCHAR" property="mailSite" />
+    <result column="isRecommend" jdbcType="INTEGER" property="isrecommend" />
+    <result column="recommend_num" jdbcType="INTEGER" property="recommendNum" />
+    <result column="isCheck" jdbcType="INTEGER" property="ischeck" />
+    <result column="startTime" jdbcType="TIMESTAMP" property="starttime" />
+    <result column="endTime" jdbcType="TIMESTAMP" property="endtime" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+    <result column="picIds" jdbcType="VARCHAR" property="picIds" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, name, province, city, county, address, longitude, latitude, phone, business_time, 
+    normal_discount, member_discount, initial_value, classify_id, keywords, labels, intro, 
+    linkman, linkman_phone, settlement_name, settlement_account, settlement_holder, sms_number, 
+    mail_site, isRecommend, recommend_num, isCheck, startTime, endTime, status, picIds
+  </sql>
+  <select id="selectPageByConditionMap" parameterType="java.util.Map" resultType="java.util.Map">
+    select 
+		pm.id,
+		pm.`name`,
+		ea1.area_name province,
+		ea2.area_name city,
+		ea3.area_name county,
+		pm.starttime,
+		pm.linkman,
+		pm.linkman_phone linkmanPhone,
+		if(pm.isRecommend = 1, '推荐商家','非推荐商家') isRecommend
+	from t_ph_merchant pm
+	LEFT JOIN t_area ea1
+	ON pm.province = ea1.id
+	LEFT JOIN t_area ea2
+	ON pm.city = ea2.id
+	LEFT JOIN t_area ea3
+	ON pm.county = ea3.id
+    where 1=1
+    <if test="name != null and name !='' ">
+		and pm.name like CONCAT('%', #{name},'%')
+	</if>
+    <if test="name != null and name !='' ">
+		and pm.name like CONCAT('%', #{name},'%')
+	</if>
+    <if test="province != null and province !='' ">
+		and pm.province = #{province}
+	</if>
+    <if test="city != null and city !='' ">
+		and pm.city = #{city}
+	</if>
+    <if test="county != null and county !='' ">
+		and pm.county = #{county}
+	</if>
+    <if test="classifyId != null and classifyId !='' ">
+		and pm.classify_id = #{classifyId}
+	</if>
+    <if test="starttime != null and starttime !='' ">
+		and pm.startTime &gt;= #{starttime}
+	</if>
+    <if test="endtime != null and endtime !='' ">
+		and pm.startTime &lt;= #{endtime}
+	</if>
+  </select>
+  <!-- app列表 -->
+  <select id="getListByPosition" resultType="java.util.Map">
+    SELECT 
+		pm.id,
+		pm.`name`,
+		pm.labels,
+		pm.picIds,
+		pm.normal_discount normalDiscount,
+		pm.member_discount memberDiscount,
+		(round(6371 * 2 * asin(sqrt(pow(sin(((latitude * pi()) / 180 - (#{lat} * pi()) / 180) / 2), 2) + cos((#{lat} * pi()) / 180) * cos((latitude * pi()) / 180) * pow(sin(((longitude * pi()) / 180 - (#{lng} * pi()) / 180) / 2), 2))), 1))  distance,
+		pm.initial_value orderCount
+	from t_ph_merchant pm
+	where 1=1 and pm.isCheck=1 and NOW() BETWEEN pm.startTime and pm.endTime
+    <if test="keyword != null and keyword !='' ">
+		and (pm.name like CONCAT('%', #{keyword},'%') or pm.labels like CONCAT('%', #{keyword},'%'))
+	</if>
+	<if test="classId != null and classId != ''">
+		and pm.classify_id = #{classId}
+    </if>
+    <if test="sortType == ''">
+		ORDER BY pm.recommend_num desc, pm.ordercount
+    </if>
+    <if test="sortType == '1'.toString()">
+		ORDER BY distance ASC, pm.id asc
+    </if>
+    <if test="sortType == '2'.toString() and isMember == '1'.toString()">
+		ORDER BY abs(pm.member_discount) asc
+    </if>
+    <if test="sortType == '2'.toString() and isMember == '0'.toString()">
+		ORDER BY abs(pm.normal_discount) asc
+    </if>
+		
+  </select>
+  <select id="getOrderCountByMcId" resultType="java.lang.Integer">
+    SELECT count(*)
+	from t_ph_order
+	where merchant_id = #{_parameter}
+  </select>
+  <select id="getMcPicByPicid" resultType="java.lang.String">
+    SELECT filepath
+	from t_uploadfile
+	where id = #{_parameter}
+  </select>
+  <select id="getPicsByIds" resultType="java.util.Map">
+    SELECT id, content picDesc, filepath picUrl
+	from t_uploadfile
+	where id in 
+	<foreach collection="array" index="index" item="item" open="(" separator="," close=")">  
+            #{item}   
+    </foreach>  
+  </select>
+  <update id="setTypeByIds" parameterType="java.util.Map">
+    update t_ph_merchant
+       set isRecommend = #{isRecommend}
+    where id in 
+	<foreach collection="ids" index="index" item="item" open="(" separator="," close=")">  
+            #{item}   
+    </foreach> 
+  </update>
+  <select id="selectPageForRecommendlist" parameterType="java.util.Map" resultType="java.util.Map">
+    select 
+		pm.id,
+		pm.`name`,
+		pm.recommend_num recommendNum
+	from t_ph_merchant pm
+    where 1=1
+    <if test="classifyId != '0'.toString() and classifyId !='' ">
+		and pm.classify_id = #{classifyId}
+	</if>
+  </select>
+  <!-- 
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_ph_merchant
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.ehome.cloud.guangchang.model.Merchant">
+    insert into t_ph_merchant (id, name, province, 
+      city, county, address, 
+      longitude, latitude, phone, 
+      business_time, normal_discount, member_discount, 
+      initial_value, classify_id, keywords, 
+      labels, intro, linkman, 
+      linkman_phone, settlement_name, settlement_account, 
+      settlement_holder, sms_number, mail_site, 
+      isRecommend, recommend_num, isCheck, 
+      startTime, endTime, status
+      )
+    values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{province,jdbcType=INTEGER}, 
+      #{city,jdbcType=INTEGER}, #{county,jdbcType=INTEGER}, #{address,jdbcType=VARCHAR}, 
+      #{longitude,jdbcType=VARCHAR}, #{latitude,jdbcType=VARCHAR}, #{phone,jdbcType=VARCHAR}, 
+      #{businessTime,jdbcType=VARCHAR}, #{normalDiscount,jdbcType=REAL}, #{memberDiscount,jdbcType=REAL}, 
+      #{initialValue,jdbcType=INTEGER}, #{classifyId,jdbcType=INTEGER}, #{keywords,jdbcType=VARCHAR}, 
+      #{labels,jdbcType=VARCHAR}, #{intro,jdbcType=VARCHAR}, #{linkman,jdbcType=VARCHAR}, 
+      #{linkmanPhone,jdbcType=VARCHAR}, #{settlementName,jdbcType=VARCHAR}, #{settlementAccount,jdbcType=VARCHAR}, 
+      #{settlementHolder,jdbcType=VARCHAR}, #{smsNumber,jdbcType=VARCHAR}, #{mailSite,jdbcType=VARCHAR}, 
+      #{isrecommend,jdbcType=INTEGER}, #{recommendNum,jdbcType=INTEGER}, #{ischeck,jdbcType=INTEGER}, 
+      #{starttime,jdbcType=TIMESTAMP}, #{endtime,jdbcType=TIMESTAMP}, #{status,jdbcType=INTEGER}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="com.ehome.cloud.guangchang.model.Merchant">
+    insert into t_ph_merchant
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="name != null">
+        name,
+      </if>
+      <if test="province != null">
+        province,
+      </if>
+      <if test="city != null">
+        city,
+      </if>
+      <if test="county != null">
+        county,
+      </if>
+      <if test="address != null">
+        address,
+      </if>
+      <if test="longitude != null">
+        longitude,
+      </if>
+      <if test="latitude != null">
+        latitude,
+      </if>
+      <if test="phone != null">
+        phone,
+      </if>
+      <if test="businessTime != null">
+        business_time,
+      </if>
+      <if test="normalDiscount != null">
+        normal_discount,
+      </if>
+      <if test="memberDiscount != null">
+        member_discount,
+      </if>
+      <if test="initialValue != null">
+        initial_value,
+      </if>
+      <if test="classifyId != null">
+        classify_id,
+      </if>
+      <if test="keywords != null">
+        keywords,
+      </if>
+      <if test="labels != null">
+        labels,
+      </if>
+      <if test="intro != null">
+        intro,
+      </if>
+      <if test="linkman != null">
+        linkman,
+      </if>
+      <if test="linkmanPhone != null">
+        linkman_phone,
+      </if>
+      <if test="settlementName != null">
+        settlement_name,
+      </if>
+      <if test="settlementAccount != null">
+        settlement_account,
+      </if>
+      <if test="settlementHolder != null">
+        settlement_holder,
+      </if>
+      <if test="smsNumber != null">
+        sms_number,
+      </if>
+      <if test="mailSite != null">
+        mail_site,
+      </if>
+      <if test="isrecommend != null">
+        isRecommend,
+      </if>
+      <if test="recommendNum != null">
+        recommend_num,
+      </if>
+      <if test="ischeck != null">
+        isCheck,
+      </if>
+      <if test="starttime != null">
+        startTime,
+      </if>
+      <if test="endtime != null">
+        endTime,
+      </if>
+      <if test="status != null">
+        status,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="name != null">
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="province != null">
+        #{province,jdbcType=INTEGER},
+      </if>
+      <if test="city != null">
+        #{city,jdbcType=INTEGER},
+      </if>
+      <if test="county != null">
+        #{county,jdbcType=INTEGER},
+      </if>
+      <if test="address != null">
+        #{address,jdbcType=VARCHAR},
+      </if>
+      <if test="longitude != null">
+        #{longitude,jdbcType=VARCHAR},
+      </if>
+      <if test="latitude != null">
+        #{latitude,jdbcType=VARCHAR},
+      </if>
+      <if test="phone != null">
+        #{phone,jdbcType=VARCHAR},
+      </if>
+      <if test="businessTime != null">
+        #{businessTime,jdbcType=VARCHAR},
+      </if>
+      <if test="normalDiscount != null">
+        #{normalDiscount,jdbcType=REAL},
+      </if>
+      <if test="memberDiscount != null">
+        #{memberDiscount,jdbcType=REAL},
+      </if>
+      <if test="initialValue != null">
+        #{initialValue,jdbcType=INTEGER},
+      </if>
+      <if test="classifyId != null">
+        #{classifyId,jdbcType=INTEGER},
+      </if>
+      <if test="keywords != null">
+        #{keywords,jdbcType=VARCHAR},
+      </if>
+      <if test="labels != null">
+        #{labels,jdbcType=VARCHAR},
+      </if>
+      <if test="intro != null">
+        #{intro,jdbcType=VARCHAR},
+      </if>
+      <if test="linkman != null">
+        #{linkman,jdbcType=VARCHAR},
+      </if>
+      <if test="linkmanPhone != null">
+        #{linkmanPhone,jdbcType=VARCHAR},
+      </if>
+      <if test="settlementName != null">
+        #{settlementName,jdbcType=VARCHAR},
+      </if>
+      <if test="settlementAccount != null">
+        #{settlementAccount,jdbcType=VARCHAR},
+      </if>
+      <if test="settlementHolder != null">
+        #{settlementHolder,jdbcType=VARCHAR},
+      </if>
+      <if test="smsNumber != null">
+        #{smsNumber,jdbcType=VARCHAR},
+      </if>
+      <if test="mailSite != null">
+        #{mailSite,jdbcType=VARCHAR},
+      </if>
+      <if test="isrecommend != null">
+        #{isrecommend,jdbcType=INTEGER},
+      </if>
+      <if test="recommendNum != null">
+        #{recommendNum,jdbcType=INTEGER},
+      </if>
+      <if test="ischeck != null">
+        #{ischeck,jdbcType=INTEGER},
+      </if>
+      <if test="starttime != null">
+        #{starttime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="endtime != null">
+        #{endtime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="status != null">
+        #{status,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.ehome.cloud.guangchang.model.Merchant">
+    update t_ph_merchant
+    set name = #{name,jdbcType=VARCHAR},
+      province = #{province,jdbcType=INTEGER},
+      city = #{city,jdbcType=INTEGER},
+      county = #{county,jdbcType=INTEGER},
+      address = #{address,jdbcType=VARCHAR},
+      longitude = #{longitude,jdbcType=VARCHAR},
+      latitude = #{latitude,jdbcType=VARCHAR},
+      phone = #{phone,jdbcType=VARCHAR},
+      business_time = #{businessTime,jdbcType=VARCHAR},
+      normal_discount = #{normalDiscount,jdbcType=REAL},
+      member_discount = #{memberDiscount,jdbcType=REAL},
+      initial_value = #{initialValue,jdbcType=INTEGER},
+      classify_id = #{classifyId,jdbcType=INTEGER},
+      keywords = #{keywords,jdbcType=VARCHAR},
+      labels = #{labels,jdbcType=VARCHAR},
+      intro = #{intro,jdbcType=VARCHAR},
+      linkman = #{linkman,jdbcType=VARCHAR},
+      linkman_phone = #{linkmanPhone,jdbcType=VARCHAR},
+      settlement_name = #{settlementName,jdbcType=VARCHAR},
+      settlement_account = #{settlementAccount,jdbcType=VARCHAR},
+      settlement_holder = #{settlementHolder,jdbcType=VARCHAR},
+      sms_number = #{smsNumber,jdbcType=VARCHAR},
+      mail_site = #{mailSite,jdbcType=VARCHAR},
+      isRecommend = #{isrecommend,jdbcType=INTEGER},
+      recommend_num = #{recommendNum,jdbcType=INTEGER},
+      isCheck = #{ischeck,jdbcType=INTEGER},
+      startTime = #{starttime,jdbcType=TIMESTAMP},
+      endTime = #{endtime,jdbcType=TIMESTAMP},
+      status = #{status,jdbcType=INTEGER}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  -->
+</mapper>

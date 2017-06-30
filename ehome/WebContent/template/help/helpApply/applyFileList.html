@@ -1,0 +1,151 @@
+<% include("/system/public/header.html",{title:'header'}){} %> <%
+layout("/system/public/aside.html",{title:'header'}){} %>
+<script type="text/javascript"></script>
+<style>
+.datainp{ width:150px; height:33px; border:1px #ccc solid;}
+.datainps{ width:150px; height:33px; border:1px #ccc solid;}
+</style>
+<!-- BEGIN WRAPPER  -->
+<div class="editalbeWrap">
+	<section id="main-content">
+		<!-- BEGIN WRAPPER  -->
+		<section class="wrapper site-min-height">
+			<section class="panel">
+				<header class="panel-heading">
+					<span class="label label-primary">帮扶归档管理</span> <span
+						class="tools pull-right"> <a href="javascript:;"
+						class="fa fa-chevron-down"></a> <a href="javascript:;"
+						class="fa fa-times"></a>
+					</span>
+				</header>
+				<div class="panel-body">
+					<div class="adv-table editable-table ">
+						<div class="clearfix">
+
+							<div class="btn-group pull-right">
+								<button class="btn btn-primary dropdown-toggle"
+									data-toggle="dropdown">
+									工具栏<i class="fa fa-angle-down"></i>
+								</button>
+								<ul class="dropdown-menu pull-right">
+									<li><a href="#">打印</a></li>
+									<li><a href="#">另存为PDF</a></li>
+									<li><a href="#">导出到Excel</a></li>
+								</ul>
+							</div>
+						</div>
+						<div class="clearfix">
+								<form class="form-inline" role="form" name="searchForm">
+									<div class="form-group">
+										<input type="text" class="form-control" name="name"
+											placeholder="请输入申请人">
+									</div>
+								    <div class="form-group">
+					                                              
+					                  <input type="text" style="width: 200px" class="datainp" id="textymdhms" name="startTime" type="text" placeholder="开始时间"   readonly>
+				                    </div>
+				                    <div class="form-group">
+					                  --                            
+					                  <input type="text" style="width: 200px" class="datainps" id="textymdhms1" name="endTime" type="text" placeholder="结束时间"   readonly>
+				                    </div>
+									<button type="submit" name="search" class="btn btn-success">检索</button>
+									<button type="submit" name="reset" class="btn btn-success">重置检索</button>
+								</form>
+						        </br>
+						       
+						</div>
+						<div class="space15"></div>
+						<table class="table table-striped table-hover table-bordered"
+							id="data-tableList">
+							<thead>
+								<tr>
+									<th width="10%" class="hidden-phone">申请人</th>
+									<th width="10%" class="hidden-phone">身份证</th>
+									<th width="10%" class="hidden-phone">电话</th>
+									<th width="10%" class="hidden-phone">归档时间</th>
+									<th width="10%" class="hidden-phone">归属工会</th>
+									<th width="10%" class="hidden-phone">操作</th>
+									<th width="10%" class="hidden-phone">导出</th>
+								</tr>
+							</thead>
+							<tbody>
+
+							</tbody>
+						</table>
+						
+						<ul class="pagination"></ul>
+               
+					</div>
+				</div>
+			</section>
+		</section>
+		<!-- END WRAPPER  -->
+	</section>
+</div>
+
+
+
+<script src="${ctxPath}/static/system/olive/all/js/jquery.form.js"></script>
+<script
+	src="${ctxPath}/static/system/olive/all/js/jquery.validate.min.js"></script>
+
+	<script src="${ctxPath}/static/ui/jedate/jedate.js"></script>
+<script
+	src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script>
+<!-- DATATABLE JS  -->
+<script
+	src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script>
+<!-- DATATABLE JS  -->
+<script src="${ctxPath}/static/web/help/helpApply/applyFile-list.js"></script>
+
+<script type="text/javascript">
+jeDate({
+	dateCell:"#textymdhms",  
+	format:"YYYY-MM-DD hh:mm:ss",
+	isinitVal:false,
+	isTime:true, 
+	festival: true, //显示节日
+	minDate:"2016-04-19 00:00:00"
+	
+})
+
+jeDate({
+	dateCell:"#textymdhms1",  
+	format:"YYYY-MM-DD hh:mm:ss",
+	isinitVal:false,
+	isTime:true, 
+	festival: true, //显示节日
+	minDate:"2016-04-19 00:00:00"
+})
+</script>
+<script type="text/javascript">
+	jQuery(document).ready(function() {
+		layui.use('layer', function() {
+			var layer = layui.layer;
+			//新建帐号
+			jQuery('a[name=new-life-table]').on('click', function(e) {
+				e.preventDefault();
+				
+				var lifeId = jQuery('input[name=localId]').val();
+				var localId = jQuery(this).attr('data-id');
+				parent.layer.open({
+					type : 2,
+					title : '新增目标页',
+					area : [ '600px', '700px' ],
+					content : '../life/add-local-page.html?lifeId=' + lifeId,
+					end : function() {
+
+					}
+				});
+			});
+			
+			
+		});
+		applyFileTableList.init();//初始化表格
+	});
+</script>
+
+<!-- END MAIN CONTENT -->
+
+<!-- END MAIN CONTENT -->
+<% layout("/system/public/footer.html",{title:'header'}){} %>

@@ -1,0 +1,188 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>
+			修改会员
+		</title>
+		<meta name="renderer" content="webkit">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<link href="${ctxPath}/static/system/public/css/bootstrap-3.3.4.css" rel="stylesheet"><!-- BOOTSTRAP CSS -->
+		<link href="${ctxPath}/static/ui/layui/css/layui.css" rel="stylesheet">
+	    <style type="text/css">	
+			.dataTables_paginate.paging_bootstrap.pagination li {
+				float: left;
+				margin: 0 1px;
+				border: 1px solid #ddd;
+				border-radius: 3px;
+				-webkit-border-radius: 3px;
+			}
+			
+			.dataTables_paginate.paging_bootstrap.pagination li.disabled a {
+				color: #c7c7c7;
+			}
+			
+			.dataTables_paginate.paging_bootstrap.pagination li a {
+				color: #797979;
+				padding: 5px 10px;
+				display: inline-block;
+			}
+			
+			.dataTables_paginate.paging_bootstrap.pagination li:hover a, .dataTables_paginate.paging_bootstrap.pagination li.active a {
+				color: #fff;
+				background: #3a9fbc;
+				border-radius: 3px;
+				-webkit-border-radius: 3px;
+				border: 1px solid #2489a6;
+			}
+			
+			.dataTables_paginate.paging_bootstrap.pagination {
+				float: right;
+				margin-top: -5px;
+				margin-bottom: 15px;
+			}
+			.layui-form-label {
+			    float: left;
+			    display: block;
+			    padding: 9px 15px;
+			    width: 110px;
+			    font-weight: 400;
+			    text-align: right;
+			}
+		</style>
+	</head>
+
+<script type="text/javascript"></script>
+
+<!-- BEGIN WRAPPER  -->
+<body>
+<div class="editalbeWrap">
+	<section id="main-content">
+		<!-- BEGIN WRAPPER  -->
+		<section class="wrapper site-min-height">
+			<section class="panel">
+				<div class="panel-body">
+					<div class="adv-table editable-table ">
+						<div class="clearfix">
+							<div class="panel-body">
+								<div class="layui-input-inline" style="padding: 0 10px;">
+									<font  size="2px" >资金来源: </font>
+									<span id="sourceSpan" name="sourceSpan">
+									        中央资金
+								    </span>
+								</div>
+								
+								<div class="layui-input-inline" style="padding: 0 40px;">
+									<span>帮扶项目：</span>
+									<span id="projectSpan" name="projectSpan">
+									        救助
+								    </span>
+								</div>
+								
+								<div class="layui-input-inline" style="padding: 0 40px;">
+									<span>待生成个案数</span>
+									<span name="numberSpan">
+									        0
+								    </span>
+								</div>
+
+								
+								<div class="btn-group">
+									<a href="javascript:;" 
+										class="btn btn-success green" name="createSignTable"> 生成签领表 <i class="fa fa-plus"></i>
+									</a>
+								</div>
+								
+							</div>
+						</div>
+						<div class="space15"></div>
+						<table class="table table-striped table-hover table-bordered"
+							id="member-list">
+							<thead>
+								<tr>
+									<th width="5%" class="center"><input type="checkbox"
+										class="checkall" />全选</th>
+									<th width="3%" class="hidden-phone">ID</th>
+									<th width="6%" class="hidden-phone">姓名</th>
+									<th width="5%" class="hidden-phone">性别</th>
+									<th width="6%" class="hidden-phone">年龄</th>
+									<th width="11%" class="hidden-phone">身份证号</th>
+									<th width="11%" class="hidden-phone">银行账号</th>
+									<th width="13%" class="hidden-phone">工作单位或家庭地址</th>
+									<th width="6%" class="hidden-phone">金额</th>
+									<th width="7%" class="hidden-phone">资金来源</th>
+									<th width="9%" class="hidden-phone">联系电话</th>
+									<th width="7%" class="hidden-phone">帮扶项目</th>
+									<th width="7%" class="hidden-phone">职工编号</th>
+									<th width="9%" class="hidden-phone">档案编号</th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</section>
+		</section>
+		<!-- END WRAPPER  -->
+	</section>
+</div>
+</div>
+
+<script src="${ctxPath}/static/system/olive/all/js/jquery-1.8.3.min.js"></script>
+<script src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script><!-- DATATABLE JS  -->
+<script src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script><!-- DATATABLE JS  -->
+<script src="${ctxPath}/static/ui/layui/layui.js"></script>	
+<!-- DATATABLE JS  -->
+<script src="${ctxPath}/static/web/caiwushenpi/unsign/js/signTable_temp.js"></script>
+<script type="text/javascript">
+	jQuery(document)
+			.ready(
+					function() {
+						jQuery('span[name=projectSpan]').html(sessionStorage.getItem("helpType"));
+						jQuery('span[name=sourceSpan]').html(sessionStorage.getItem("aountSource"));
+						jQuery('span[name=numberSpan]').html(sessionStorage.getItem("member"));
+						
+						jQuery('span[name=projectSpan]').html()
+						
+						id = '${id}'
+						var createBtn = jQuery('a[name=createSignTable]');
+						  
+						createBtn.on('click',function(e){
+							$.ajax({
+		                        url: "../signTable/saveSignTable",
+		                        data: {
+		                        	"helpType":jQuery('span[name=projectSpan]').html(),
+		                        	"amountSource":jQuery('span[name=sourceSpan]').html(),
+		                        	"number":jQuery('span[name=numberSpan]').html(),
+		                        	"id":id
+		                        },
+		                        //traditional: true,
+		                        async: true,
+		                        type: 'post',
+		                        dataType: 'json',  
+		                        success: function(data) {
+		                        	if(data.status == 10000){
+			                        	if(confirm('成功生成'+data.message+'个签领表')){
+			                				sessionStorage.setItem('cache-choose-record',[]);
+			                				sessionStorage.setItem('cache-choose-rel-record',[]);
+			                				window.parent.location.reload();
+			    							parent.layer.closeAll();
+			                			}
+		                        	}
+		                        },
+		                        error: function(XMLHttpRequest, textStatus, errorThrown) {
+		                            alert("status:" + XMLHttpRequest.status +
+		                                ",readyState:" + XMLHttpRequest.readyState +
+		                                ",textStatus:" + textStatus);
+		                        }
+		                    });
+						});
+						
+					unsignTable.init(id);
+			});
+</script>
+<body>
+<!-- END MAIN CONTENT -->
+

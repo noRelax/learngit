@@ -1,0 +1,507 @@
+package com.ehome.core.util.redis;
+
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import net.sf.json.JSONObject;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+
+import com.alibaba.fastjson.JSON;
+import com.ehome.core.frame.SpringContextHolder;
+import com.ehome.core.model.BaseEntity;
+import com.ehome.core.util.CollectionUtils;
+import com.ehome.core.util.StringUtils;
+
+/**
+ * Jedis工具类
+ * 
+ * @Title:JedisUtils
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年4月24日 上午9:54:48
+ * @version:
+ */
+public class JedisUtils {
+
+	private final static JedisPool jedisPool = SpringContextHolder.getBean(
+			"jedisPool", JedisPool.class);
+
+	/**
+	 * 获取jedis连接
+	 * 
+	 * @return
+	 */
+	public static Jedis getJedis() {
+		return jedisPool.getResource();
+	}
+
+	/**
+	 * 判斷Key是否存在
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public static boolean exist(String key) {
+		try (Jedis jedis = getJedis()) {
+			if (jedis.exists(key)) {
+				return Boolean.TRUE;
+			} else {
+				return Boolean.FALSE;
+			}
+		}
+	}
+
+	/**
+	 * 根据Key获取Value
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public static String get(String key) {
+		String value = "";
+		try (Jedis jedis = getJedis()) {
+			if (jedis.exists(key)) {
+				value = jedis.get(key);
+				value = StringUtils.isNotBlank(value) ? value : "";
+			}
+		}
+		return value;
+	}
+
+	/**
+	 * 根据Key获取Value
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public static byte[] get(byte[] key) {
+		try (Jedis jedis = getJedis()) {
+			if (jedis.exists(key)) {
+				return jedis.get(key);
+			} else {
+				return null;
+			}
+		}
+	}
+
+	/**
+	 * 缓存二进制对象到Redis
+	 * 
+	 * @param key
+	 * @param value
+	 */
+	public static void set(byte[] key, byte[] value, int seconds) {
+		try (Jedis jedis = getJedis()) {
+			jedis.set(key, value);
+			if (seconds != 0)
+				jedis.expire(key, seconds);
+		}
+	}
+
+	/**
+	 * 缓存KV到Redis
+	 * 
+	 * @param key
+	 * @param value
+	 * @param seconds
+	 */
+	public static void set(String key, String value, int seconds) {
+		try (Jedis jedis = getJedis()) {
+			jedis.set(key, value);
+			if (seconds != 0)
+				jedis.expire(key, seconds);
+		}
+	}
+
+	/**
+	 * 删除key
+	 * //TODO 添加方法功能描述
+	 * @param key
+	 */
+	public static void delete(String key) {
+		try (Jedis jedis = getJedis()) {
+			if (jedis.exists(key))
+				jedis.del(key);
+		}
+	}
+
+	/**
+	 * 设置KV同时设置有效时间
+	 * 
+	 * @param key
+	 * @param seconds
+	 * @param value
+	 */
+	public static String setEx(String key, int seconds, String value) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.setex(key, seconds, value);
+		}
+	}
+
+	/**
+	 * 自增1
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public static long incrBy(String key) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.incr(key);
+		}
+	}
+
+	/**
+	 * 递增指定的incr值
+	 * 
+	 * @param key
+	 * @param incr
+	 * @return
+	 */
+	public static long incrBy(String key, long incr) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.incrBy(key, incr);
+		}
+	}
+
+	/**
+	 * 自减1
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public static long decrBy(String key) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.decr(key);
+		}
+	}
+
+	/**
+	 * 递减指定的decr值
+	 * 
+	 * @param key
+	 * @param decr
+	 * @return
+	 */
+	public static long decrBy(String key, long decr) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.decrBy(key, decr);
+		}
+	}
+
+	/**
+	 * 添加一个或多个元素到Set集合里面
+	 * 
+	 * @param key
+	 * @param members
+	 * @return 返回新添加到集合中的元素数量
+	 */
+	public static long sAdd(String key, String... members) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.sadd(key, members);
+		}
+	}
+
+	/**
+	 * 從SET集合中移除一個或多個成員member
+	 * 
+	 * @param key
+	 * @param member
+	 * @return 返回從集合中移除的成員個數,若Key不存在或member不存在則返回0
+	 */
+	public static long sRemove(String key, String... members) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.srem(key, members);
+		}
+	}
+
+	/**
+	 * 添加分数/成员到有序集合SortedSet里面
+	 * 
+	 * @param key
+	 *            键值
+	 * @param score
+	 *            分数
+	 * @param member
+	 *            成员
+	 * @return 添加到有序集合的成员数量，不包括已经存在更新分数的成员
+	 */
+	public static long zAdd(String key, long score, String member) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.zadd(key, score, member);
+		}
+	}
+
+	/**
+	 * 從有序的集合中移除一個或者多個成員member
+	 * 
+	 * @param key
+	 * @param members
+	 * @return 返回從集合中移除的成員個數,若Key不存在或member不存在則返回0
+	 */
+	public static long zRemove(String key, String... members) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.zrem(key, members);
+		}
+	}
+
+	/**
+	 * 返回成員member是否是集合中的成員
+	 * 
+	 * @param key
+	 * @param member
+	 * @return 如果是則返回1,如果不是或者Key不存在則返回0
+	 */
+	public static boolean sisMember(String key, String member) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.sismember(key, member);
+		}
+	}
+
+	/**
+	 * 隨機返回集合Key中的一個元素
+	 * 
+	 * @param key
+	 * @return 如果Key不存在則返回Null
+	 */
+	public static String srandMember(String key) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.srandmember(key);
+		}
+	}
+
+	/**
+	 * 隨機返回集合Key中的元素數組
+	 * 
+	 * @param key
+	 * @param randNum
+	 *            注意randNum是整數且小於Key集合的元素數目,否則返回的數組可能會有重複元素
+	 * @return 如果Key不存在則返回一個空的數組
+	 */
+	public static List<String> srandMember(String key, int randNum) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.srandmember(key, randNum);
+		}
+	}
+
+	/**
+	 * 根據制定的Key以及開始結束索引返回SortedSet的成員列表 注意Sorted Set集合索引為0表示第一個元素,為
+	 * 1表示第二個元素,以此類推。 -1表示最後一個元素,-2則表示倒數第二個元素，以此類推。
+	 * 
+	 * @param key
+	 * @param start
+	 * @param end
+	 * @return
+	 */
+	public static Set<String> zRange(String key, long start, long end) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.zrange(key, start, end);
+		}
+	}
+
+	/**
+	 * 獲取Set集合中的元素個數
+	 * 
+	 * @param key
+	 * @return 若Key不存在則返回0
+	 */
+	public static long sCard(String key) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.scard(key);
+		}
+	}
+
+	/**
+	 * 獲取SortedSet集合中的元素個數
+	 * 
+	 * @param key
+	 * @return 若Key不存在則返回0
+	 */
+	public static long zCard(String key) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.zcard(key);
+		}
+	}
+
+	/**
+	 * 返回SortedSet集合中成員member的分數值score
+	 * 
+	 * @param key
+	 * @param member
+	 * @return 若member不是集合中的成員或Key不存在則返回Null
+	 */
+	public static Double zScore(String key, String member) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.zscore(key, member);
+		}
+	}
+
+	/**
+	 * 为哈希表 key 中的指定字段的整数值加上增量 increment
+	 * 
+	 * @param key
+	 * @param mapKey
+	 * @param value
+	 * @return
+	 */
+	public static long hIncrBy(String key, String mapKey, long value) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.hincrBy(key, mapKey, value);
+		}
+	}
+
+	/**
+	 * 取存储在哈希表中指定字段的值
+	 * 
+	 * @param key
+	 * @param mapKey
+	 * @return
+	 */
+	public static String hget(String key, String mapKey) {
+		try (Jedis jedis = getJedis()) {
+			return jedis.hget(key, mapKey);
+		}
+	}
+
+	/**
+	 * 缓存Map对象到Redis
+	 * 
+	 * @param key
+	 * @param map
+	 */
+	public static void hmset(String key, Map<String, String> map, int seconds) {
+		try (Jedis jedis = getJedis()) {
+			jedis.hmset(key, map);
+			if (seconds != 0)
+				jedis.expire(key, seconds);
+		}
+	}
+
+	/**
+	 * 缓存实体类对象到Redis
+	 * 
+	 * @param name
+	 *            实体类名
+	 * @param key
+	 *            实体主键ID
+	 * @param entity
+	 *            实体对象
+	 */
+	public static <T> void hset(String name, String key, T entity) {
+		try (Jedis jedis = getJedis()) {
+			jedis.hset(name, key, JSONObject.fromObject(entity).toString());
+		}
+	}
+
+	/**
+	 * 从 Redis 缓存的 Map 检索对象
+	 * 
+	 * @param clazz
+	 *            对象类型
+	 * @param key
+	 *            Redis的Key
+	 * @param mapKey
+	 *            Map的Key
+	 * @return 检索到的对象
+	 * 
+	 */
+	public static <T> T find(Class<T> clazz, String key, String mapKey) {
+		try (Jedis jedis = getJedis()) {
+			List<String> list = jedis.hmget(key, mapKey);
+			if (CollectionUtils.isNotEmpty(list)) {
+				return JSON.parseObject(list.get(0), clazz);
+			}
+			return null;
+		}
+	}
+
+	/**
+	 * 从 Redis 中检索对象列表
+	 * 
+	 * @param clazz
+	 *            检索对象返回类型
+	 * @param key
+	 *            检索Key
+	 * @return 检索到的对象列表
+	 */
+	public static <T> List<T> find(Class<T> clazz, String key) {
+		try (Jedis jedis = getJedis()) {
+			Map<String, String> map = jedis.hgetAll(key);
+			Collection<String> values;
+			if (map != null && !(values = map.values()).isEmpty()) {
+				return values.parallelStream()
+						.map(str -> JSON.parseObject(str, clazz))
+						.collect(Collectors.toList());
+			}
+			return Collections.emptyList();
+		}
+	}
+
+	/**
+	 * 删除缓存
+	 * 
+	 * @param clazz
+	 *            实体类名
+	 * @param id
+	 *            实体主键ID
+	 */
+	public static <E extends BaseEntity> void remove(Class<E> clazz,
+			Serializable id) {
+		try (Jedis jedis = getJedis()) {
+			jedis.hdel(clazz.getName(), String.valueOf(id));
+		}
+	}
+
+	/**
+	 * 簡易版Redis分布式鎖
+	 * 
+	 * @param key
+	 * @param expired
+	 * @param timeout
+	 * @param timeUnit
+	 * @return
+	 */
+	public static boolean acquiredLock(String key, int expired, int timeout,
+			TimeUnit timeUnit) {
+		try (Jedis jedis = getJedis()) {
+			long time = System.nanoTime();
+			while (System.nanoTime() - time < timeUnit.toNanos(timeout)) {
+				long lock = jedis.setnx(key, UUID.randomUUID().toString());
+				if (lock == 1) {
+					jedis.expire(key, expired);
+					return Boolean.TRUE;
+				}
+			}
+		}
+		return Boolean.FALSE;
+	}
+
+	/**
+	 * 解锁
+	 * 
+	 * @param key
+	 */
+	public static void unLock(String key) {
+		try (Jedis jedis = getJedis()) {
+			jedis.del(key);
+		}
+	}
+
+	/**
+	 * 返回Jedis连接
+	 * 
+	 * @param jedis
+	 */
+	public static void closeJedis(Jedis jedis) {
+		if (null != jedis) {
+			jedis.close();
+		}
+	}
+}

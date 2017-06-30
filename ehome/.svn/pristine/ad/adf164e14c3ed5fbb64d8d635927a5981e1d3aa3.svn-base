@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.life.mapper.LifeConfigMapper">
+	<resultMap id="LifeConfigMap" type="com.ehome.cloud.life.model.LifeConfigModel">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="life_name" property="lifeName" jdbcType="VARCHAR" />
+		<result column="icon" property="icon" jdbcType="VARCHAR" />
+		<result column="url" property="url" jdbcType="VARCHAR" />
+		<result column="is_index" property="isIndex" jdbcType="INTEGER" />
+		<result column="parent_id" property="parentId" jdbcType="INTEGER" />
+		<result column="life_dept" property="lifeDept" jdbcType="VARCHAR" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="pv" property="pv" jdbcType="INTEGER" />
+		<result column="app_pv" property="appPv" jdbcType="INTEGER" />
+		<result column="pv_percent" property="pvPercent" jdbcType="VARCHAR" />
+		<result column="uv" property="uv" jdbcType="INTEGER" />
+		<result column="app_uv" property="appUv" jdbcType="INTEGER" />
+		<result column="uv_percent" property="uvPercent" jdbcType="VARCHAR" />
+		<result column="life_config_id" property="lifeConfigId" jdbcType="INTEGER" />
+		<result column="unload_id" property="unloadId" jdbcType="INTEGER"/>
+	</resultMap>
+	<resultMap type="com.ehome.cloud.life.model.AreaModel" id="AreaMap">
+		<result column="area_name" property="label" jdbcType="VARCHAR" />
+		<result column="type" property="type" jdbcType="VARCHAR" />
+		<result column="parent" property="parent" jdbcType="VARCHAR" />
+		<result column="value" property="value" jdbcType="VARCHAR" />
+		<result column="id" property="uid" jdbcType="INTEGER" />
+		<result column="pid" property="pid" jdbcType="INTEGER" />
+		<result column="level" property="level" jdbcType="INTEGER" />
+	</resultMap>
+	<resultMap type="com.ehome.cloud.life.model.LifeCityModel"
+		id="LifeCityMap">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="province_id" property="provinceId" jdbcType="INTEGER" />
+		<result column="city_id" property="cityId" jdbcType="INTEGER" />
+		<result column="life_config_id" property="lifeCityId" jdbcType="INTEGER" />
+	</resultMap>
+
+	<sql id="commonSQL">
+		SELECT
+		e.id,e.icon,e.parent_id,e.life_name,e.url,e.is_index,e.life_dept,e.sort,e.status,e.remark,e.create_time
+	</sql>
+
+	<select id="queryLifeConfigList" resultMap="LifeConfigMap">
+		SELECT DISTINCT
+		e.id,e.icon,e.parent_id,e.life_name,e.url,e.is_index,e.life_dept,e.sort,e.status,e.remark,e.create_time,e.unload_id FROM t_life_config e 
+        LEFT JOIN t_life_city c ON e.id = c.life_config_id  where e.parent_id=0
+		<if test="lifeName!=null and lifeName!=''">
+			AND e.life_name LIKE CONCAT('%', #{lifeName},'%')
+		</if>
+		<if test="provinceId != null and provinceId !='' ">
+			and c.province_id = #{provinceId}
+		</if>
+		<if test="cityId != null and cityId !='' ">
+			and c.city_id = #{cityId}
+		</if>
+		order by e.id   desc
+	</select>
+
+	<select id="queryById" resultMap="LifeConfigMap">
+		<include refid="commonSQL"></include>
+		FROM t_life_config e
+
+		WHERE e.id=#{lifeId}
+	</select>
+
+	<select id="queryByCityId" resultMap="LifeCityMap">
+
+		SELECT * FROM t_life_city WHERE life_config_id=#{lifeCityId}
+	</select>
+
+	<update id="updateLife">
+
+		UPDATE t_life_config 
+		
+		<trim prefix=" " prefixOverrides=",">    
+		    <set>  
+		    	<if test="lifeName != null">life_name = #{lifeName},</if>  
+		    	<if test="icon != null">icon = #{icon},</if>  
+		        <if test="url != null">url = #{url},</if>  
+		        <if test="isIndex != null">is_index = #{isIndex},</if>  
+		        <if test="lifeDept != null">life_dept = #{lifeDept},</if> 
+		        <if test="sort != null">sort = #{sort},</if>
+		        <if test="status != null">status=#{status},</if>
+		        <if test="remark != null">remark = #{remark},</if>
+		        <if test="unloadId != null">unload_id = #{unloadId}</if>
+		    </set>  
+    		WHERE id = #{id}
+  		 </trim> 
+
+	</update>
+
+	<insert id="insertLife" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO t_life_config(
+
+		life_name,
+		icon,
+		url,
+		is_index,
+		life_dept,
+		sort,
+		status,
+		remark,
+		unload_id
+		)VALUES(
+
+		#{lifeName},
+		#{icon},
+		#{url},
+		#{isIndex},
+		#{lifeDept},
+		#{sort},
+		#{status},
+		#{remark},
+		#{unloadId}
+		)
+	</insert>
+
+	<delete id="deleteLife">
+		DELETE FROM t_life_config WHERE id=#{id}
+	</delete>
+	
+	<select id="queryByLifeId" resultMap="LifeConfigMap">
+	   SELECT * from t_life_config where parent_id =#{id}
+	</select>
+	
+	<select id="queryByPLifeId" resultMap="LifeConfigMap">
+	   SELECT * from t_life_config where parent_id =#{id}
+	</select>
+	
+	<delete id="deleteLocalId">
+	   DELETE  FROM t_life_config where parent_id =#{parentId}
+	</delete>
+	
+	<select id="queryByParentId" resultMap="LifeConfigMap">
+	   SELECT unload_id FROM t_life_config WHERE parent_id = #{parentId}
+	</select>
+	
+	<delete id="deleteParUnloadId">
+       DELETE FROM t_uploadfile WHERE id = #{unloadId}
+	</delete>
+	
+	<select id="queryByIds" resultMap="LifeConfigMap">
+	   SELECT * from t_life_config where id=#{id}
+	</select>
+     
+    <delete id="deletelocalUnloadId">
+       DELETE FROM t_uploadfile WHERE id = #{unloadId}
+    </delete>
+    
+    <delete id="deleteLifeCityId">
+       DELETE FROM t_life_city WHERE life_config_id = #{id}
+    </delete>
+     
+	<select id="querylocalList" resultMap="LifeConfigMap">
+		<include refid="commonSQL"></include>
+		FROM t_life_config e WHERE e.parent_id=#{localId}
+		<if test="lifeName!=null and lifeName!=''">
+			AND e.life_name LIKE CONCAT('%', #{lifeName},'%')
+		</if>
+		order by e.id   desc
+	</select>
+
+	<update id="updateLocal">
+
+		UPDATE t_life_config 
+
+		<trim prefix=" " prefixOverrides=",">    
+		    <set>  
+		    	<if test="lifeName != null">life_name = #{lifeName},</if>  
+		    	<if test="icon != null">icon = #{icon},</if>  
+		        <if test="url != null">url = #{url},</if>  
+		        <if test="sort != null">sort = #{sort},</if>
+		        <if test="status != null">status=#{status},</if>
+		        <if test="unloadId != null">unload_id = #{unloadId}</if>
+		    </set>  
+    		WHERE id = #{id}
+  		 </trim> 
+
+	</update>
+
+	<insert id="insertLocal">
+		INSERT INTO t_life_config(
+		parent_id,
+		life_name,
+		icon,
+		url,
+		sort,
+		status,
+		unload_id
+		)VALUES(
+		#{parentId},
+		#{lifeName},
+		#{icon},
+		#{url},
+		#{sort},
+		#{status},
+		#{unloadId}
+		)
+	</insert>
+
+	<select id="queryLocalById" resultMap="LifeConfigMap">
+		<include refid="commonSQL"></include>
+		FROM t_life_config e where e.id=#{localId}
+	</select>
+
+	<select id="querydataList" resultMap="LifeConfigMap">
+		SELECT
+		e.id,e.parent_id,e.life_name,e.url,e.is_index,e.life_dept,e.sort,e.status,e.remark,e.create_time,
+		d.pv,d.app_pv,d.pv_percent,d.uv,d.app_uv,d.uv_percent,d.life_config_id
+		FROM t_life_config e , t_life_data_track d where
+		e.id=d.life_config_id 
+		<if test="startTime!=null and startTime!=''">
+			AND e.create_time &gt; #{startTime}
+		</if>
+		<if test="endTime!=null and endTime!=''">
+			AND e.create_time &lt; #{endTime}
+		</if>
+		<if test="lifeName!=null and lifeName!=''">
+		    AND e.life_name LIKE CONCAT('%', #{lifeName},'%') 
+		</if>
+		
+		order by e.id   desc
+	</select>
+
+	<select id="queryArea" resultMap="AreaMap">
+		SELECT id,area_name,pid,"" as value,"" as type,"" as parent,level from
+		t_area where t_area.level in (1,2)
+	</select>
+
+	<insert id="insertCity">
+		INSERT INTO t_life_city (city_id,life_config_id) VALUES
+		<foreach collection="list" item="item" index="index"
+			separator=",">
+			(#{item},#{lifeCityId})
+		</foreach>
+	</insert>
+
+	<select id="queryByConfigId" resultType="java.lang.Integer">
+		select id from t_life_config where id=(select max(id) from t_life_config)
+	</select>
+
+	<select id="selectByArea" resultMap="LifeCityMap">
+		SELECT DISTINCT province_id,province_name from t_life_city
+	</select>
+
+	<select id="selectByCity" resultMap="LifeCityMap">
+		SELECT DISTINCT city_id,city_name from t_life_city WHERE
+		province_id=#{provinceId}
+	</select>
+	<select id="queryAreaName" resultMap="AreaMap">
+		SELECT  id uid,area_name value,level,pid FROM t_area where area_name  LIKE CONCAT('%',#{areaName} ,'%') and level in('1','2')
+	</select>
+	
+	<insert id="insertsCity">
+	   INSERT INTO t_life_city (city_id,life_config_id,province_id,province_name,city_name) 
+	   VALUES (#{cityId},#{lifeConfigId},#{provinceId},#{provinceName},#{cityName})
+	</insert>
+	
+	<delete id="deleteCityId">
+	    DELETE FROM t_life_city WHERE  life_config_id=#{lifeConfigId}
+	</delete>
+	
+	<delete id="deleteUnloadId">
+        DELETE from t_uploadfile WHERE id = #{unloadId}
+	</delete>
+	
+	<select id="queryMaxSort" resultMap="LifeConfigMap">
+	    SELECT MAX(sort)+1 as sort FROM t_life_config WHERE  parent_id =0
+	</select>
+	
+	<select id="queryLocalMaxSort" resultMap="LifeConfigMap">
+	    SELECT MAX(sort)+1 as sort FROM t_life_config where parent_id !=0 and parent_id=#{parentId}
+	</select>
+</mapper>

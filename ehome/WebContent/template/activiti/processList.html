@@ -1,0 +1,263 @@
+<% include("/system/public/header.html",{title:'header'}){} %> <%
+layout("/system/public/aside.html",{title:'header'}){} %>
+
+<script type="text/javascript"></script>
+
+<!-- BEGIN WRAPPER  -->
+<div class="editalbeWrap">
+	<section id="main-content">
+		<!-- BEGIN WRAPPER  -->
+		<section class="wrapper site-min-height">
+			<section class="panel">
+				<header class="panel-heading">
+					<span class="label label-primary">流程列表</span> <span class="tools pull-right"> <a
+							href="javascript:;" class="fa fa-chevron-down"></a> <a href="javascript:;"
+							class="fa fa-times"></a> </span>
+				</header>
+				<div class="panel-body">
+					<div class="adv-table editable-table ">
+						<div class="clearfix">
+							<div class="btn-group">
+								<a onclick="" data-toggle="modal" class="btn btn-success green">
+									新增模型 <i class="fa fa-plus"></i>
+								</a>
+							</div>
+							<div class="btn-group pull-right">
+								<button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+									工具栏<i class="fa fa-angle-down"></i>
+								</button>
+								<ul class="dropdown-menu pull-right">
+									<li>
+										<a href="#">没有工具</a>
+									</li>
+								</ul>
+							</div>
+						</div>
+						<div class="space15"></div>
+						<table class="table table-striped table-hover table-bordered" id="sample-table">
+							<thead>
+								<tr>
+									<th width="5%"><input type="checkbox" id="zcheckbox" /> <span class="lbl"></span></th>
+									<th>流程名称</th>
+									<th>版本</th>
+									<th>key</th>
+									<th><i class="icon-time bigger-110 hidden-480"></i> 部署时间</th>
+									<th>所属机构</th>
+									<th>操作</th>
+								</tr>
+							</thead>
+						</table>
+						<ul class="pagination"></ul>
+					</div>
+				</div>
+			</section>
+		</section>
+		<!-- END WRAPPER  -->
+	</section>
+</div>
+
+
+<script src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script>
+<!-- DATATABLE JS  -->
+<script src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script>
+<!-- DATATABLE JS  -->
+<script src="${ctxPath}/static/system/olive/all/js/jquery.form.js"></script>
+<script src="${ctxPath}/static/system/olive/all/js/jquery.validate.min.js"></script>
+<script src="${ctxPath}/static/system/olive/all/assets/layer/layer.js"></script>
+
+<script type="text/javascript">
+	jQuery(document).ready(
+			function() {
+				init();
+
+				//全选
+				$('table th input:checkbox').on(
+						'click',
+						function() {
+							var that = this;
+							$(this).closest('table').find(
+									'tr > td:first-child input:checkbox').each(
+									function() {
+										this.checked = that.checked;
+										$(this).closest('tr').toggleClass(
+												'selected');
+									});
+
+						});
+			});
+
+	//删除
+	function del(id) {
+
+		if (confirm("确定要删除吗？")) {
+			$.ajax({
+				type : "POST",
+				url : "${ctxPath}/process/delProcessDefinition",
+				data : {
+					"deploymentIds" : id,
+				},
+				success : function(data) {
+					var obj = JSON.parse(data); //由JSON字符串转换为JSON对象
+					alert(obj.msg);
+					if (obj.code == "10000") {
+						init();
+					}
+				},
+				error : function(request) {
+					alert("程序异常，请重试");
+				}
+
+			});
+		}
+	}
+	
+	//查看流程设计
+	function viewImage(id) {
+
+		layer.open({
+			type : 2,
+			title : '查看流程设计',
+			shadeClose : true,
+			skin : 'layui-layer-rim',
+			shade : 0.6,
+			shadeClose : false, //开启遮罩关闭
+			maxmin : true, //开启最大化最小化按钮
+			area : [ '60%', '75%' ],
+			anim : 1,
+			content : [
+					'${ctxPath}/process/viewProcessDefinitionImage?deploymentId='+ id, 'yes' ],
+			success : function(layero) {
+				//隐藏最小化按钮
+				layero.find('.layui-layer-min').hide();
+			}
+		});
+
+	}
+	
+	//发起流程
+	function startProcess(id){
+		
+		layer.open({
+			type : 2,
+			title : '发起流程',
+			shadeClose : true,
+			skin : 'layui-layer-rim',
+			shade : 0.6,
+			shadeClose : false, //开启遮罩关闭
+			maxmin : true, //开启最大化最小化按钮
+			area : [ '60%', '75%' ],
+			anim : 1,
+			content : [
+					'${ctxPath}/process/startFormProcess?processDefinitionId='+ id, 'no' ],
+			success : function(layero) {
+				//隐藏最小化按钮
+				layero.find('.layui-layer-min').hide();
+			}
+		});
+		
+	}
+	
+	
+
+	//初始化表格
+	function init() {
+
+		var url = "${ctxPath}/process/selectProcessList?category=${category}";
+
+		//初始化table
+		var oTable1 = $('#sample-table')
+				.dataTable(
+						{
+							"bPaginate" : true,//分页工具条显示
+							//"sPaginationType" : "full_numbers",//分页工具条样式
+							"bStateSave" : true, //是否打开客户端状态记录功能,此功能在ajax刷新纪录的时候不会将个性化设定回复为初始化状态  
+							"bScrollCollapse" : true, //当显示的数据不足以支撑表格的默认的高度
+							"bLengthChange" : true, //每页显示的记录数
+							"bFilter" : false, //搜索栏
+							"bSort" : true, //是否支持排序功能
+							"bInfo" : true, //显示表格信息
+							"bAutoWidth" : true, //自适应宽度
+							"bJQueryUI" : false,//是否开启主题
+							"bDestroy" : true,
+							"bProcessing" : true, //开启读取服务器数据时显示正在加载中……特别是大数据量的时候，开启此功能比较好
+							"bServerSide" : true,//服务器处理分页，默认是false，需要服务器处理，必须true
+							"sAjaxDataProp" : "aData",//是服务器分页的标志，必须有 
+							"sAjaxSource" : url,//通过ajax实现分页的url路径。  
+							"aoColumns" : [//初始化要显示的列
+									{
+										"mDataProp" : "id",//获取列数据，跟服务器返回字段一致
+										"sClass" : "center",//显示样式
+										"mRender" : function(data, type, full) {//返回自定义的样式
+											return "<label><input type='checkbox' name='ids' value='"+full.deploymentId+"' class='ace' /><span class='lbl'></span></label>"
+										}
+									},
+									{
+										"mDataProp" : "name"
+									},
+									{
+										"mDataProp" : "version"
+									},
+									{
+										"mDataProp" : "key"
+									},
+									{
+										"mDataProp" : "deploymentTime",
+										"mRender" : function(data, type, full) {
+											return new Date(data)//处理时间显示
+											.toLocaleString();
+										}
+									},{
+										"mDataProp" : "orgainName",
+									},
+									{
+										"mDataProp" : "deploymentId",
+										"sClass" : "center",//显示样式
+										"mRender" : function(data, type, full) {
+
+											return "<a class='update' onclick='startProcess(\""
+													+ full.id
+													+ "\");' title='发起'><span class='btn btn-success'>发起</span></a>&nbsp;<a class='green' onclick='viewImage(\""
+													+ data
+													+ "\");' title='查看流程设计'><span class='btn btn-warning'>查看流程设计</span></a>&nbsp;<a class='red' onclick='del(\""
+													+ data
+													+ "\")'tle='删除'><span class='btn btn-danger'>删除</span></a>"
+										}
+									} ],
+							"aoColumnDefs" : [ {//用来设置列一些特殊列的属性
+								"bSortable" : false,
+								"aTargets" : [ 0 ]
+							//第一列不排序
+							}, {
+								"bSortable" : false,
+								"aTargets" : [ 5 ]
+							} ],
+							"oLanguage" : {//语言设置
+								"sProcessing" : "处理中...",
+								"sLengthMenu" : "显示 _MENU_ 项结果",
+								"sZeroRecords" : "没有匹配结果",
+								"sInfo" : "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+								"sInfoEmpty" : "显示第 0 至 0 项结果，共 0 项",
+								"sInfoFiltered" : "(由 _MAX_ 项结果过滤)",
+								"sInfoPostFix" : "",
+								"sSearch" : "搜索:",
+								"sUrl" : "",
+								"sEmptyTable" : "表中数据为空",
+								"sLoadingRecords" : "载入中...",
+								"sInfoThousands" : ",",
+								"oPaginate" : {
+									"sFirst" : "首页",
+									"sPrevious" : "上页",
+									"sNext" : "下页",
+									"sLast" : "末页"
+								},
+								"oAria" : {
+									"sSortAscending" : ": 以升序排列此列",
+									"sSortDescending" : ": 以降序排列此列"
+								}
+							}
+						});
+
+	};
+</script>
+<!-- END MAIN CONTENT -->
+<% layout("/system/public/footer.html",{title:'header'}){} %>

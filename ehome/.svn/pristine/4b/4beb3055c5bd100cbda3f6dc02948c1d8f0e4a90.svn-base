@@ -1,0 +1,135 @@
+package com.ehome.push;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.gexin.rp.sdk.base.IPushResult;
+import com.gexin.rp.sdk.base.impl.ListMessage;
+import com.gexin.rp.sdk.base.impl.SingleMessage;
+import com.gexin.rp.sdk.base.impl.Target;
+import com.gexin.rp.sdk.exceptions.RequestException;
+import com.gexin.rp.sdk.http.IGtPush;
+import com.gexin.rp.sdk.template.AbstractTemplate;
+
+public class GtPushUtil {
+
+	/**
+	 * 对单个用户推送消息
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-2-14
+	 * @param template
+	 *            模版
+	 * @param alias
+	 *            用户别名
+	 * @param pushNetWorkType
+	 *            1为wifi，0为不限制网络环境,默认0
+	 * @return
+	 */
+	public String PushtoSingle(AbstractTemplate template,
+			Integer pushNetWorkType, String alias) {
+
+		IGtPush push = new IGtPush(Constants.APPKEY, Constants.MASTERSECRET);
+		// 单推消息的消息体
+		SingleMessage message = new SingleMessage();
+		// 消息离线是否存储
+		message.setOffline(true);
+		// 离线有效时间，单位为毫秒，可选
+		message.setOfflineExpireTime(24 * 3600 * 1000);
+		// 可选，1为wifi，0为不限制网络环境。根据手机处于的网络情况，决定是否下发
+		if (pushNetWorkType != null) {
+			message.setPushNetWorkType(pushNetWorkType);
+		} else {
+			message.setPushNetWorkType(0);
+		}
+		// 推送消息消息内容
+		message.setData(template);
+
+		// 定义一个推送目标
+		Target target = new Target();
+		target.setAppId(Constants.APPID);
+		// setClientId和setAlias其中一项必填
+		target.setAlias(alias);
+
+		// 推送结果
+		IPushResult ret = null;
+		try {
+			ret = push.pushMessageToSingle(message, target);
+		} catch (RequestException e) {
+			e.printStackTrace();
+			ret = push.pushMessageToSingle(message, target, e.getRequestId());
+		}
+
+		if (ret != null) {
+			return ret.getResponse().toString();
+		} else {
+			return "服务器响应异常";
+		}
+
+	}
+
+	/**
+	 * 对指定用户列表推送消息
+	 * 
+	 * @author kokJuis
+	 * @version 1.0
+	 * @date 2017-2-14
+	 * @param template
+	 *            模版
+	 * @param userList
+	 *            用户别名列表
+	 * @param pushNetWorkType
+	 *            1为wifi，0为不限制网络环境,默认0
+	 * @return
+	 */
+	public String PushList(AbstractTemplate template, Integer pushNetWorkType,
+			List<String> userList) {
+
+		// 配置返回每个别名及其对应cid的用户状态，可选
+		System.setProperty("gexin_pushList_needAliasDetails", "true");
+
+		IGtPush push = new IGtPush(Constants.APPKEY, Constants.MASTERSECRET);
+
+		ListMessage message = new ListMessage();
+		message.setData(template);
+		// 设置消息离线，并设置离线时间
+		message.setOffline(true);
+		// 离线有效时间，单位为毫秒，可选
+		message.setOfflineExpireTime(24 * 1000 * 3600);
+		// 可选，1为wifi，0为不限制网络环境。根据手机处于的网络情况，决定是否下发
+		if (pushNetWorkType != null) {
+			message.setPushNetWorkType(pushNetWorkType);
+		} else {
+			message.setPushNetWorkType(0);
+		}
+
+		// 配置推送目标
+		List<Target> tagList = new ArrayList<Target>();
+		for (String userId : userList) {
+			Target target = new Target();
+			target.setAppId(Constants.APPID);
+			target.setAlias(userId);
+			tagList.add(target);
+		}
+
+		// taskId用于在推送时去查找对应的message
+		String taskId = push.getContentId(message);
+		// 推送结果
+		IPushResult ret = null;
+		try {
+			ret = push.pushMessageToList(taskId, tagList);
+		} catch (RequestException e) {
+			e.printStackTrace();
+
+		}
+
+		if (ret != null) {
+			return ret.getResponse().toString();
+		} else {
+			return "服务器响应异常";
+		}
+
+	}
+
+}

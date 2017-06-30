@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.sys.mapper.RoleMapper">
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.sys.model.RoleModel">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="role_code" property="roleCode" jdbcType="VARCHAR" />
+		<result column="role_type" property="roleType" />
+		<result column="role_name" property="roleName" jdbcType="VARCHAR" />
+		<result column="role_desc" property="roleDesc"
+			jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+		<result column="is_app_type" property="isAppType" jdbcType="INTEGER"/>
+		<result column="status" property="status" />
+	</resultMap>
+	
+	
+	<insert id="insertRole"  parameterType="com.ehome.cloud.sys.model.RoleModel" 
+			useGeneratedKeys="true" keyProperty="id">
+		   	INSERT INTO t_role (
+		   	role_code,role_type,role_name,role_desc,status,create_time,is_app_type
+		) VALUES (
+		    #{roleCode},#{roleType},#{roleName},#{roleDesc},#{status},now(),#{isAppType}
+		)
+	</insert>
+	
+	<update id="updateRole" parameterType="com.ehome.cloud.sys.model.RoleModel">
+		update t_role set role_code=#{roleCode},role_type=#{roleType},role_name=#{roleName},role_desc=#{roleDesc},status=#{status},is_app_type=#{isAppType}
+		WHERE 
+			id = #{id}
+	</update>
+	
+	<delete id="deleteRoleById" parameterType="java.lang.Integer">
+	    delete from t_role WHERE id = #{id}
+	</delete>
+	
+	<select id="queryForList" resultMap="BaseResultMap" parameterType="java.lang.String">
+		 select id,role_code,role_type,role_name,role_desc,status,create_time,is_app_type from t_role where 1=1 
+	         <if test="keyword!=null and keyword!=''">
+	             and (role_name  LIKE CONCAT('%', #{keyword},'%') 
+	         </if>
+	</select>
+	
+	<select id="queryById" resultType="com.ehome.cloud.sys.model.RoleModel" parameterType="java.lang.Integer">
+		 select id,role_code,role_type,role_name,role_desc,status,create_time,is_app_type from t_role 
+	     where id = #{id}
+	</select>
+	
+	<select id="queryRoleList" resultMap="BaseResultMap">
+		 SELECT distinct t.id,t.role_code,t.role_type,t.role_name,t.role_desc,t.status,t.create_time,is_app_type 
+		 FROM t_role t 
+		 <where>
+		     <if test="roleName!=null and roleName!=''">
+	             AND (t.role_name  LIKE CONCAT('%', #{roleName},'%') 
+	         </if>
+		     <if test="roleType!=null and roleType!=''">
+	             AND t.role_type = #{roleType} 
+	         </if>
+			 AND t.id NOT IN (
+			    SELECT e.role_id FROM t_role_user e WHERE e.user_id = #{userId}
+			 ) 
+	         <if test="authRoleList != null and authRoleList.size() != 0">
+                   AND t.id NOT IN 
+        	        <foreach collection="authRoleList" item="item" index="index" open="("
+	                 separator="," close=")">
+	               #{item}
+                    </foreach>
+	          </if>
+	         <if test="unAuthRoleList != null and unAuthRoleList.size() != 0">
+                   OR t.id IN 
+        	        <foreach collection="unAuthRoleList" item="item" index="index" open="("
+	                 separator="," close=")">
+	               #{item}
+                    </foreach>
+	          </if>
+		 </where>
+	</select>
+	
+	<select id="querySelectRoleList" resultMap="BaseResultMap">
+	    SELECT distinct r.* FROM t_role r LEFT JOIN t_role_user t ON
+        r.id = t.role_id WHERE 
+        (
+        t.user_id = #{userId}
+    	<if test="authRoleList != null and authRoleList.size() != 0">
+            OR r.id IN 
+        	 <foreach collection="authRoleList" item="item" index="index" open="("
+	         separator="," close=")">
+	         #{item}
+         </foreach>
+        </if>
+        )
+	    <if test="unAuthRoleList != null and unAuthRoleList.size() != 0">
+                AND r.id NOT IN 
+     	        <foreach collection="unAuthRoleList" item="item" index="index" open="("
+               separator="," close=")">
+             #{item}
+                 </foreach>
+	    </if>
+	</select>
+	
+	<insert id="insertAuthRole">
+		INSERT INTO t_role_user (role_id,user_id) VALUES
+		<foreach collection="authRoleList" item="item" index="index" separator=",">
+			(#{item},#{userId})
+		</foreach>
+	</insert>
+	
+	<delete id="deleteAuthRole">
+	    DELETE FROM t_role_user 
+	    WHERE t_role_user.user_id = #{userId} AND t_role_user.role_id IN 
+        <foreach collection="unAuthRoleList" item="item" index="index" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+	
+	<select id="queryAuthRoleByUserId" resultMap="BaseResultMap">
+	    SELECT r.* FROM t_role_user t 
+        JOIN t_role r ON t.role_id = r.id
+        WHERE t.user_id = #{userId} AND r.is_app_type = #{isAppType}
+	</select>
+	
+	<!-- 查询前端用户角色 -->
+	<select id="queryAuthRoleByAppUserId" resultMap="BaseResultMap">
+	    SELECT r.* FROM t_role_app_user t 
+        JOIN t_role r ON t.role_id = r.id
+        WHERE t.app_user_id = #{userId} AND r.is_app_type = #{isAppType} 
+	</select>
+	
+	<select id="queryMenus" resultType="java.lang.String" parameterType="java.lang.Integer">
+		SELECT
+			GROUP_CONCAT(menu_id)
+		FROM t_role_menu where role_id=#{roleId}
+	</select>
+	
+	
+	
+	
+	
+	
+	
+</mapper>

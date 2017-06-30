@@ -1,0 +1,242 @@
+package com.ehome.cloud.sys.controller;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.shiro.authz.annotation.Logical;
+import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.apache.shiro.authz.annotation.RequiresUser;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import tk.mybatis.mapper.entity.Condition;
+
+import com.alibaba.fastjson.JSON;
+import com.ehome.cloud.sys.dto.ConfigModuleDto;
+import com.ehome.cloud.sys.model.ConfigModule;
+import com.ehome.cloud.sys.model.ConfigModuleCity;
+import com.ehome.cloud.sys.model.Dictionary;
+import com.ehome.cloud.sys.service.IConfigModuleCityService;
+import com.ehome.cloud.sys.service.IConfigModuleService;
+import com.ehome.cloud.sys.service.IDictionaryService;
+import com.ehome.core.dict.ResponseCode;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.frame.BaseModelAndView;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.frame.Pagination;
+import com.ehome.core.model.AjaxResult;
+import com.ehome.core.util.CollectionUtils;
+import com.ehome.core.util.DictoryCodeUtils;
+import com.ehome.core.util.NumberUtils;
+import com.github.pagehelper.PageInfo;
+
+/**
+ * 
+ * @Title:ConfigModuleController
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年3月8日 下午5:04:14
+ * @version:
+ */
+@Controller
+@RequestMapping(value = "/cfgModule")
+public class ConfigModuleController extends BaseController {
+
+	@Resource
+	private IConfigModuleService configModuleService;
+
+	@Resource
+	private IConfigModuleCityService configModuleCityService;
+	
+	@Resource
+	private IDictionaryService dictionaryService;
+
+	/**
+	 * 搜索页
+	 * 
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/index")
+	@RequiresUser
+	@RequiresPermissions("sys:cfgModule:list")
+	public ModelAndView index(HttpServletRequest request) {
+		ModelAndView view = new BaseModelAndView("/system/config/list.html",
+				request);
+		return view;
+	}
+
+	/**
+	 * 分页查询
+	 * 
+	 * @param model
+	 * @param request
+	 * @param moduleName
+	 * @param sEcho
+	 * @param page
+	 * @param rows
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/querylist", method = RequestMethod.POST)
+	@RequiresUser
+	@ResponseBody
+	@RequiresPermissions("sys:cfgModule:list")
+	public AjaxResult queryModuleList(
+			Model model,
+			NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") String moduleName,
+			@RequestParam(required = false, defaultValue = "") Integer sEcho,
+			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false, defaultValue = "10") int rows)
+			throws BusinessException {
+		List<ConfigModuleDto> lifeConfigList = configModuleService
+				.queryConfigList(moduleName, page, rows);
+		DictoryCodeUtils.renderList(lifeConfigList);
+		PageInfo<ConfigModuleDto> pageInfo = new PageInfo<>(lifeConfigList);
+		Pagination<ConfigModuleDto> pagination = new Pagination<>();
+		pagination.setData(pageInfo.getList());
+		pagination.setsEcho(sEcho);
+		pagination.setiTotalDisplayRecords((int) pageInfo.getTotal());
+		pagination.setiTotalRecords((int) pageInfo.getTotal());
+		return new AjaxResult(ResponseCode.success.getCode(), "", pagination);
+	}
+
+	/**
+	 * 修改服务
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "edit-cfg-page", method = RequestMethod.GET)
+	@RequiresUser
+	@RequiresPermissions("sys:cfgModule:edit")
+	public String editLifePage(Model model, NativeWebRequest request) {
+		Integer pkId = NumberUtils.toInt(request.getParameter("moduleId"));
+		ConfigModule cfgModule = configModuleService.selectByKey(pkId);
+		Condition condition = new Condition(ConfigModuleCity.class);
+		condition.createCriteria().andEqualTo("moduleId", pkId);
+		List<ConfigModuleCity> listCity = configModuleCityService
+				.selectByCondition(condition);
+		model.addAttribute("pkId", pkId);
+		model.addAttribute("cfgModule", cfgModule);
+		model.addAttribute("listCity", JSON.toJSON(listCity));
+		List<Dictionary> dictList = dictionaryService
+				.queryByCode("CODE_MODULE_TYPE");
+		if (CollectionUtils.isNotEmpty(dictList))
+			model.addAttribute("dictList", JSON.toJSON(dictList));
+		return "/system/config/edit.html";
+	}
+
+	/**
+	 * 新增服务
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "add-cfg-page", method = RequestMethod.GET)
+	@RequiresUser
+	@RequiresPermissions("sys:cfgModule:add")
+	public String addLifePage(Model model, NativeWebRequest request) {
+		ConfigModuleDto maxSort = configModuleService.queryMaxSort();
+		model.addAttribute("maxSort", maxSort);
+		List<Dictionary> dictList = dictionaryService
+				.queryByCode("CODE_MODULE_TYPE");
+		if (CollectionUtils.isNotEmpty(dictList))
+			model.addAttribute("dictList", JSON.toJSON(dictList));
+		return "/system/config/add.html";
+	}
+
+	/**
+	 * 保存服务
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 * @throws BusinessException
+	 */
+	@RequestMapping(value = "/addCfgModule", method = RequestMethod.POST)
+	@RequiresUser
+	@RequiresPermissions(value = { "sys:cfgModule:add", "sys:cfgModule:edit" }, logical = Logical.OR)
+	@ResponseBody
+	public AjaxResult addLife(
+			Model model,
+			NativeWebRequest request,
+			MultipartFile filed,
+			@RequestParam(required = false, defaultValue = "") Integer id,
+			@RequestParam(required = false, defaultValue = "") Integer moduleType,
+			@RequestParam(required = false, defaultValue = "") Integer channelId,
+			@RequestParam(required = false, defaultValue = "") String moduleName,
+			@RequestParam(required = false, defaultValue = "") String moduleCode,
+			@RequestParam(required = false, defaultValue = "") String file,
+			@RequestParam(required = false, defaultValue = "") String icon,
+			@RequestParam(required = false, defaultValue = "") String remark,
+			@RequestParam(required = false, defaultValue = "") Integer sort,
+			@RequestParam(required = false, defaultValue = "") Integer status,
+			@RequestParam(required = false, defaultValue = "") Integer cityId,
+			@RequestParam(required = false, defaultValue = "") String json,
+			@RequestParam(required = false, defaultValue = "") Integer unloadId)
+			throws BusinessException {
+		if (!NumberUtils.isNull(id) && !NumberUtils.eqZero(id)) {
+			ConfigModule configModel = configModuleService.selectByKey(id);
+			if (null != configModel) {
+				configModel.setModuleName(moduleName);
+				configModel.setIcon(icon);
+				configModel.setSort(sort);
+				configModel.setStatus(status);
+				configModel.setRemark(remark);
+				configModel.setChannelId(channelId);
+				configModel.setModuleType(moduleType);
+				configModel.setModuleCode(moduleCode);
+				configModel.setCreateTime(new Date());
+				configModuleService.updateCfgModule(configModel, json);
+			}
+		} else {
+			ConfigModule configModel = new ConfigModule();
+			configModel.setModuleName(moduleName);
+			configModel.setIcon(icon);
+			configModel.setSort(sort);
+			configModel.setStatus(status);
+			configModel.setRemark(remark);
+			configModel.setUnloadId(unloadId);
+			configModel.setChannelId(channelId);
+			configModel.setModuleType(moduleType);
+			configModel.setModuleCode(moduleCode);
+			configModuleService.insertCfgModule(configModel, json);
+		}
+		return new AjaxResult(ResponseCode.success.getCode(), "",
+				ResponseCode.success.getMsg());
+	}
+
+	/**
+	 * _ 删除服务列表
+	 * 
+	 * @param model
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(value = "/delete", method = RequestMethod.POST)
+	@RequiresUser
+	@ResponseBody
+	@RequiresPermissions("sys:cfgModule:delete")
+	public AjaxResult delete(Model model, NativeWebRequest request,
+			@RequestParam(required = false, defaultValue = "") Integer id,
+			@RequestParam(required = false, defaultValue = "") Integer unloadId)
+			throws BusinessException {
+		configModuleService.deleteCfgModule(id, unloadId);
+		return new AjaxResult(ResponseCode.success.getCode(), "",
+				ResponseCode.success.getMsg());
+	}
+}

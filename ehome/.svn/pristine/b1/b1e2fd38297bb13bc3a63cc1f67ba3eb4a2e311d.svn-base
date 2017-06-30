@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ehome.cloud.guangchang.mapper.TopicMapper">
+  <resultMap id="BaseResultMap" type="com.ehome.cloud.guangchang.model.TopicModel">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="appuser_id" jdbcType="INTEGER" property="appuserId" />
+    <result column="title" jdbcType="VARCHAR" property="title" />
+    <result column="description" jdbcType="VARCHAR" property="description" />
+    <result column="isofficial" jdbcType="TINYINT" property="isofficial" />
+    <result column="subtitle" jdbcType="VARCHAR" property="subtitle" />
+    <result column="topicrule" jdbcType="VARCHAR" property="topicrule" />
+    <result column="ordernum" jdbcType="INTEGER" property="ordernum" />
+    <result column="discussnum" jdbcType="INTEGER" property="discussnum" />
+    <result column="createtime" jdbcType="TIMESTAMP" property="createtime" />
+    <result column="status" jdbcType="TINYINT" property="status" />
+    <result column="picture_url" jdbcType="VARCHAR" property="pictureUrl" />
+    <result column="user_id" jdbcType="INTEGER" property="userId" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, appuser_id, title, description, isofficial, subtitle, topicrule, ordernum, discussnum,  
+    createtime, status, picture_url, user_id
+  </sql>
+  
+  <select id="selectForList" parameterType="com.ehome.core.util.PageData" resultType="com.ehome.core.util.PageData">
+    select 
+    	t.appuser_id userId,
+		t.id topicId,
+		t.title,
+		t.subtitle,
+		t.picture_url pictureUrl,
+		t.description content,
+		t.topicrule,
+		t.isofficial,
+		t.createtime,
+		t.discussnum
+	from t_gc_topic t
+	where 1=1 
+	<if test="userId != null">
+		and t.appuser_id = #{userId}
+	</if>
+	<if test="topicId != null">
+		and t.id = #{topicId}
+	</if>
+	order by t.createtime desc
+  </select>
+  
+  <select id="selectListPage" parameterType="com.ehome.core.util.PageData" resultType="java.util.Map">
+    select 
+    	t.*,
+		u.USERNAME
+	from t_gc_topic t left join sys_user u ON t.appuser_id=u.ID
+	where 1=1
+	<if test="keyword != null">
+		and t.title LIKE CONCAT('%',#{keyword},'%')
+	</if>
+	order by t.createtime desc
+  </select>
+  
+  <select id="findListItem" parameterType="java.lang.Integer" resultType="com.ehome.core.util.PageData">
+    select 
+    	t.*,
+		u.USERNAME
+	from t_gc_topic t left join sys_user u ON t.appuser_id=u.ID
+	where t.id = #{id}
+  </select>
+  
+  <select id="selectFileList" parameterType="com.ehome.core.util.PageData" resultType="java.util.Map">
+    select 
+    	id,filepath
+	from t_uploadfile where id in 
+	<foreach item="item" collection="list" open="(" separator="," close=")">  
+          #{item}
+    </foreach> 	
+  </select>
+  
+  <select id="selectTopicAndDiscussionList" parameterType="com.ehome.core.util.PageData" resultType="com.ehome.core.util.PageData">
+    SELECT * from(
+		SELECT 'Topic' type,gt.id topicId, '' discussionId, gt.title content, gt.title topicTitle, gt.picture_url img, gt.createtime
+		from t_gc_topic gt
+		where gt.appuser_id = #{userId}
+		
+		UNION
+		
+		SELECT 'Discussion' type,'' topicId, gd.id discussionId, gd.content, gt1.title topicTitle, gd.pic_urls img, gd.createtime
+		from t_gc_discussion gd
+		LEFT JOIN t_gc_topic gt1
+		on gd.topic_id = gt1.id
+		where gd.user_id = #{userId} and gd.isanonymous = 0
+	) tmp ORDER BY tmp.createtime desc
+  </select>
+  
+  <update id="addDiscussnum" parameterType="java.lang.Integer">
+    update t_gc_topic
+    set discussnum = discussnum +1
+    where id = #{id}
+  </update>
+  <!-- 
+  <insert id="insertTopic"   useGeneratedKeys="true" keyProperty="id">
+    insert into t_gc_topic (
+    	appuser_id, 
+    	title, 
+      	`desc`, 
+      	isofficial, 
+      	subtitle, 
+      	topicrule, 
+      	ordernum, 
+      	replaytimes, 
+      	createtime, 
+      	status, 
+      	picture_id,
+      	user_id 
+      )values (
+      	#{appUserId}, 
+      	#{title}, 
+     	#{desc}, 
+     	#{isofficial}, 
+     	#{subtitle}, 
+      	#{topicrule}, 
+      	#{ordernum}, 
+      	#{replaytimes}, 
+      	now(), 
+      	#{status}, 
+      	#{pictureId},
+      	#{userId},
+      )
+  </insert>
+  <delete id="deleteTopicById" parameterType="java.lang.Integer">
+    delete from t_gc_topic
+    where id = #{id}
+  </delete>
+  <select id="selectTopicById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from t_gc_topic
+    where id = #{id}
+  </select>
+  <insert id="insertSelective" parameterType="com.ehome.cloud.guangchang.model.Topic">
+    insert into t_gc_topic
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="userId != null">
+        user_id,
+      </if>
+      <if test="title != null">
+        title,
+      </if>
+      <if test="desc != null">
+        desc,
+      </if>
+      <if test="isofficial != null">
+        isofficial,
+      </if>
+      <if test="subtitle != null">
+        subtitle,
+      </if>
+      <if test="topicrule != null">
+        topicrule,
+      </if>
+      <if test="ordernum != null">
+        ordernum,
+      </if>
+      <if test="replaytimes != null">
+        replaytimes,
+      </if>
+      <if test="createtime != null">
+        createtime,
+      </if>
+      <if test="status != null">
+        status,
+      </if>
+      <if test="pictureId != null">
+        picture_id,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="userId != null">
+        #{userId,jdbcType=INTEGER},
+      </if>
+      <if test="title != null">
+        #{title,jdbcType=VARCHAR},
+      </if>
+      <if test="desc != null">
+        #{desc,jdbcType=VARCHAR},
+      </if>
+      <if test="isofficial != null">
+        #{isofficial,jdbcType=TINYINT},
+      </if>
+      <if test="subtitle != null">
+        #{subtitle,jdbcType=VARCHAR},
+      </if>
+      <if test="topicrule != null">
+        #{topicrule,jdbcType=VARCHAR},
+      </if>
+      <if test="ordernum != null">
+        #{ordernum,jdbcType=INTEGER},
+      </if>
+      <if test="replaytimes != null">
+        #{replaytimes,jdbcType=INTEGER},
+      </if>
+      <if test="createtime != null">
+        #{createtime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="status != null">
+        #{status,jdbcType=TINYINT},
+      </if>
+      <if test="pictureId != null">
+        #{pictureId,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  
+  <update id="updateByPrimaryKey" parameterType="com.ehome.cloud.guangchang.model.Topic">
+    update t_gc_topic
+    set user_id = #{userId,jdbcType=INTEGER},
+      title = #{title,jdbcType=VARCHAR},
+      desc = #{desc,jdbcType=VARCHAR},
+      isofficial = #{isofficial,jdbcType=TINYINT},
+      subtitle = #{subtitle,jdbcType=VARCHAR},
+      topicrule = #{topicrule,jdbcType=VARCHAR},
+      ordernum = #{ordernum,jdbcType=INTEGER},
+      replaytimes = #{replaytimes,jdbcType=INTEGER},
+      createtime = #{createtime,jdbcType=TIMESTAMP},
+      status = #{status,jdbcType=TINYINT},
+      picture_id = #{pictureId,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  -->
+</mapper>

@@ -1,0 +1,386 @@
+package com.ehome.cloud.sys.controller;
+
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+
+import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.apache.shiro.authz.annotation.RequiresUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.ehome.cloud.sys.model.RoleModel;
+import com.ehome.cloud.sys.service.IMenuService;
+import com.ehome.cloud.sys.service.IRoleService;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.frame.PageBean;
+import com.ehome.core.util.BeanToMapUtil;
+import com.ehome.core.util.CollectionUtils;
+import com.ehome.core.util.PageData;
+import com.ehome.core.util.ServletUtil;
+import com.ehome.core.util.StringUtils;
+import com.github.pagehelper.PageInfo;
+
+/**
+ * 
+ * @Title:RoleController
+ * @Description:角色管理控制类入口
+ * @author:zsh
+ * @date:2017年2月6日
+ * @version 1.0,2017年2月6日
+ * @{tags
+ */
+@Controller
+@RequestMapping(value = "/role")
+public class RoleController extends BaseController {
+	private final static Logger logger = LoggerFactory
+			.getLogger(RoleController.class);
+
+	@Resource
+	private IRoleService roleService;
+
+	@Resource
+	private IMenuService menuService;
+
+	@RequestMapping(value = "list")
+	@RequiresUser
+	@RequiresPermissions("sys:role:list")
+	public ModelAndView getList(RoleModel roleModel,
+			HttpServletRequest request, HttpServletResponse response) {
+		response.setContentType("text/html;charset=utf-8");
+		response.setCharacterEncoding("utf-8");
+		// response.setHeader("Cache-Control", "no-cache");
+		// response.getWriter().print(resultStr);
+		PageData pd = new PageData();
+		pd = this.getPageData();
+		ModelAndView result = null;
+		try {
+			result = new ModelAndView("/system" + request.getServletPath()
+					+ ".html");
+
+			List<RoleModel> roleList = roleService.queryForList(
+					pd.getString("keyword", null), pd.getInteger("page", 1),
+					pd.getInteger("rows", 1000));
+			JSON.DEFFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
+			if (CollectionUtils.isNotEmpty(roleList)) {
+				PageBean<RoleModel> pb = new PageBean<>(roleList,
+						ServletUtil.getPageUrl(this.getRequest()));
+				result.addObject("pageInfo", new PageInfo<RoleModel>(roleList));
+				result.addObject("tablelist", JSON.toJSONString(roleList,
+						SerializerFeature.WriteDateUseDateFormat));
+				// result.addObject("queryParam", roleModel);
+				result.addObject("page", pd.getInteger("page", 1));
+				result.addObject("rows", pd.getInteger("rows", 1000));
+				result.addObject("pb", pb);
+				result.addObject("pageHtml", pb.pageHtml);
+			} else {
+
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	@RequestMapping(value = "add")
+	public ModelAndView add(RoleModel roleModel, HttpServletRequest request,
+			HttpServletResponse response) {
+		response.setContentType("text/html;charset=utf-8");
+		response.setCharacterEncoding("utf-8");
+		// response.setHeader("Cache-Control", "no-cache");
+		// response.getWriter().print(resultStr);
+		PageData pd = new PageData();
+		pd = this.getPageData();
+		ModelAndView result = null;
+		RoleModel roleMode = new RoleModel();
+		try {
+			result = new ModelAndView("/system" + request.getServletPath()
+					+ ".html");
+			Integer id = pd.getInteger("id", -1);
+			if (id != -1) {
+				roleMode = roleService.queryById(id);
+			}
+			result.addObject("roleModel", roleMode);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	@RequestMapping(value = "addRole")
+	public ModelAndView addRole(HttpServletRequest request,
+			HttpServletResponse response) {
+		response.setContentType("text/html;charset=utf-8");
+		response.setCharacterEncoding("utf-8");
+		// response.setHeader("Cache-Control", "no-cache");
+		// response.getWriter().print(resultStr);
+		PageData pd = new PageData();
+		pd = this.getPageData();
+		try {
+			if (pd.get("id") == null || "".equals(pd.get("id"))) {
+				RoleModel roleModel = new RoleModel();
+				roleModel = (RoleModel) BeanToMapUtil.mapToBean(
+						RoleModel.class, pd);
+				roleService.insertRole(roleModel);
+			} else {
+				RoleModel roleModel = new RoleModel();
+				roleModel = (RoleModel) BeanToMapUtil.mapToBean(
+						RoleModel.class, pd);
+				roleService.updateRole(roleModel);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new ModelAndView("redirect:/role/list");
+	}
+
+	@RequestMapping(value = "/deleteRole")
+	public void delete(PrintWriter out, HttpServletRequest request) {
+		PageData pd = new PageData();
+		int flag = 0;
+		try {
+			pd = this.getPageData();
+			if (pd.get("id") != null && !"".equals(pd.get("id"))) {
+				flag = roleService.deleteRoleById(pd.getInteger("id", -1));
+			}
+		} catch (Exception e) {
+			logger.error(e.toString(), e);
+
+		}
+		out.println(flag);
+
+	}
+
+	/**
+	 * 请求角色菜单授权页面
+	 */
+	// public ModelAndView add(RoleModel roleModel, HttpServletRequest request,
+	// HttpServletResponse response) {
+	// response.setContentType("text/html;charset=utf-8");
+	// response.setCharacterEncoding("utf-8");
+	// // response.setHeader("Cache-Control", "no-cache");
+	// // response.getWriter().print(resultStr);
+	// PageData pd = new PageData();
+	// pd = this.getPageData();
+	// ModelAndView result = null;
+	// RoleModel roleMode = new RoleModel();
+	// try {
+	// result = new ModelAndView("/system" + request.getServletPath());
+	// Integer id = pd.getInteger("id", -1);
+	// if(id!=-1){
+	// roleMode = roleService.queryById(id);
+	// }
+	// result.addObject("roleModel", roleMode);
+	// } catch (Exception e) {
+	// e.printStackTrace();
+	// }
+	// return result;
+	// }
+
+	/**
+	 * 
+	 * pid name parent_id id checked
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping(value = "/auth")
+	public ModelAndView auth(HttpServletRequest request,
+			HttpServletResponse response) {
+		response.setContentType("text/html;charset=utf-8");
+		response.setCharacterEncoding("utf-8");
+		// response.setHeader("Cache-Control", "no-cache");
+		// response.getWriter().print(resultStr);
+
+		ModelAndView result = null;
+		PageData pd = new PageData();
+		pd = this.getPageData();
+		try {
+
+			result = new ModelAndView("/system" + request.getServletPath()
+					+ ".html");
+			Integer roleId = pd.getInteger("roleId", -1);
+
+			List<Map<String, Object>> menuList = menuService.queryListAllMenu();
+
+			// RoleModel role = roleService.queryById(roleId);
+			String roleMenus = roleService.queryMenus(roleId);
+			String roles[] = null;
+			String rolesTemp[] = null;
+			if (StringUtils.isNotBlank(roleMenus)) {
+				roles = roleMenus.split(",");
+				rolesTemp = roles;
+
+				for (Map<String, Object> map : menuList) {
+					// 检查是否勾选
+					for (int i = 0; i < roles.length; i++) {
+						boolean hasMenu = true;
+						if ((map.get("id") == null ? "" : map.get("id")
+								.toString()).equals(roles[i])) {
+							map.put("hasMenu", hasMenu);
+							@SuppressWarnings("unchecked")
+							List<Map<String, Object>> subMenuList = (List<Map<String, Object>>) map
+									.get("nodes");
+							if (subMenuList != null && subMenuList.size() > 0) {
+								for (Map<String, Object> sub : subMenuList) {
+									for (int j = 0; j < rolesTemp.length; j++) {
+										if ((sub.get("id") == null ? "" : sub
+												.get("id").toString())
+												.equals(rolesTemp[j])) {
+											sub.put("hasMenu", hasMenu);
+											break;
+										}
+									}
+									// 第三层
+									@SuppressWarnings("unchecked")
+									List<Map<String, Object>> subNextMenuList = (List<Map<String, Object>>) sub
+											.get("nodes");
+									if (!CollectionUtils
+											.isEmpty(subNextMenuList)) {
+										for (Map<String, Object> subNext : subNextMenuList) {
+											for (int j = 0; j < rolesTemp.length; j++) {
+												if ((subNext.get("id") == null ? ""
+														: subNext.get("id")
+																.toString())
+														.equals(rolesTemp[j])) {
+													subNext.put("hasMenu",
+															hasMenu);
+													break;
+												}
+											}
+										}
+									}
+								}
+
+							}
+							break;
+						} else {
+
+						}
+					}
+				}
+			}
+
+			JSONArray arr = JSONArray.fromObject(menuList);
+			String json = arr.toString();
+			System.out.println("pppp:" + JSON.toJSONString(menuList));
+			json = json.replaceAll("MENU_ID", "id")
+					.replaceAll("menu_name", "name")
+					.replaceAll("subMenu", "nodes")
+					.replaceAll("hasMenu", "checked");
+			result.addObject("zTreeNodes", json);
+			result.addObject("roleId", roleId);
+			System.out.println("json:" + json);
+		} catch (Exception e) {
+			logger.error(e.toString(), e);
+		}
+
+		return result;
+	}
+
+	@RequestMapping(value = "/addAuth")
+	public void addAuth(PrintWriter out, HttpServletRequest request) {
+
+		// request.setCharacterEncoding("utf-8");
+		Map<String, Object> map = new HashMap<>();
+		PageData pd = new PageData();
+		int flag = 0;
+		try {
+			pd = this.getPageData();
+			if (pd.get("roleId") != null && !"".equals(pd.get("roleId"))) {
+				menuService.deleteMenusByRoleId(Integer.parseInt(pd.get(
+						"roleId").toString()));
+				if (pd.get("menuIds") != null
+						&& !"".equals(pd.get("menuIds").toString())) {
+					String ids = pd.get("menuIds").toString();
+					String tempStr[] = ids.split(",");
+					// 可以再方map
+					List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+					for (int j = 0; j < tempStr.length; j++) {
+						// list.add(Integer.parseInt(tempStr[j].toString()));
+						Map<String, Object> tempMap = new HashMap<>();
+						tempMap.put("role_id",
+								Integer.parseInt(pd.get("roleId").toString()));
+						tempMap.put("menu_id",
+								Integer.parseInt(tempStr[j].toString()));
+						list.add(tempMap);
+
+					}
+					map.put("list", list);
+					// map.put("roleId",
+					// Integer.parseInt(pd.get("roleId").toString()));
+
+					menuService.saveMenus(map);
+				}
+				;
+			}
+			flag = 1;
+		} catch (Exception e) {
+			logger.error(e.toString(), e);
+
+		}
+		out.println(flag);
+
+	}
+
+	// @RequestMapping(value = "/auth")
+	// public ModelAndView auth(HttpServletRequest request,HttpServletResponse
+	// response) {
+	// response.setContentType("text/html;charset=utf-8");
+	// response.setCharacterEncoding("utf-8");
+	// // response.setHeader("Cache-Control", "no-cache");
+	// // response.getWriter().print(resultStr);
+	//
+	// ModelAndView result = null;
+	// PageData pd = new PageData();
+	// pd = this.getPageData();
+	// try {
+	//
+	// result = new ModelAndView("/system" + request.getServletPath());
+	// Integer roleId = pd.getInteger("roleId", -1);
+	//
+	// List<Map<String, Object>> varList = menuService.queryListAllMenu();
+	//
+	// RoleModel role = roleService.queryById(roleId);
+	// String roleMenus = roleService.queryMenus(roleId);
+	// String roles [] = roleMenus.split(",");
+	// if (Tools.notEmpty(roleMenus)) {
+	// for (Map<String, Object> map : varList) {
+	// //检查是否勾选
+	// for (int i = 0; i < roles.length; i++)
+	// { boolean hasMenu = true;
+	// if((map.get("id")==null?"":map.get("id").toString()).equals(roles[i])){
+	// map.put("checked", hasMenu);
+	// break;
+	// }else{
+	//
+	// }
+	// }
+	// }
+	// }
+	//
+	// result.addObject("resultStr",JSON.toJSONString(varList).replaceAll("parent_id",
+	// "pid"));
+	// System.out.println(JSON.toJSONString(varList));
+	// } catch (Exception e) {
+	// logger.error(e.toString(), e);
+	// }
+	//
+	// return result;
+	// }
+}

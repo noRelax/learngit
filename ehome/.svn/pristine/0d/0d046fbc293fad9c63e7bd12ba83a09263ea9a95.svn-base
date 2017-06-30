@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.sys.mapper.AppUserMapper">
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.sys.model.AppUserModel">
+		<id column="Id" property="id" jdbcType="INTEGER" />
+		<result column="user_account" property="userAccount" jdbcType="VARCHAR" />
+		<result column="user_password" property="userPassword"
+			jdbcType="VARCHAR" />
+		<result column="user_name" property="userName" jdbcType="VARCHAR" />
+		<result column="user_email" property="userEmail" jdbcType="INTEGER" />
+		<result column="user_tel" property="userTel" jdbcType="VARCHAR" />
+		<result column="user_mobile" property="userMobile" jdbcType="VARCHAR" />
+		<result column="user_desc" property="userDesc" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="status" property="status" />
+		<result column="sex" property="sex" />
+		<result column="province" property="province" />
+		<result column="city" property="city" />
+		<result column="county" property="county" />
+		<result column="address" property="address" />
+		<result column="source_device" property="sourceDevice" />
+		<result column="is_member" property="isMember" />
+		<result column="last_login_time" property="lastLoginTime" jdbcType="TIMESTAMP" />
+		<result column="street" property="street" />
+		<result column="imei" property="imei" />
+		<result column="real_name" property="realName" />
+		<result column="ip" property="ip" />
+		<result column="nick_name" property="nickName" />
+		<result column="portrait" property="portrait" />
+		<result column="signature" property="signature" />
+		<result column="invitation_code" property="invitationCode" />
+		<result column="reg_code" property="regCode" />
+		<result column="invitation_code_from" property="invitationCodeFrom" />
+		<result column="from_type" property="fromType" />
+		<result column="from_key" property="fromKey" />
+		<result column="black_type" property="blackType"/>
+		<result column="salt" property="salt"/>
+	</resultMap>
+	
+	<sql id="commonSQL">
+         SELECT u.id,u.user_account,u.user_password,u.user_name,u.user_email,u.user_tel,u.user_mobile,
+         u.user_desc,u.create_time,u.status,u.sex,u.province,u.city,u.county,u.address,u.source_device,
+         u.is_member,u.last_login_time,u.street,u.imei,u.real_name,u.ip,u.nick_name,u.portrait,u.signature,
+         u.invitation_code,u.reg_code,u.invitation_code_from,u.from_type,u.from_key,u.black_type,u.salt
+	</sql>
+	
+	<insert id="insertUser" useGeneratedKeys="true" keyProperty="id">
+	   	INSERT INTO t_app_user (
+			user_account,
+			user_password,
+			user_name,
+			user_email,
+			user_tel,
+			user_mobile,
+			user_desc,
+			create_time,
+			status,
+			sex,
+			province,
+			city,
+			county,
+			address,
+			source_device,
+			is_member,
+			last_login_time,
+			street,
+			imei,
+			real_name,
+			ip,
+			nick_name,
+			portrait,
+			signature,
+			invitation_code,
+			reg_code,
+			invitation_code_from,
+			from_type,
+			from_key,
+			salt
+		) VALUES (
+			#{userAccount},
+			#{userPassword},
+			#{userName},
+			#{userEmail},
+			#{userTel},
+			#{userMobile},
+			#{userDesc},
+			now(),
+			#{status},
+			#{sex},
+			#{province},
+			#{city},
+			#{county},
+			#{address},
+			#{sourceDevice},
+			#{isMember},
+			#{lastLoginTime},
+			#{street},
+			#{imei},
+			#{realName},
+			#{ip},
+			#{nickName},
+			#{portrait},
+			#{signature},
+			#{invitationCode},
+			#{regCode},
+			#{invitationCodeFrom},
+			#{fromType},
+			#{fromKey},
+			#{salt}
+		)
+	</insert>
+	
+	<update id="updateUser">
+		UPDATE t_app_user SET
+			user_account = #{userAccount},
+			user_name = #{userName},
+			user_email = #{userEmail},
+			user_tel = #{userTel},
+			user_mobile = #{userMobile},
+			user_desc = #{userDesc},
+			status = #{status},
+			sex = #{sex},
+			province = #{province},
+			city = #{city},
+			county = #{county},
+			address = #{address},
+			source_device = #{sourceDevice},
+			is_member = #{isMember},
+			last_login_time = now(),
+			street = #{street},
+			imei = #{imei},
+			real_name = #{realName},
+			ip = #{ip},
+			nick_name = #{nickName},
+			portrait = #{portrait},
+			signature = #{signature},
+			invitation_code = #{invitationCode},
+			reg_code = #{regCode},
+			invitation_code_from = #{invitationCodeFrom},
+			from_type = #{fromType},
+			from_key = #{fromKey},
+			black_type = #{blackType}
+		WHERE 
+			id = #{id}
+	</update>
+	
+	<insert id="saveAppRole"  parameterType="java.util.HashMap">
+		insert into t_role_app_user (role_id,app_user_id)   
+ 		   values
+		<foreach item="item" collection="list" index="index" separator=",">  
+	      (#{item.role_id},#{item.app_user_id})    
+		</foreach>   
+	</insert> 
+	<!-- 根据帐号名或者手机查找帐号信息 -->
+	<select id="queryLoginAccount" resultType="com.ehome.cloud.sys.dto.AppUserDto">
+	    SELECT t.*,m.audit_status auditStatus FROM t_app_user t 
+	    LEFT JOIN t_member m ON t.id = m.app_user_id
+	    WHERE 
+	    t.user_account = #{userAccount}
+	    LIMIT 1
+	</select>
+	
+	<!-- 根据第三方openId和fromType查找帐号信息 -->
+	<select id="queryByThirdPath" resultType="com.ehome.cloud.sys.dto.AppUserDto">
+        SELECT t.* FROM t_app_user t 
+        WHERE 
+        t.user_account = #{userAccount} AND t.from_type = #{fromType}
+        LIMIT 1
+    </select>
+    
+    <select id="queryByOpenId" resultType="com.ehome.cloud.sys.dto.AppUserDto">
+		SELECT
+		    t.*, m.audit_status auditStatus 
+		FROM
+		    t_app_user t
+		LEFT JOIN t_member m ON t.id = m.app_user_id
+		WHERE
+		    t.user_account = #{openId}
+		AND t.from_type = #{fromType} 
+		AND t.is_third = 1
+		LIMIT 1
+    </select>
+	
+	<select id="queryForList" resultType="java.util.HashMap">
+	     select 
+	     u.id,
+	     u.user_name userName,
+	     u.nick_name nickName,
+	     u.sex,
+	     u.address,
+	     u.is_member isMember,
+	     u.invitation_code invitationCode,
+	     u.create_time createTime,
+	     u.user_desc userDesc,
+	     u.status,
+	     u.black_type blackType,
+	     o.orgain_name orgainName
+	     FROM t_app_user u 
+	     LEFT JOIN t_member m ON u.id = m.app_user_id
+	     LEFT JOIN t_orgain o ON m.basic_union_id = o.id
+	     <where>
+	         <if test="keyword!=null and keyword!=''">
+	             AND (u.user_name LIKE CONCAT('%', #{keyword},'%')
+	             OR u.user_account LIKE CONCAT('%', #{keyword},'%')
+	             OR u.nick_name LIKE CONCAT('%', #{keyword},'%')
+	             OR u.reg_code LIKE CONCAT('%', #{keyword},'%')
+	             OR u.id LIKE CONCAT('%', #{keyword},'%')
+	             )
+	         </if>
+	        <!--  <if test="black_type!=null and black_type!=0">
+	             AND u.black_type = #{userId}
+	         </if> -->
+	     </where>
+	</select>
+	
+	<delete id="deleteAppRole" parameterType="java.lang.Integer">
+	    delete from t_role_app_user where app_user_id = #{app_user_id}
+	</delete>
+	
+	<!-- 删除用户验证码 -->
+	<delete id="deleteCode"  parameterType="java.util.HashMap">
+		delete from e_usercode 
+		where 
+			userId = #{userId} and type=#{type}
+	</delete>
+	
+	<!-- 保存验证码-->
+	<insert id="insertCode"  parameterType="java.util.HashMap">
+		insert into e_usercode (
+			code,
+			userId,
+			type,
+			expire_time,
+			url_time
+		) values (
+			#{code},
+			#{userId},
+			#{type},
+			#{expire_time},
+			#{time}
+		)
+	</insert>
+	
+	<select id="querySysUser" resultType="java.util.HashMap">
+	    select * from sys_user where user_id = #{userId}
+	</select>
+	
+	<insert id="insertSysUser" useGeneratedKeys="true" keyProperty="id" parameterType="java.util.HashMap">
+			insert into sys_user (
+			id,
+			USER_ID,
+			USERNAME,
+			PASSWORD,
+			imei,
+			<if test="device_token!=null and device_token!='' ">
+				device_token,
+			</if>
+			user_type,
+			available,
+			createDate,
+			PHONE,
+			<if test="accountType!=null and accountType!='' ">
+				accountType,
+			</if>
+			<if test="invitation_code != null and invitation_code != ''">
+				invitation_code,
+			</if>
+			<if test="invitation_code_from != null and invitation_code_from != ''">
+				invitation_code_from,
+			</if>
+			<if test="reg_code != null and reg_code != ''">
+				reg_code,
+			</if>
+			<if test="phone_signature != null and phone_signature != ''">
+				phone_signature,
+			</if>
+			nickname,
+			salt
+		) values (
+		    #{id},
+			#{userId},
+			#{USERNAME},
+			#{passWord},
+			#{imei},
+			<if test="device_token!=null and device_token!='' ">
+				#{device_token},
+			</if>
+			2,
+			1,
+			#{createDate},
+			#{userId},
+			<if test="accountType!=null and accountType!='' ">
+				#{accountType},
+			</if>
+			<if test="invitation_code != null and invitation_code != ''">
+				#{invitation_code},
+			</if>
+			<if test="invitation_code_from != null and invitation_code_from != ''">
+				#{invitation_code_from},
+			</if>
+			<if test="reg_code != null and reg_code != ''">
+				#{reg_code},
+			</if>
+			<if test="phone_signature != null and phone_signature != ''">
+				#{phone_signature},
+			</if>
+			#{userId},
+			#{salt}	
+		)
+	</insert>
+	
+	<!--更新sys_user个人信息-->
+	<update id="updateSysUser" parameterType="map">
+		update sys_user 
+		<trim prefix="set" suffixOverrides=","> 
+		<if test="salt!=null and salt!=''">salt=#{salt},</if>
+		<if test="passWord!=null and passWord!=''">password=#{passWord},</if>
+		<if test="nickname!=null and nickname!=''">nickname=#{nickname},</if>
+		<if test="sex!=null and sex!=''">sex=#{sex},</if>
+		<if test="cityId!=null and cityId!=''">cityId=#{cityId},</if>
+		<if test="cityName!=null and cityName!=''">cityName=#{cityName},</if>
+		<if test="signature!=null and signature!=''">signature=#{signature},</if>
+		<if test="portrait!=null and portrait!=''">portrait=#{portrait},</if>
+		</trim>
+		where  user_id=#{userId}
+	</update>
+	
+	<!--更新app个人信息状态-->
+	<update id="updateStatus" >
+		update t_app_user 
+		<trim prefix="set" suffixOverrides=","> 
+		<if test="status !=null and status !=''">status=#{status},</if>
+		</trim>
+		where  id in 
+		<foreach collection="ids" index="index" item="item" open="(" separator="," close=")">  
+            #{item}   
+    	</foreach> 
+	</update>
+	
+	<!--更新黑名单类型-->
+	<update id="updateBlackType" >
+		update t_app_user 
+		set black_type = #{blackType}
+		where id = #{id}
+	</update>
+	
+	<!-- 查询前端用户信息 -->
+	<select id="queryInfo" resultType="java.util.HashMap">
+	     select 
+	     u.id,
+	     u.user_name userName,
+	     u.nick_name nickName,
+	     if(u.sex = 0, '男', '女') sex,
+	     u.user_mobile mobile,
+	     u.user_email email,
+	     u.address,
+	     if(u.is_member = 1, '是', '否') isMember,
+	     u.invitation_code invitationCode,
+	     u.create_time createTime,
+	     u.user_desc userDesc,
+	     u.status,
+	     o.orgain_name orgainName
+	     FROM t_app_user u 
+	     LEFT JOIN t_member m ON u.id = m.app_user_id
+	     LEFT JOIN t_orgain o ON m.basic_union_id = o.id
+	     where u.id = #{id}
+	</select>
+</mapper>

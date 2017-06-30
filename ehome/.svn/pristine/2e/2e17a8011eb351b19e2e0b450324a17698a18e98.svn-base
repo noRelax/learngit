@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.marry.mapper.MarryCommentMapper">
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.marry.dto.MarryCommentDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="comment" property="comment" jdbcType="VARCHAR" />
+		<result column="photo_id" property="photoId" jdbcType="INTEGER" />
+		<result column="app_user_id" property="appUserId" jdbcType="INTEGER" />
+		<result column="public_time" property="publicTime" jdbcType="TIMESTAMP" />
+		<result column="is_shielding" property="isShielding" jdbcType="INTEGER" />
+	</resultMap>
+	
+	<sql id="commonSQL">
+		SELECT
+			t.id,
+			t. COMMENT,
+			t.photo_id,
+			t.app_user_id,
+			t.public_time,
+			t.is_shielding
+		FROM
+			t_marry_comment t
+	</sql>
+
+	<select id="queryForList" resultMap="BaseResultMap">
+		<include refid="commonSQL"></include>
+		<where>
+		    <choose>  
+	            <when test="selectName==1">
+	                <if test="keyword!=null and keyword!=''">
+	                    AND t.app_user_id = #{keyword} 
+	                </if>  
+	            </when> 
+	            <when test="selectName==2">
+	                <if test="keyword!=null and keyword!=''">
+	                    AND t.photo_id = #{keyword} 
+	                </if>  
+	            </when>  
+	            <otherwise>  
+	                <if test="keyword!=null and keyword!=''">
+	                    AND t.comment LIKE CONCAT('%', #{keyword},'%')
+	                </if> 
+	            </otherwise>  
+            </choose> 
+			<if test="isShielding==0">
+				AND t.is_shielding = 0
+			</if>	
+			<if test="isShielding==1">
+				AND t.is_shielding = 1
+			</if>	
+			<if test="startPublictTime!=null and startPublictTime!=''">
+				AND t.public_time  >=  #{startPublictTime}
+			</if>
+			<if test="endPublicTime!=null and endPublicTime!=''">
+				AND t.public_time  <![CDATA[ <= ]]> #{endPublicTime}
+			</if>
+		</where>
+		order by t.public_time desc
+	</select>
+    
+    <update id="updateStatus">
+        update t_marry_comment set is_shielding = #{isShielding} where id=#{id}
+    </update>
+    
+    <update id="updateShielding">
+        update t_marry_comment set is_shielding = #{isShielding} where id in
+        <foreach collection="photoIdsList" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+    </update>
+    
+    <!-- authoir : hl@diandianwifi.com -->
+    <resultMap id="AppBaseResultMap"
+		type="com.ehome.cloud.app.marry.dto.AppMarryCommentDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="comment" property="comment" jdbcType="VARCHAR" />
+		<result column="photo_id" property="photoId" jdbcType="INTEGER" />
+		<result column="app_user_id" property="appUserId" jdbcType="INTEGER" />
+		<result column="public_time" property="publicTime" jdbcType="TIMESTAMP" />
+		<result column="is_shielding" property="isShielding" jdbcType="INTEGER" />
+		<result column="portrait" property="commentatorPortrait"
+			jdbcType="INTEGER" />
+		<result column="nick_name" property="commentatorNickName"
+			jdbcType="INTEGER" />
+	</resultMap>
+    
+    <select id="selectByPhotoId" resultMap="AppBaseResultMap">
+		SELECT
+			T.ID,
+			A.NICK_NAME,
+			A.PORTRAIT,
+			T. COMMENT,
+			T.PHOTO_ID,
+			T.APP_USER_ID,
+			T.PUBLIC_TIME
+		FROM
+			T_APP_USER A,
+			(
+				SELECT
+					A.ID,
+					A. COMMENT,
+					A.PHOTO_ID,
+					A.APP_USER_ID,
+					A.PUBLIC_TIME
+				FROM
+					T_MARRY_COMMENT A
+				WHERE
+					A.IS_SHIELDING = 0
+				AND A.PHOTO_ID = #{photoId}) T WHERE A.ID=T.APP_USER_ID
+				ORDER BY
+					T.PUBLIC_TIME DESC
+	</select>
+    
+</mapper>

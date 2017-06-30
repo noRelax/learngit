@@ -1,0 +1,600 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta charset="utf-8">
+<title>新建后台帐号</title>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+<link href="${ctxPath}/static/ui/layui/css/layui.css" rel="stylesheet">
+<link rel="stylesheet"
+	href="${ctxPath}/static/zTreev3/css/zTreeStyle/zTreeStyle.css"
+	type="text/css" />
+<link rel="stylesheet"
+	href="${ctxPath}/static/web/system/orgain/css/list-css.css"
+	type="text/css" />
+<link href="${ctxPath}/static/system/public/css/bootstrap-3.3.4.css"
+	rel="stylesheet">
+<!-- BOOTSTRAP CSS -->
+<style>
+#last_tab p {
+	margin: 0;
+}
+
+#last_tab td {
+	height: 23px;
+	line-height: 23px;
+}
+</style>
+</head>
+
+</head>
+
+<body>
+	<div id="main_div">
+		<div id="befor_tab" align="center">
+			<table width="1000" height="400" border="1">
+				<caption align="top" style="text-align:center">
+					<h2>困难职工帮扶中心困难职工帮扶申请表</h2>
+					<br> <br>
+				</caption>
+				<tr>
+					<td width="75">姓名</td>
+					<td width="140">${helpApplyDto.name}</td>
+					<td width="80">性别</td>
+					<td width="66">${helpApplyDto.sexName}</td>
+					<td width="100">出生年月</td>
+					<td width="140">${brithday}</td>
+					<td width="100">户口类别</td>
+					<td width="140">${helpApplyDto.cardTypeName}</td>
+				</tr>
+				<tr>
+					<td width="100">身份证号码</td>
+					<td colspan="3">${helpApplyDto.idCard}</td>
+					<td>工作单位</td>
+					<td width="100" colspan="4">${helpApplyDto.company}</td>
+				</tr>
+				<tr>
+					<td>家庭住址</td>
+					<td colspan="3">${helpApplyDto.address}</td>
+					<td>家庭人口</td>
+					<td>${helpApplyDto.familyNum}</td>
+					<td>联系电话</td>
+					<td>${helpApplyDto.phone}</td>
+				</tr>
+				<tr>
+					<td colspan="2"><p>家庭经济总收入（元）</p></td>
+					<td colspan="2">${helpApplyDto.incomeTotal}</td>
+					<td colspan="2" width="170"><p>家庭年人均收入（元）</p></td>
+					<td colspan="3">${helpApplyDto.incomeAvg}</td>
+				</tr>
+				<tr>
+					<td colspan="9"><div align="center">申请帮扶项目</div></td>
+				</tr>
+				<tr>
+					<td colspan="3"><div align="center">生活救助</div></td>
+					<td colspan="4" width="101"><div align="center">医疗救助</div></td>
+					<td colspan="3"><div align="center">助学救助</div></td>
+
+				</tr>
+				<tr style="text-align: center;">
+
+					<td colspan="3"><%if(helpApplyDto.helpType==0 ||
+						helpApplyDto.helpType==100071){%> <c:if test="">√</c:if>&nbsp;
+						<%}%>
+					</td>
+					<td colspan="4"><%if(helpApplyDto.helpType==1 ||
+						helpApplyDto.helpType==100399 ){%> <c:if test="">√</c:if>&nbsp;
+						<%}%>
+					</td>
+					<td colspan="3"><%if(helpApplyDto.helpType==2 ||
+						helpApplyDto.helpType==100072 ){%> <c:if test="">√</c:if>&nbsp;
+						<%}%>
+					</td>
+
+				</tr>
+				<tr>
+					<td><div align="center">
+							<p>申</p>
+							<p>请</p>
+							<p>原</p>
+							<p>因</p>
+						</div></td>
+					<td colspan="8"><div align="left">
+							${helpApplyDto.reasons} <br> <br> <br>
+						</div>
+						<div align="right">
+							<p>申请人签名：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+						</div></td>
+				</tr>
+				<tr>
+					<td><div align="center">
+							<p>所</p>
+							<p>在</p>
+							<p>单</p>
+							<p>位</p>
+							<p>工</p>
+							<p>会</p>
+							<p>意</p>
+							<p>见</p>
+						</div></td>
+					<td colspan="8"><div align="left">
+							${applyMsg} <br> <br> <br>
+							<p>工会主席签名：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;（盖章）</p>
+						</div></td>
+				</tr>
+			</table>
+
+		</div>
+		<br>
+
+
+		<div id="last_tab" align="center">
+			<table align="center" border="1" width="90%">
+				<caption align="top" style="text-align:center">
+					<h2>
+						湛江市困难职工档案表（<span style="color: red">*</span>为必填项）
+					</h2>
+					<br> <br>
+				</caption>
+				<tr>
+					<td align="center" colspan="2" width="200"><p>职工编号（市总工会填写）</p></td>
+					<td align="center" colspan="10"><p>&nbsp;</p></td>
+					<td align="center" colspan="4"><p>
+							<span style="color: red">*</span>困难类别
+						</p></td>
+					<td align="center" colspan="7"><p>${helpApplyDto.difficultTypeName}</p></td>
+				</tr>
+				<tr>
+					<td align="center" colspan="2"><p>
+							<span style="color: red">*</span>姓&nbsp;名
+						</p></td>
+					<td width="50" align="center"><p>
+							<span style="color: red">*</span>民族
+						</p></td>
+					<td align="center" width="50"><p>
+							<span style="color: red">*</span>性别
+						</p></td>
+					<td colspan="3" align="center"><p>
+							<span style="color: red">*</span>政治面貌
+						</p></td>
+					<td align="center" colspan="3"><p>
+							<span style="color: red">*</span>身份证号
+						</p></td>
+					<td align="center" colspan="2"><p>
+							<span style="color: red">*</span>出生日期
+						</p></td>
+					<td align="center" colspan="4"><p>
+							<span style="color: red">*</span>健康状况
+						</p></td>
+					<td align="center" colspan="3"><p>残疾类别</p></td>
+					<td align="center" colspan="2"><p>
+							<span style="color: red">*</span>工作状态
+						</p></td>
+					<td align="center" colspan="2"><p>
+							<span style="color: red">*</span>劳模类型
+						</p></td>
+				</tr>
+				<tr>
+					<td align="center" colspan="2"><p>${helpApplyDto.name}</p></td>
+					<td width="50" align="center"><p>${helpApplyDto.nationName}</p></td>
+					<td align="center"><p>${helpApplyDto.sexName}</p></td>
+					<td colspan="3" align="center"><p>${helpApplyDto.politicalName}</p></td>
+					<td align="center" colspan="3"><p>${helpApplyDto.idCard}</p></td>
+					<td colspan="2" align="center"><p>${brithday}</p></td>
+					<td align="center" colspan="4"><p>${helpApplyDto.healthName}</p></td>
+					<td align="center" colspan="3"><p>${helpApplyDto.disabilityTypeName}</p></td>
+					<td align="center" colspan="2"><p>${helpApplyDto.workStatusName}</p></td>
+					<td align="center" colspan="2"><p>${helpApplyDto.modelTypeName}</p></td>
+				</tr>
+				<tr>
+					<td align="center" colspan="2"><p>
+							<span style="color: red">*</span>住房类型
+						</p></td>
+					<td align="center" colspan="2"><p>建筑面积</p></td>
+					<td align="center" colspan="3"><p>手机号码</p></td>
+					<td align="center" colspan="3"><p>其他联系方式</p></td>
+					<td align="center" colspan="2"><p>邮政编码</p></td>
+					<td align="center" colspan="4"><p>
+							<span style="color: red">*</span>工作时间
+						</p></td>
+					<td align="center" colspan="3"><p>
+							<span style="color: red">*</span>所属行业
+						</p></td>
+					<td align="center" colspan="2"><p>
+							<span style="color: red">*</span>婚姻状况
+						</p></td>
+					<td align="center" colspan="2"><p>
+							<span style="color: red">*</span>户口类型
+						</p></td>
+				</tr>
+				<tr>
+					<td align="center" colspan="2"><p>${helpApplyDto.housingTypeName}</p></td>
+					<td align="center" colspan="2"><p>${helpApplyDto.housingArea}</p></td>
+					<td align="center" colspan="3"><p>${helpApplyDto.phone}</p></td>
+					<td align="center" colspan="3"><p>&nbsp;</p></td>
+					<td align="center" colspan="2"><p>${helpApplyDto.postcode}</p></td>
+					<td align="center" colspan="4"><p>${workYear}</p></td>
+					<td align="center" colspan="3"><p>${helpApplyDto.industryName}</p></td>
+					<td align="center" colspan="2"><p>${helpApplyDto.maritalStatusName}</p></td>
+					<td align="center" colspan="2"><p>${helpApplyDto.cardTypeName}</p></td>
+				</tr>
+				<tr>
+					<td height="17" colspan="7" align="center"><p>
+							<span style="color: red">*</span>家庭住址
+						</p></td>
+					<td align="center" colspan="5"><p>工作单位</p></td>
+					<td align="center" colspan="7"><p>单位性质</p></td>
+					<td align="center" colspan="2"><p>企业状况</p></td>
+					<td align="center" colspan="2"><p>是否单亲</p></td>
+				</tr>
+				<tr>
+					<td align="center" colspan="7"><p>${helpApplyDto.address}</p></td>
+					<td align="center" colspan="5"><p>${helpApplyDto.company}</p></td>
+					<td align="center" colspan="7"><p>${helpApplyDto.unitPropertiesName}</p></td>
+					<td align="center" colspan="2"><p>${helpApplyDto.companyStatusName}</p></td>
+					<td align="center" colspan="2"><p>${helpApplyDto.isSingleParentName}</p></td>
+				</tr>
+				<tr>
+					<td align="center" colspan="3"><p>
+							<span style="color: red">*</span>本人月平均收入
+						</p></td>
+					<td align="center" colspan="4"><p>
+							<span style="color: red">*</span>家庭其他非薪资年收入
+						</p></td>
+					<td align="center" colspan="2"><p>
+							<span style="color: red">*</span>家庭年度总收入
+						</p></td>
+					<td align="center" colspan="3"><p>
+							<span style="color: red">*</span>家庭人口
+						</p></td>
+					<td align="center" colspan="7"><p>家庭月人均收入</p></td>
+					<td align="center" colspan="2"><p>
+							<span style="color: red">*</span>户口所在地行政区划
+						</p></td>
+					<td align="center" colspan="2"><p>
+							<span style="color: red">*</span>医保状况
+						</p></td>
+				</tr>
+				<tr>
+					<td align="center" colspan="3"><p>${helpApplyDto.monthlyIncome}</p></td>
+					<td align="center" colspan="4"><p>${helpApplyDto.familySalaryIncome}</p></td>
+					<td align="center" colspan="2"><p>${helpApplyDto.incomeTotal}</p></td>
+					<td align="center" colspan="3"><p>${helpApplyDto.familyNum}</p></td>
+					<td align="center" colspan="7"><p>${helpApplyDto.avgMonthlyIncome}</p></td>
+					<td align="center" colspan="2"><p>${helpApplyDto.seatRegistered}</p></td>
+					<td align="center" colspan="2"><p>${helpApplyDto.medicalInsuranceName}</p></td>
+				</tr>
+				<tr>
+					<td align="center" colspan="4"><p>是否有一定自救能力</p></td>
+					<td align="center" colspan="5"><p>${helpApplyDto.isHasSelfSaveName}</p></td>
+					<td align="center" colspan="8"><p>是否为零就业家庭</p></td>
+					<td align="center" colspan="6"><p>${helpApplyDto.isZeroJobName}</p></td>
+				</tr>
+				<tr>
+
+					<td width="10" align="center" rowspan="4" colspan="2">
+						<p>
+							家<br /> 庭<br /> 成<br /> 员
+						</p>
+					</td>
+					<td width="75" align="center"><p>姓名</p></td>
+					<td width="50" align="center"><p>关系</p></td>
+					<td align="center" colspan="2"><p>性别</p></td>
+					<td width="80" align="center"><p>政治面貌</p></td>
+					<td align="center" colspan="3"><p>身份证号</p></td>
+					<td align="center" colspan="2" width="90"><p>健康状况</p></td>
+					<td align="center" colspan="3"><p>月收入</p></td>
+					<td align="center" colspan="2"><p>身份</p></td>
+					<td align="center" colspan="3"><p>医保状况</p></td>
+					<td align="center" colspan="3"><p>单位或学校</p></td>
+				</tr>
+				<% if(!isEmpty(helpApplyDto.helpApplyFamilyList)){ %> <% for(info in
+				helpApplyDto.helpApplyFamilyList){ %>
+				<tr>
+					<td width="75" align="center"><p>${info.name}</p></td>
+					<td width="50" align="center"><p>${info.familyRelationshipName}</p></td>
+					<td align="center" colspan="2">${info.sexName}</td>
+					<td width="80" align="center">${info.politicalName}
+						<p></p>
+					</td>
+					<td align="center" colspan="3"><p>${info.idCard}</p></td>
+					<td align="center" colspan="2"><p>${info.healthName}</p></td>
+					<td align="center" colspan="3"><p>${info.monthlyIncome}</p></td>
+					<td align="center" colspan="2"><p>${info.identity}</p></td>
+					<td align="center" colspan="3"><p>${info.medicalInsuranceName}</p></td>
+					<td align="center" colspan="3"><p>${info.unitSchool}</p></td>
+				</tr>
+				<%}%> <%}else{%>
+				<tr>
+					<td width="75" align="center">&nbsp;</td>
+					<td width="50" align="center">&nbsp;</td>
+					<td align="center" colspan="2">&nbsp;</td>
+					<td width="80" align="center">&nbsp;</td>
+					<td align="center" colspan="3">&nbsp;</td>
+					<td align="center" colspan="2">&nbsp;</td>
+					<td align="center" colspan="3">&nbsp;</td>
+					<td align="center" colspan="2">&nbsp;</td>
+					<td align="center" colspan="3">&nbsp;</td>
+					<td align="center" colspan="3">&nbsp;</td>
+				</tr>
+				<%}%>
+
+				<tr>
+					&nbsp;&nbsp;&nbsp;
+					<td width="75" align="center">&nbsp;</td>
+					<td width="50" align="center">&nbsp;</td>
+					<td align="center" colspan="2">&nbsp;</td>
+					<td width="80" align="center">&nbsp;</td>
+					<td align="center" colspan="3">&nbsp;</td>
+					<td align="center" colspan="2">&nbsp;</td>
+					<td align="center" colspan="3">&nbsp;</td>
+					<td align="center" colspan="2">&nbsp;</td>
+					<td align="center" colspan="3">&nbsp;</td>
+					<td align="center" colspan="3">&nbsp;</td>
+				</tr>
+
+				<tr>
+					<td align="center" colspan="2" rowspan="2"><p>
+							<span style="color: red">*</span>致困原因
+						</p></td>
+					<td align="center" colspan="21" rowspan="2"><p>${helpApplyDto.povertyCausesName}</p></td>
+				</tr>
+				<tr>
+				</tr>
+				<tr>
+					<td align="center" colspan="2"><p>开户银行</p></td>
+					<td align="center" colspan="3"><p>${helpApplyDto.openBank}</p></td>
+					<td align="center" colspan="2"><p>支行名称</p></td>
+					<td align="center" colspan="4"><p>${helpApplyDto.branchBank}</p></td>
+					<td align="center" colspan="3"><p>银行卡号</p></td>
+					<td align="center" colspan="9"><p>${helpApplyDto.cardNum}</p></td>
+				</tr>
+				<tr>
+					<td align="center" colspan="5"><p>附&nbsp;&nbsp;件</p></td>
+					<td align="center" colspan="2"><p>附件类型</p></td>
+					<td align="center" colspan="4"><p>&nbsp;</p></td>
+					<td align="center" colspan="3"><p>附件名称</p></td>
+					<td align="center" colspan="9"><p>&nbsp;</p></td>
+				</tr>
+				<tr>
+					<td align="center" colspan="2" rowspan="2"><p>帮扶单位</p></td>
+					<td align="center" colspan="5" rowspan="2"><p>&nbsp;</p></td>
+					<td align="center" colspan="2" rowspan="2"><p>
+							<span style="color: red">*</span>单位工会负</br>责人签字
+						</p></td>
+					<td align="center" colspan="4" rowspan="2"><p>&nbsp;</p></td>
+					<td align="center" colspan="5" rowspan="2"><p>
+							<span style="color: red">*</span>单位工会意见</br>（盖章）
+						</p></td>
+					<td align="center" colspan="5" rowspan="2"><p>&nbsp;</p></td>
+				</tr>
+				<tr>
+				</tr>
+				<tr>
+					<td align="center" colspan="2"><p>
+							<span style="color: red">*</span>建档人
+						</p></td>
+					<td align="center" colspan="5"><p>&nbsp;</p></td>
+					<td align="center" colspan="2"><p>
+							<span style="color: red">*</span>审核人
+						</p></td>
+					<td align="center" colspan="4"><p>&nbsp;</p></td>
+					<td align="center" colspan="5"><p>录入人</p></td>
+					<td align="center" colspan="5"><p>&nbsp;</p></td>
+				</tr>
+			</table>
+		</div>
+		<br>
+		<hr>
+		<div style="margin-left:5%;">
+			<% if(!isEmpty(idCardImg)){ %>
+			<p>本人身份证：</p>
+			<% for(pic in idCardImg){ %> <img src="${ctxPath}${pic.filePath}"
+				onclick="javascript:window.open(this.src);" title="查看图片" width="50"
+				height="50"> <%}%> <%}%> <% if(!isEmpty(famIdCardImg)){ %>
+			<p>家人身份证：</p>
+			<% for(pic in famIdCardImg){ %> <img src="${ctxPath}${pic.filePath}"
+				onclick="javascript:window.open(this.src);" title="查看图片" width="50"
+				height="50"> <%}%> <%}%> <% if(!isEmpty(povertyImgId)){ %>
+			<p>困难证明：</p>
+			<% for(pic in povertyImgId){ %> <img src="${ctxPath}${pic.filePath}"
+				onclick="javascript:window.open(this.src);" title="查看图片" width="50"
+				height="50"> <%}%> <%}%>
+		</div>
+		<hr>
+		<form name="dataForm" id="dataForm" method="post"
+			enctype="multipart/form-data">
+			<div id="apply_tab" align="center">
+				<table border="1" width="90%">
+					<tr>
+						<td>审批机构</td>
+						<td>审批人</td>
+						<td>审批意见</td>
+						<td>审批结果</td>
+						<td>审批时间</td>
+						<td>建议救助资金</td>
+						<td>资金来源</td>
+
+					</tr>
+					<% for(var i=1;i
+					<variableMapList.~size;i++){ %>
+					<tr>
+						<td>${variableMapList[i].taskName}</td>
+						<td>${variableMapList[i].userName}</td>
+						<td>${variableMapList[i].applyMsg}</td>
+						<td>${variableMapList[i].approvalStatus}</td>
+						<td>${variableMapList[i].approveTime}</td>
+						<td>${variableMapList[i].moneyNum}</td>
+						<td>${variableMapList[i].moneyFrom}</td>
+
+					</tr>
+					<%}%> 
+				</table>
+				<br> <br> <br>
+				<div align="center" id="subbmitTable" style="width: 90%;">
+					<table style="border-collapse:separate; border-spacing:0px 10px;">
+						<tr>
+							<td>审批意见：</td>
+							<td><textarea name="applyMsg" id="applyMsg" cols="30"
+									style="resize: none" rows="4"></textarea></td>
+						</tr>
+						<tr>
+							<td>审批操作：</td>
+							<td><select id="resultId" name="resultId"
+								onchange="resultId_sel(this.value)">
+									<option value="1">同意</option> <% if(orginType=="2"){ %>
+									<option value="4">退回到发起人</option> <% }else{%>
+
+									<option value="2">退回</option> <%}%>
+									<option value="3">不同意</option>
+							</select></td>
+						</tr>
+						<tr id="money_num_tr">
+							<td>建议资金：</td>
+							<td><input autocomplete="off" type="text" name="money_num"
+								id="money_num" /></td>
+						</tr>
+						<tr id="money_from_tr">
+							<td>资金来源：</td>
+							<td><select id="money_from" name="money_from">
+
+							</select></td>
+						</tr>
+
+					</table>
+				</div>
+				<br /> <br />
+				<div>
+					<table style="width:30%;" id="tableId">
+						<tr>
+							<td style="text-align:center"><a id="doSaveBut"
+								name="doSaveBut" class="btn btn-small btn-success"
+								onclick="doSave();">提交审批</a></td>
+						</tr>
+					</table>
+					<br />
+				</div>
+				<input type="hidden" value="" id="applyId" name="applyId" /> <input
+					type="hidden" name="taskId" value="${taskId}"> <input
+					type="hidden" name="processInstanceId" value="${processInstanceId}">
+				<input type="hidden" name="helpApplyId" value="${helpApplyId}">
+			</div>
+		</form>
+	</div>
+</body>
+</html>
+<script
+	src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script>
+<script src="${ctxPath}/static/system/olive/all/js/jquery-1.8.3.min.js"></script>
+<script src="${ctxPath}/static/ui/layui/layui.js"></script>
+<script>
+	function resultId_sel(id) {
+		if (id == "2") {
+			$('#backOrgain_div').show();
+			$('#backOrgainRead_div').show();
+			$('#money_num_tr').hide();
+			$('#money_from_tr').hide();
+		} else if (id == "1") {
+			$('#money_num_tr').show();
+			$('#money_from_tr').show();
+			$('#backOrgain_div').hide();
+			$('#backOrgainRead_div').hide();
+		} else {
+			$('#money_num_tr').hide();
+			$('#money_from_tr').hide();
+			$('#backOrgain_div').hide();
+			$('#backOrgainRead_div').hide();
+		}
+
+	}
+
+	var taskId = '${taskId}';
+	if (taskId == '') {
+		$('#subbmitTable').remove();
+		$('#tableId').remove();
+	}
+
+	var checkSubmitFig = false;
+	<!--
+	function doSave(form) {
+		var reg = /^(\d*(\.?)(\d)+)$/;
+		if ($("#resultId").val() == 1) {
+			if (!reg.test($("#money_num").val().trim())) {
+				alert("建议资金不得为空且为数字");
+				return;
+			}
+		}
+
+		if (checkSubmitFig == false) {
+			checkSubmitFig = true;
+			var taskId = $('input[name=taskId]').val();
+			var processInstanceId = $('input[name=processInstanceId]').val();
+			var url = '${ctxPath}/helpApply/doSave';
+			form.action = url;
+			$('#doSaveBut').attr("disabled", "disabled");
+			form.submit();
+		} else {
+			alert("请勿重复提交！");
+			return;
+		}
+	}
+	-->
+	var moneyFrom = jQuery('select[name=money_from]');
+	var dicList = '${dicList}'
+	if (dicList != null) {
+		dicList = jQuery.parseJSON(dicList);
+		for ( var x in dicList)
+			moneyFrom.append("<option value='"+dicList[x].dictKey+"'>"
+					+ dicList[x].dictValue + "</option>");
+	}
+
+	function doSave() {
+		if (confirm("确定提交流程吗？")) {
+			var taskId = $('input[name=taskId]').val();
+			var processInstanceId = $('input[name=processInstanceId]').val();
+			var helpApplyId = $('input[name=helpApplyId]').val();
+			var resultId = $('select[name=resultId]').val();
+			var money_num = $('input[name=money_num]').val();
+			var money_from = $('select[name=money_from]').val();
+			var reg = /^(\d*(\.?)(\d)+)$/;
+			if ($("#resultId").val() == 1) {
+				if (!reg.test($("#money_num").val().trim())) {
+					alert("建议资金不得为空且为数字");
+					return;
+				}
+			}
+			$('#doSaveBut').attr("disabled", "disabled");
+			$.ajax({
+				type : "POST",
+				url : '../../../helpApply/doSave',
+				data : {
+					"resultId" : resultId,
+					"money_num" : money_num,
+					"money_from" : money_from,
+					"taskId" : taskId,
+					"processInstanceId" : processInstanceId,
+					"helpApplyId" : helpApplyId,
+					"applyMsg" : $("#applyMsg").val()
+				},
+				dataType : 'text',
+				success : function(data) {
+					var obj = JSON.parse(data); //由JSON字符串转换为JSON对象
+					alert(obj.message);
+					if (obj.status == "10000") {
+						var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+						parent.layer.close(index); //再执行关闭  
+						window.parent.onload = parent.refresh();
+					}
+				},
+				error : function(error) {
+				}
+			});
+		}
+
+	}
+</script>
+
+

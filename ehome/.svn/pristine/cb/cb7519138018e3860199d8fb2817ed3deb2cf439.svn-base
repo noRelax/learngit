@@ -1,0 +1,151 @@
+package com.ehome.cloud.marry.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+
+import org.apache.shiro.authz.annotation.RequiresUser;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.NativeWebRequest;
+
+import com.ehome.cloud.marry.dto.StatisticsDto;
+import com.ehome.cloud.marry.service.IStatisticsService;
+import com.ehome.core.dict.ResponseCode;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.model.AjaxResult;
+
+/**
+ * 数据统计
+ * 
+ * @Title:StatisticsController
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年4月19日 下午4:06:31
+ * @version:
+ */
+@Controller
+@RequestMapping(value = "/marry/statistics")
+public class StatisticsController extends BaseController {
+
+    @Resource
+    private IStatisticsService statisticsService;
+
+    @RequestMapping(value = "/index", method = RequestMethod.GET)
+    public String index(Model model, NativeWebRequest request) throws BusinessException {
+        return "/marry/statistics.html";
+    }
+
+    /**
+     * 用户转化
+     * 
+     * @param model
+     * @param request
+     * @param deviceType
+     * @param startDate
+     * @param endDate
+     * @return
+     * @throws BusinessException
+     */
+    @RequestMapping(value = "/userConver", method = RequestMethod.POST)
+    @RequiresUser
+    @ResponseBody
+    public AjaxResult userConver(Model model, NativeWebRequest request,
+            @RequestParam(required = false, defaultValue = "") Integer deviceType,
+            @RequestParam(required = false, defaultValue = "") String startDate,
+            @RequestParam(required = false, defaultValue = "") String endDate) throws BusinessException {
+        Map<String, String> resultMap = statisticsService.queryUserConvert(deviceType, startDate, endDate);
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), resultMap);
+    }
+
+    /**
+     * 金币转化
+     * 
+     * @param model
+     * @param request
+     * @param deviceType
+     * @param startDate
+     * @param endDate
+     * @return
+     * @throws BusinessException
+     */
+    @RequestMapping(value = "/goldCoinsConver", method = RequestMethod.POST)
+    @ResponseBody
+    public AjaxResult goldCoinsConver(Model model, NativeWebRequest request,
+            @RequestParam(required = false, defaultValue = "") Integer deviceType,
+            @RequestParam(required = false, defaultValue = "") String startDate,
+            @RequestParam(required = false, defaultValue = "") String endDate) throws BusinessException {
+        Map<String, Integer> resultMap = statisticsService.queryGoldCoinsConvert(deviceType, startDate, endDate);
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), resultMap);
+    }
+
+    /**
+     * 数据统计
+     * 
+     * @param model
+     * @param request
+     * @param deviceType
+     * @param startDate
+     * @param endDate
+     * @return
+     * @throws BusinessException
+     */
+    @RequestMapping(value = "/dataStatistics", method = RequestMethod.POST)
+    @ResponseBody
+    public AjaxResult dataStatistics(Model model, NativeWebRequest request,
+            @RequestParam(required = false, defaultValue = "") Integer deviceType,
+            @RequestParam(required = false, defaultValue = "") String startDate,
+            @RequestParam(required = false, defaultValue = "") String endDate) throws BusinessException {
+        Map<String, Integer> resultMap = statisticsService.queryDataStatis(deviceType, startDate, endDate);
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), resultMap);
+    }
+
+    /**
+     * 年收入明细和年龄统计
+     * 
+     * @param model
+     * @param request
+     * @param deviceType
+     * @param startDate
+     * @param endDate
+     * @return
+     * @throws BusinessException
+     */
+    @RequestMapping(value = "/incomeAndAge", method = RequestMethod.POST)
+    @ResponseBody
+    public AjaxResult annualIncome(Model model, NativeWebRequest request,
+            @RequestParam(required = false, defaultValue = "") Integer deviceType,
+            @RequestParam(required = false, defaultValue = "") String startDate,
+            @RequestParam(required = false, defaultValue = "") String endDate) throws BusinessException {
+        Map<String, List<StatisticsDto>> statisticsMap = statisticsService
+                .queryStatistics(deviceType, startDate, endDate);
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), statisticsMap);
+    }
+
+    /**
+     * 用户意向分布
+     * 
+     * @param model
+     * @param request
+     * @param deviceType
+     * @param startDate
+     * @param endDate
+     * @return
+     * @throws BusinessException
+     */
+    @RequestMapping(value = "/userInterest", method = RequestMethod.POST)
+    @ResponseBody
+    public AjaxResult userInterest(Model model, NativeWebRequest request,
+            @RequestParam(required = false, defaultValue = "") Integer deviceType,
+            @RequestParam(required = false, defaultValue = "") String startDate,
+            @RequestParam(required = false, defaultValue = "") String endDate) throws BusinessException {
+        Map<String, List<StatisticsDto>> resultMap = statisticsService.queryUserInterest(deviceType, startDate, endDate);
+        return new AjaxResult(ResponseCode.success.getCode(), ResponseCode.success.getMsg(), resultMap);
+    }
+}

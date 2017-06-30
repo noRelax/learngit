@@ -1,0 +1,91 @@
+package com.ehome.cloud.marry.task;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import redis.clients.jedis.Jedis;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.ehome.cloud.marry.model.MarryUserInterest;
+import com.ehome.cloud.marry.service.IMarryUserInterestService;
+import com.ehome.cloud.marry.task.dto.TaskPo;
+import com.ehome.core.frame.SpringContextHolder;
+import com.ehome.core.util.EntityUtils;
+import com.ehome.core.util.redis.JedisUtils;
+
+/**
+ * 任务调度定时到Redis队列中拉取对象持久化到数据库
+ * 
+ * @Title:RedisTaskJob
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年4月25日 下午4:02:41
+ * @version:
+ */
+@Component
+public class RedisTaskJob {
+
+	private final static Logger logger = LoggerFactory
+			.getLogger(RedisTaskJob.class);
+
+	private final static String QUEUE_NAME = "USER_INTEREST";
+
+	private final static ExecutorService es = Executors.newFixedThreadPool(5);
+
+	private volatile static boolean stop = true;
+
+	/**
+	 * 每隔一小时执行一次
+	 */
+	@Scheduled(cron = "0 0 0/1 * * ? ")
+	public void getRedisTask() {
+		if (logger.isDebugEnabled()) {
+			logger.debug("调度开始");
+		}
+		try (Jedis jedis = JedisUtils.getJedis()) {
+			if (jedis.exists(QUEUE_NAME)) {
+				start();
+			}
+			while (stop) {
+				if (!jedis.exists(QUEUE_NAME)) {
+					stop();
+					break;
+				}
+				try {
+					String task = jedis.lpop(QUEUE_NAME);
+					if (StringUtils.isNotBlank(task)) {
+						TaskPo taskPo = JSONObject.toJavaObject(
+								JSON.parseObject(task), TaskPo.class);
+						MarryUserInterest model = EntityUtils.convert(taskPo,
+								MarryUserInterest.class);
+						IMarryUserInterestService marryUserInterestService = SpringContextHolder
+								.getBean("marryUserInterestService",
+										IMarryUserInterestService.class);
+						es.submit(() -> {
+							marryUserInterestService.save(model);
+						});
+					}
+				} catch (Exception e) {
+					stop();
+					throw e;
+				}
+			}
+		}
+	}
+
+	public static void stop() {
+		stop = false;
+	}
+
+	public static void start() {
+		stop = true;
+	}
+
+}

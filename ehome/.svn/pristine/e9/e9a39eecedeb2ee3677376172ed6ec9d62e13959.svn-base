@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>发起请假</title>
+
+<script type="text/javascript" src="${ctxPath}/static/system/olive/all/js/jquery.js"></script>
+
+</head>
+<body>
+	<form name="form1" id="form1" action="process/task/complete/${taskId}/${processInstanceId}">
+		<div style="margin: 0 auto;">
+
+
+			<table border="1">
+				<tr>
+					<td>请假类型：</td>
+					<td><select id="leaveType" name="fp_leaveType">
+							<option>公休</option>
+							<option>病假</option>
+							<option>调休</option>
+							<option>事假</option>
+							<option>婚假</option>
+						</select></td>
+				</tr>
+				<tr>
+					<td>开始时间：</td>
+					<td><input type="text" id="startTime" name="fp_startTime" class="datetime required" />
+					</td>
+				</tr>
+				<tr>
+					<td>结束时间：</td>
+					<td><input type="text" id="endTime" name="fp_endTime" class="datetime required" />
+					</td>
+				</tr>
+				<tr>
+					<td>请假原因：</td>
+					<td><textarea id="reason" name="fp_reason"></textarea></td>
+				</tr>
+			</table>
+
+
+
+		</div>
+		<input type="hidden" name="taskId" value="${taskId}">
+		<input type="hidden" name="processInstanceId" value="${processInstanceId}">
+		<div>
+			<table style="width:30%;">
+				<tr>
+
+					<td style="vertical-align:top;"><a class="btn btn-small btn-success" onclick="commit();">下一步</a>
+					</td>
+					<td style="vertical-align:top;"><a class="btn btn-small btn-danger" onclick="backOne();">驳回上一步</a>
+					</td>
+					<td style="vertical-align:top;"><a class="btn btn-small btn-danger" onclick="backStart();">驳回发起人</a>
+					</td>
+
+				</tr>
+			</table>
+		</div>
+	</form>
+</body>
+
+<script type="text/javascript">
+	function commit() {
+		if (confirm("确定提交流程吗？")) {
+			$
+					.ajax({
+						type : "POST",
+						url : '${ctxPath}/process/task/complete/${taskId}/${processInstanceId}',
+						data : $('#form1').serialize(),
+						dataType : 'text',
+						success : function(data) {
+							var obj = JSON.parse(data); //由JSON字符串转换为JSON对象
+							alert(obj.msg);
+							if (obj.code == "10000") {
+								var index = parent.layer
+										.getFrameIndex(window.name); //先得到当前iframe层的索引
+								parent.layer.close(index); //再执行关闭  
+							}
+						},
+						error : function(error) {
+						}
+					});
+		}
+
+	}
+
+	function backOne() {
+
+		if (confirm("确定驳回上一步吗？")) {
+			var id = "${taskId}";
+
+			$.ajax({
+				type : "POST",
+				url : '${ctxPath}/process/backProcess',
+				data : {
+					"taskId" : id,
+					"tag" : "1"
+				},
+				dataType : 'text',
+				success : function(data) {
+					var obj = JSON.parse(data); //由JSON字符串转换为JSON对象
+					alert(obj.msg);
+					if (obj.code == "10000") {
+						var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+						parent.layer.close(index); //再执行关闭  
+					}
+				},
+				error : function(error) {
+				}
+			});
+		}
+
+	}
+
+	function backStart() {
+
+		if (confirm("确定驳回发起人吗？")) {
+			var id = "${taskId}";
+
+			$.ajax({
+				type : "POST",
+				url : '${ctxPath}/process/backProcess',
+				data : {
+					"taskId" : id,
+					"tag" : "0"
+				},
+				dataType : 'text',
+				success : function(data) {
+					var obj = JSON.parse(data); //由JSON字符串转换为JSON对象
+					alert(obj.msg);
+					if (obj.code == "10000") {
+						var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+						parent.layer.close(index); //再执行关闭  
+					}
+				},
+				error : function(error) {
+				}
+			});
+		}
+
+	}
+</script>
+</html>

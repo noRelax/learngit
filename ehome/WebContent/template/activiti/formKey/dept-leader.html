@@ -1,0 +1,165 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title></title>
+
+<script type="text/javascript" src="${ctxPath}/static/system/olive/all/js/jquery.js"></script>
+</head>
+<body>
+	<form name="form1" id="form1" action="process/task/complete/${taskId}/${processInstanceId}">
+		<div style="margin: 0 auto;">
+
+
+			<table class='view-info'>
+				<tr>
+					<td width="100" class="label">申请人：</td>
+					<td name="userId">${data.applyUserId}</td>
+				</tr>
+				<tr>
+					<td class="label">假种：</td>
+					<td name="leaveType">${data.leaveType}</td>
+				</tr>
+				<tr>
+					<td class="label">请假<font color="red">开始</font>时间：</td>
+					<td name="startTime">${data.startTime}</td>
+				</tr>
+				<tr>
+					<td class="label">请假<font color="red">结束</font>时间：</td>
+					<td name="endTime">${data.endTime}</td>
+				</tr>
+				<tr>
+					<td class="label">请假事由：</td>
+					<td name="reason">${data.reason}</td>
+				</tr>
+				<tr>
+					<td class="label">是否同意申请：</td>
+					<td><select id="deptLeaderPass" name="fp_deptLeaderPass">
+							<option value="true">同意</option>
+							<option value="false">不同意</option>
+						</select>
+					</td>
+				</tr>
+				<tr id="leaderBackReasonTr">
+					<td class="label">意见：</td>
+					<td><textarea id="leaderBackReason" name="fp_leaderReason"></textarea>
+					</td>
+				</tr>
+			</table>
+
+
+			<table>
+				<tr>
+					<td>节点名称</td>
+					<td>审批结果</td>
+					<td>审批意见</td>
+					<td>审批时间</td>
+				</tr>
+
+				<% for(entry in approveList){ %>
+				<tr>
+					<td>${entry.taskName}</td>
+					<td>${entry.deptLeaderPass}</td>
+					<td>${entry.leaderReason}</td>
+					<td>${entry.approveTime}</td>
+				</tr>
+				<% } %>
+			</table>
+
+
+
+		</div>
+		<input type="hidden" name="taskId" value="${taskId}">
+		<input type="hidden" name="processInstanceId" value="${processInstanceId}">
+		<div>
+			<table style="width:30%;">
+				<tr>
+
+					<td style="vertical-align:top;"><a class="btn btn-small btn-success" onclick="commit();">提交</a>
+					</td>
+					<td style="vertical-align:top;"><a class="btn btn-small btn-danger" onclick="backOne();">驳回上一步</a>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</form>
+</body>
+
+<script type="text/javascript">
+	function commit() {
+		if (confirm("确定提交流程吗？")) {
+			$
+					.ajax({
+						type : "POST",
+						url : '${ctxPath}/process/task/complete/${taskId}/${processInstanceId}',
+						data : $('#form1').serialize(),
+						dataType : 'text',
+						success : function(data) {
+							var obj = JSON.parse(data); //由JSON字符串转换为JSON对象
+							alert(obj.msg);
+							if (obj.code == "10000") {
+								var index = parent.layer
+										.getFrameIndex(window.name); //先得到当前iframe层的索引
+								parent.layer.close(index); //再执行关闭  
+							}
+						},
+						error : function(error) {
+						}
+					});
+		}
+
+	}
+
+	function backOne() {
+
+		if (confirm("确定驳回上一步吗？")) {
+			$
+					.ajax({
+						type : "POST",
+						url : '${ctxPath}/process/backFormLast/${taskId}/${processInstanceId}',
+						data : $('#form1').serialize(),
+						dataType : 'text',
+						success : function(data) {
+							var obj = JSON.parse(data); //由JSON字符串转换为JSON对象
+							alert(obj.msg);
+							if (obj.code == "10000") {
+								var index = parent.layer
+										.getFrameIndex(window.name); //先得到当前iframe层的索引
+								parent.layer.close(index); //再执行关闭  
+							}
+						},
+						error : function(error) {
+						}
+					});
+		}
+
+	}
+
+	function backStart() {
+
+		if (confirm("确定驳回发起人吗？")) {
+			var id = "${taskId}";
+
+			$.ajax({
+				type : "POST",
+				url : '${ctxPath}/process/backProcess',
+				data : {
+					"taskId" : id,
+					"tag" : "0"
+				},
+				dataType : 'text',
+				success : function(data) {
+					var obj = JSON.parse(data); //由JSON字符串转换为JSON对象
+					alert(obj.msg);
+					if (obj.code == "10000") {
+						var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+						parent.layer.close(index); //再执行关闭  
+					}
+				},
+				error : function(error) {
+				}
+			});
+		}
+
+	}
+</script>
+</html>

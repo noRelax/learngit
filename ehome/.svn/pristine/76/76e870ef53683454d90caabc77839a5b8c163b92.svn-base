@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.puhui.mapper.PhOrderMapper">
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.puhui.model.PhOrder">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="order_num" property="orderNum" jdbcType="VARCHAR" />
+		<result column="pay_transaction_no" property="payTransactionNo"
+			jdbcType="VARCHAR" />
+		<result column="pay_time" property="payTime" jdbcType="TIMESTAMP" />
+		<result column="pay_way" property="payWay" jdbcType="INTEGER" />
+		<result column="original_price" property="originalPrice"
+			jdbcType="DECIMAL" />
+		<result column="discount" property="discount" jdbcType="REAL" />
+		<result column="pay_money" property="payMoney" jdbcType="DECIMAL" />
+
+		<result column="handling_charge" property="handlingCharge"
+			jdbcType="DECIMAL" />
+
+		<result column="discount_money" property="discountMoney"
+			jdbcType="DECIMAL" />
+		<result column="discount_type" property="discountType"
+			jdbcType="INTEGER" />
+		<result column="customer_name" property="customerName"
+			jdbcType="VARCHAR" />
+		<result column="customer_id" property="customerId" jdbcType="INTEGER" />
+		<result column="merchant_name" property="merchantName"
+			jdbcType="VARCHAR" />
+		<result column="merchant_id" property="merchantId" jdbcType="INTEGER" />
+		<result column="merchant_addr" property="merchantAddr"
+			jdbcType="VARCHAR" />
+		<result column="province" jdbcType="INTEGER" property="province" />
+		<result column="city" jdbcType="INTEGER" property="city" />
+		<result column="county" jdbcType="INTEGER" property="county" />
+
+		<result column="remarks" property="remarks" jdbcType="VARCHAR" />
+		<result column="isSettle" property="issettle" jdbcType="INTEGER" />
+		<result column="settle_user_id" property="settleUserId"
+			jdbcType="INTEGER" />
+		<result column="settle_user_name" property="settleUserName"
+			jdbcType="VARCHAR" />
+		<result column="settle_time" property="settleTime" jdbcType="TIMESTAMP" />
+		<result column="settle_remarks" property="settleSemarks"
+			jdbcType="VARCHAR" />
+
+		<result column="export_time" property="exportTime" jdbcType="TIMESTAMP" />
+
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, order_num, pay_transaction_no, pay_time, pay_way,
+		original_price,
+		discount, pay_money,handling_charge,
+		discount_money,
+		discount_type,
+		customer_name, customer_id, merchant_name,
+		merchant_id,
+		merchant_addr,
+		province, city, county,
+		remarks, isSettle,
+		settle_user_id,
+		settle_user_name,
+		settle_time,settle_remarks,export_time
+	</sql>
+	<select id="selectByOrderId" resultMap="BaseResultMap"
+		parameterType="java.lang.Integer">
+		select
+		<include refid="Base_Column_List" />
+		from t_ph_order where id = #{id,jdbcType=INTEGER}
+	</select>
+
+
+	<insert id="insertOrder" parameterType="com.ehome.cloud.puhui.model.PhOrder">
+		insert into
+		t_ph_order
+		(id, order_num, pay_transaction_no, pay_time, pay_way,
+		original_price,
+		discount, pay_money, handling_charge,discount_money, discount_type,
+		customer_name,
+		customer_id,
+		merchant_name, merchant_id,
+		merchant_addr,province,
+		city,
+		county,
+		remarks,
+		isSettle,
+		settle_user_id,
+		settle_user_name, settle_time)
+		values
+		(#{id,jdbcType=INTEGER},
+		#{orderNum,jdbcType=VARCHAR},
+		#{payTransactionNo,jdbcType=VARCHAR},
+		#{payTime,jdbcType=TIMESTAMP},
+		#{payWay,jdbcType=INTEGER},
+		#{originalPrice,jdbcType=DECIMAL},
+		#{discount,jdbcType=REAL},
+		#{payMoney,jdbcType=DECIMAL},#{handlingCharge,jdbcType=DECIMAL},
+		#{discountMoney,jdbcType=DECIMAL}, #{discountType,jdbcType=INTEGER},
+		#{customerName,jdbcType=VARCHAR},
+		#{customerId,jdbcType=INTEGER},
+		#{merchantName,jdbcType=VARCHAR},
+		#{merchantId,jdbcType=INTEGER},
+		#{merchantAddr,jdbcType=VARCHAR},
+		#{province,jdbcType=INTEGER},
+		#{city,jdbcType=INTEGER}, #{county,jdbcType=INTEGER},
+		#{remarks,jdbcType=VARCHAR},
+		#{issettle,jdbcType=INTEGER},
+		#{settleUserId,jdbcType=INTEGER},
+		#{settleUserName,jdbcType=VARCHAR},
+		#{settleTime,jdbcType=TIMESTAMP})
+	</insert>
+
+
+	<!-- <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer"> 
+		delete from t_ph_order where id = #{id,jdbcType=INTEGER} </delete> <insert 
+		id="insert" parameterType="com.ehome.cloud.puhui.model.PhOrder"> insert into 
+		t_ph_order (id, order_num, pay_transaction_no, pay_time, pay_way, original_price, 
+		discount, pay_money, discount_money, discount_type, customer_name, customer_id, 
+		merchant_name, merchant_id, merchant_addr, remarks, isSettle, settle_user_id, 
+		settle_user_name, settle_time) values (#{id,jdbcType=INTEGER}, #{orderNum,jdbcType=VARCHAR}, 
+		#{payTransactionNo,jdbcType=VARCHAR}, #{payTime,jdbcType=TIMESTAMP}, #{payWay,jdbcType=INTEGER}, 
+		#{originalPrice,jdbcType=VARCHAR}, #{discount,jdbcType=REAL}, #{payMoney,jdbcType=VARCHAR}, 
+		#{discountMoney,jdbcType=VARCHAR}, #{discountType,jdbcType=INTEGER}, #{customerName,jdbcType=VARCHAR}, 
+		#{customerId,jdbcType=INTEGER}, #{merchantName,jdbcType=VARCHAR}, #{merchantId,jdbcType=INTEGER}, 
+		#{merchantAddr,jdbcType=VARCHAR}, #{remarks,jdbcType=VARCHAR}, #{issettle,jdbcType=INTEGER}, 
+		#{settleUserId,jdbcType=INTEGER}, #{settleUserName,jdbcType=VARCHAR}, #{settleTime,jdbcType=TIMESTAMP}) 
+		</insert> <insert id="insertSelective" parameterType="com.ehome.cloud.puhui.model.PhOrder"> 
+		insert into t_ph_order <trim prefix="(" suffix=")" suffixOverrides=","> <if 
+		test="id != null"> id, </if> <if test="orderNum != null"> order_num, </if> 
+		<if test="payTransactionNo != null"> pay_transaction_no, </if> <if test="payTime 
+		!= null"> pay_time, </if> <if test="payWay != null"> pay_way, </if> <if test="originalPrice 
+		!= null"> original_price, </if> <if test="discount != null"> discount, </if> 
+		<if test="payMoney != null"> pay_money, </if> <if test="discountMoney != 
+		null"> discount_money, </if> <if test="discountType != null"> discount_type, 
+		</if> <if test="customerName != null"> customer_name, </if> <if test="customerId 
+		!= null"> customer_id, </if> <if test="merchantName != null"> merchant_name, 
+		</if> <if test="merchantId != null"> merchant_id, </if> <if test="merchantAddr 
+		!= null"> merchant_addr, </if> <if test="remarks != null"> remarks, </if> 
+		<if test="issettle != null"> isSettle, </if> <if test="settleUserId != null"> 
+		settle_user_id, </if> <if test="settleUserName != null"> settle_user_name, 
+		</if> <if test="settleTime != null"> settle_time, </if> </trim> <trim prefix="values 
+		(" suffix=")" suffixOverrides=","> <if test="id != null"> #{id,jdbcType=INTEGER}, 
+		</if> <if test="orderNum != null"> #{orderNum,jdbcType=VARCHAR}, </if> <if 
+		test="payTransactionNo != null"> #{payTransactionNo,jdbcType=VARCHAR}, </if> 
+		<if test="payTime != null"> #{payTime,jdbcType=TIMESTAMP}, </if> <if test="payWay 
+		!= null"> #{payWay,jdbcType=INTEGER}, </if> <if test="originalPrice != null"> 
+		#{originalPrice,jdbcType=VARCHAR}, </if> <if test="discount != null"> #{discount,jdbcType=REAL}, 
+		</if> <if test="payMoney != null"> #{payMoney,jdbcType=VARCHAR}, </if> <if 
+		test="discountMoney != null"> #{discountMoney,jdbcType=VARCHAR}, </if> <if 
+		test="discountType != null"> #{discountType,jdbcType=INTEGER}, </if> <if 
+		test="customerName != null"> #{customerName,jdbcType=VARCHAR}, </if> <if 
+		test="customerId != null"> #{customerId,jdbcType=INTEGER}, </if> <if test="merchantName 
+		!= null"> #{merchantName,jdbcType=VARCHAR}, </if> <if test="merchantId != 
+		null"> #{merchantId,jdbcType=INTEGER}, </if> <if test="merchantAddr != null"> 
+		#{merchantAddr,jdbcType=VARCHAR}, </if> <if test="remarks != null"> #{remarks,jdbcType=VARCHAR}, 
+		</if> <if test="issettle != null"> #{issettle,jdbcType=INTEGER}, </if> <if 
+		test="settleUserId != null"> #{settleUserId,jdbcType=INTEGER}, </if> <if 
+		test="settleUserName != null"> #{settleUserName,jdbcType=VARCHAR}, </if> 
+		<if test="settleTime != null"> #{settleTime,jdbcType=TIMESTAMP}, </if> </trim> 
+		</insert> <update id="updateByPrimaryKeySelective" parameterType="com.ehome.cloud.puhui.model.PhOrder"> 
+		update t_ph_order <set> <if test="orderNum != null"> order_num = #{orderNum,jdbcType=VARCHAR}, 
+		</if> <if test="payTransactionNo != null"> pay_transaction_no = #{payTransactionNo,jdbcType=VARCHAR}, 
+		</if> <if test="payTime != null"> pay_time = #{payTime,jdbcType=TIMESTAMP}, 
+		</if> <if test="payWay != null"> pay_way = #{payWay,jdbcType=INTEGER}, </if> 
+		<if test="originalPrice != null"> original_price = #{originalPrice,jdbcType=VARCHAR}, 
+		</if> <if test="discount != null"> discount = #{discount,jdbcType=REAL}, 
+		</if> <if test="payMoney != null"> pay_money = #{payMoney,jdbcType=VARCHAR}, 
+		</if> <if test="discountMoney != null"> discount_money = #{discountMoney,jdbcType=VARCHAR}, 
+		</if> <if test="discountType != null"> discount_type = #{discountType,jdbcType=INTEGER}, 
+		</if> <if test="customerName != null"> customer_name = #{customerName,jdbcType=VARCHAR}, 
+		</if> <if test="customerId != null"> customer_id = #{customerId,jdbcType=INTEGER}, 
+		</if> <if test="merchantName != null"> merchant_name = #{merchantName,jdbcType=VARCHAR}, 
+		</if> <if test="merchantId != null"> merchant_id = #{merchantId,jdbcType=INTEGER}, 
+		</if> <if test="merchantAddr != null"> merchant_addr = #{merchantAddr,jdbcType=VARCHAR}, 
+		</if> <if test="remarks != null"> remarks = #{remarks,jdbcType=VARCHAR}, 
+		</if> <if test="issettle != null"> isSettle = #{issettle,jdbcType=INTEGER}, 
+		</if> <if test="settleUserId != null"> settle_user_id = #{settleUserId,jdbcType=INTEGER}, 
+		</if> <if test="settleUserName != null"> settle_user_name = #{settleUserName,jdbcType=VARCHAR}, 
+		</if> <if test="settleTime != null"> settle_time = #{settleTime,jdbcType=TIMESTAMP}, 
+		</if> </set> where id = #{id,jdbcType=INTEGER} </update> <update id="updateByPrimaryKey" 
+		parameterType="com.ehome.cloud.puhui.model.PhOrder"> update t_ph_order set 
+		order_num = #{orderNum,jdbcType=VARCHAR}, pay_transaction_no = #{payTransactionNo,jdbcType=VARCHAR}, 
+		pay_time = #{payTime,jdbcType=TIMESTAMP}, pay_way = #{payWay,jdbcType=INTEGER}, 
+		original_price = #{originalPrice,jdbcType=VARCHAR}, discount = #{discount,jdbcType=REAL}, 
+		pay_money = #{payMoney,jdbcType=VARCHAR}, discount_money = #{discountMoney,jdbcType=VARCHAR}, 
+		discount_type = #{discountType,jdbcType=INTEGER}, customer_name = #{customerName,jdbcType=VARCHAR}, 
+		customer_id = #{customerId,jdbcType=INTEGER}, merchant_name = #{merchantName,jdbcType=VARCHAR}, 
+		merchant_id = #{merchantId,jdbcType=INTEGER}, merchant_addr = #{merchantAddr,jdbcType=VARCHAR}, 
+		remarks = #{remarks,jdbcType=VARCHAR}, isSettle = #{issettle,jdbcType=INTEGER}, 
+		settle_user_id = #{settleUserId,jdbcType=INTEGER}, settle_user_name = #{settleUserName,jdbcType=VARCHAR}, 
+		settle_time = #{settleTime,jdbcType=TIMESTAMP} where id = #{id,jdbcType=INTEGER} 
+		</update> -->
+
+
+	<select id="selectListByOrder" resultMap="BaseResultMap"
+		parameterType="com.ehome.cloud.puhui.model.PhOrder">
+		select
+		<include refid="Base_Column_List" />
+		from t_ph_order
+		<where>
+			<if test="id !=null">
+				id = #{id,jdbcType=INTEGER}
+			</if>
+			<if test="orderNum != null">
+				and order_num = #{orderNum,jdbcType=VARCHAR}
+			</if>
+			<if test="payTransactionNo != null">
+				and pay_transaction_no =
+				#{payTransactionNo,jdbcType=VARCHAR}
+			</if>
+
+			<if test="startDate !=null">
+				and pay_time &gt;=#{startDate,jdbcType=TIMESTAMP}
+			</if>
+
+			<if test="endDate !=null">
+				and pay_time &lt;=
+				date_add(#{endDate,jdbcType=TIMESTAMP}, INTERVAL 1 day)
+			</if>
+			<if test="payTime != null">
+				and pay_time = #{payTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test="payWay != null">
+				and pay_way = #{payWay,jdbcType=INTEGER}
+			</if>
+			<if test="originalPrice != null">
+				and original_price = #{originalPrice,jdbcType=DECIMAL}
+			</if>
+			<if test="discount != null">
+				and discount = #{discount,jdbcType=REAL}
+			</if>
+			<if test="payMoney != null">
+				and pay_money = #{payMoney,jdbcType=DECIMAL}
+			</if>
+			<if test="discountMoney != null">
+				and discount_money = #{discountMoney,jdbcType=DECIMAL}
+			</if>
+			<if test="discountType != null">
+				and discount_type = #{discountType,jdbcType=INTEGER}
+			</if>
+			<if test="customerName != null and customerName!=''">
+				and customer_name like
+				CONCAT('%',#{customerName,jdbcType=VARCHAR},'%')
+			</if>
+			<if test="customerId != null">
+				and customer_id = #{customerId,jdbcType=INTEGER}
+			</if>
+			<if test="merchantName != null and merchantName!=''">
+				and merchant_name like
+				CONCAT('%',#{merchantName,jdbcType=VARCHAR}, '%')
+			</if>
+			<if test="merchantId != null">
+				and merchant_id = #{merchantId,jdbcType=INTEGER}
+			</if>
+			<if test="merchantAddr != null">
+				and merchant_addr = #{merchantAddr,jdbcType=VARCHAR}
+			</if>
+
+			<if test="province != null">
+				and province= #{province,jdbcType=INTEGER}
+			</if>
+			<if test="city != null">
+				and city=#{city,jdbcType=INTEGER}
+			</if>
+			<if test="county != null">
+				and county=#{county,jdbcType=INTEGER}
+			</if>
+
+			<if test="remarks != null">
+				and remarks = #{remarks,jdbcType=VARCHAR}
+			</if>
+			<if test="issettle != null">
+				and isSettle = #{issettle,jdbcType=INTEGER}
+			</if>
+			<if test="settleUserId != null">
+				and settle_user_id = #{settleUserId,jdbcType=INTEGER}
+			</if>
+			<if test="settleUserName != null">
+				and settle_user_name =
+				#{settleUserName,jdbcType=VARCHAR}
+			</if>
+			<if test="settleTime != null">
+				and settle_time = #{settleTime,jdbcType=TIMESTAMP}
+			</if>
+		</where>
+
+		order by pay_time desc
+
+	</select>
+
+	<!-- 查询统计 -->
+	<select id="selectStatistics" resultType="java.util.Map"
+		parameterType="com.ehome.cloud.puhui.model.PhOrder">
+		SELECT COUNT(id)
+		orderTotal,COUNT(DISTINCT
+		merchant_id)
+		merchantTotal,SUM(pay_money)
+		payMoneyTotal,COUNT(CASE WHEN
+		isSettle=1
+		THEN 0 END)
+		settleOrder,SUM(CASE WHEN isSettle=1 THEN
+		pay_money ELSE 0
+		END)
+		settlePayMoney FROM t_ph_order
+		<where>
+			<if test="customerName != null and customerName!=''">
+				customer_name like
+				CONCAT('%',#{customerName,jdbcType=VARCHAR},'%')
+			</if>
+			<if test="customerId != null">
+				and customer_id = #{customerId,jdbcType=INTEGER}
+			</if>
+			<if test="merchantName != null and merchantName!=''">
+				and merchant_name like
+				CONCAT('%',#{merchantName,jdbcType=VARCHAR}, '%')
+			</if>
+			<if test="merchantId != null">
+				and merchant_id = #{merchantId,jdbcType=INTEGER}
+			</if>
+			<if test="startDate !=null">
+				and pay_time &gt;=#{startDate,jdbcType=TIMESTAMP}
+			</if>
+
+			<if test="endDate !=null">
+				and pay_time &lt;=#{endDate,jdbcType=TIMESTAMP}
+				<!--date_add(#{endDate,jdbcType=TIMESTAMP}, INTERVAL 1 day) -->
+			</if>
+			<if test="payWay != null">
+				and pay_way = #{payWay,jdbcType=INTEGER}
+			</if>
+			<if test="issettle != null">
+				and isSettle = #{issettle,jdbcType=INTEGER}
+			</if>
+			<if test="province != null">
+				and province= #{province,jdbcType=INTEGER}
+			</if>
+			<if test="city != null">
+				and city=#{city,jdbcType=INTEGER}
+			</if>
+			<if test="county != null">
+				and county=#{county,jdbcType=INTEGER}
+			</if>
+		</where>
+	</select>
+
+	<select id="selectStatisticsByIds" resultType="java.util.Map"
+		parameterType="java.util.List">
+		SELECT COUNT(id)
+		orderTotal,COUNT(DISTINCT
+		merchant_id)
+		merchantTotal,SUM(pay_money)
+		payMoneyTotal,COUNT(CASE WHEN
+		isSettle=1
+		THEN 0 END)
+		settleOrder,SUM(CASE WHEN isSettle=1 THEN
+		pay_money ELSE 0
+		END)
+		settlePayMoney FROM t_ph_order where id in
+		<foreach collection="array" index="index" item="item" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</select>
+
+
+	<!-- 更新结算状态 -->
+	<update id="updateSettleById" parameterType="com.ehome.cloud.puhui.model.PhOrder">
+		UPDATE t_ph_order
+		SET isSettle=1,settle_user_id = #{settleUserId},settle_user_name =
+		#{settleUserName},settle_time =
+		#{settleTime,jdbcType=TIMESTAMP},settle_remarks=#{settleSemarks} WHERE
+		id =#{id}
+	</update>
+
+	<!-- 批量更新结算状态 -->
+	<update id="batchUpdateSettleByIds" parameterType="java.util.Map">
+		UPDATE
+		t_ph_order
+		SET isSettle=1,settle_user_id =
+		#{settleUserId},settle_user_name =
+		#{settleUserName},settle_time =
+		#{settleTime,jdbcType=TIMESTAMP},settle_remarks=#{settleSemarks} WHERE
+		isSettle=0 and
+		id in
+		<foreach collection="ids" index="index" item="item" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</update>
+
+
+	<!-- 更新导出时间 -->
+	<update id="updateExportTime" parameterType="com.ehome.cloud.puhui.model.PhOrder">
+		UPDATE t_ph_order
+		SET export_time=#{exportTime,jdbcType=TIMESTAMP} WHERE
+		id=#{id}
+	</update>
+
+	<!-- 只需要查一张图片 -->
+	<select id="selectImgByMerchantId" resultType="java.lang.String"
+		parameterType="java.lang.Integer">
+		SELECT filepath FROM t_uploadfile WHERE id =(SELECT picIds FROM
+		t_ph_merchant WHERE
+		id=#{id})
+	</select>
+
+</mapper>

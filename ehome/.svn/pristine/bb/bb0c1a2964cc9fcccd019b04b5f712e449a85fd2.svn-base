@@ -1,0 +1,120 @@
+package com.ehome.cloud.sys.service;
+
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.annotations.Param;
+
+import com.ehome.cloud.marry.model.MarryMemberModel;
+import com.ehome.cloud.sys.dto.AppUserDto;
+import com.ehome.cloud.sys.model.AppUserModel;
+import com.ehome.core.frame.BusinessException;
+import com.ehome.core.frame.IService;
+
+/**
+ * App用户接口
+ * 
+ * @Title:IAppUserService
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年2月13日 上午10:42:49
+ * @version:
+ */
+public interface IAppUserService extends IService<AppUserModel> {
+
+	AppUserDto queryByLoginName(String userAccount);
+
+	AppUserDto queryByThirdPath(String userAccount, Integer fromType);
+
+	AppUserDto queryByThridPathLogin(String openId, Integer fromType);
+
+	List<Map<String, Object>> queryForList(String keyword, Integer blackTypeId,
+			Integer start, Integer pageSize) throws BusinessException;
+
+	/**
+	 * 
+	 * @param roleMap
+	 * @return
+	 */
+	int saveAppRole(Map<String, Object> roleMap);
+
+	/**
+	 * @param primaryKey
+	 * @return
+	 * 
+	 */
+	int deleteAppRole(Integer app_user_id);
+
+	/**
+	 * @param oldSystemMap
+	 * @return
+	 * 
+	 */
+	int deleteCode(Map<String, Object> map);
+
+	/**
+	 * @param oldSystemMap
+	 * @return
+	 * 
+	 */
+	int insertCode(Map<String, Object> map);
+
+	/**
+	 * @param params
+	 * @return
+	 * 
+	 */
+	List<Map<String, Object>> querySysUser(Map<String, String> map);
+
+	/**
+	 * @param params
+	 * 
+	 */
+	int insertSysUser(Map<String, String> map);
+
+	/**
+	 * @param params
+	 * 
+	 */
+	int updateSysUser(Map<String, String> map);
+
+	/**
+	 * 登录操作
+	 */
+	void workForLogin(AppUserDto appUserModel, String imei,
+			Integer source_device);
+
+	/**
+	 * 更新状态
+	 * 
+	 * @param status
+	 * @param id
+	 * @return
+	 */
+	int updateStatus(String status, String[] ids);
+
+	/** 更新个人信息 （新旧表事务）
+	 * @param map
+	 * @return 
+	 * 
+	 */
+	public void updateUserInfo(Map<String, Object> map,
+			AppUserModel appUserModel, MarryMemberModel marryMemberModel);
+
+	/**
+	 * 查询前端用户信息
+	 * @param id
+	 * @return
+	 */
+	Map<String, Object> queryInfo(@Param("id") int id);
+
+	/**
+	 * 更新黑名单类型
+	 * @param id
+	 * @return
+	 */
+	int updateBlackType(@Param("id") int id, @Param("blackType") int blackType);
+
+	void bindMobileByThirdPath(Integer id, String userPassword,
+			String userMobile) throws Exception;
+}

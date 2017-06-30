@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.sys.mapper.DictionaryMapper">
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.sys.model.Dictionary">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="dict_type_id" property="dictTypeId"/>
+		<result column="dict_key" property="dictKey" jdbcType="VARCHAR" />
+		<result column="dict_value" property="dictValue" jdbcType="VARCHAR" />
+		<result column="sort" property="sort" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+		<result column="create_user" property="createUser" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<resultMap id="DtoMap" type="com.ehome.cloud.sys.dto.DictionaryDto">
+		<result column="type_code" property="typeCode"/>
+		<result column="dict_key" property="dictKey" jdbcType="VARCHAR" />
+		<result column="dict_value" property="dictValue" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<select id="queryForList" resultMap="BaseResultMap">
+		 SELECT id,dict_type_id,dict_key,dict_value,sort,remark,create_time,create_user FROM t_dictionary WHERE 1=1
+		 AND dict_type_id = #{dictTypeId}
+	</select>
+	
+	<select id="getRenderFieldValue" resultType="java.lang.String">
+	     SELECT d.dict_value FROM t_dictionary d 
+         JOIN t_dictionary_type dt ON d.dict_type_id = dt.id
+         WHERE d.dict_key = #{fieldValue} AND dt.type_code = #{code} LIMIT 1;
+	</select>
+	
+	<select id="getFieldKeyByCode" resultType="java.lang.String">
+		 SELECT d.dict_key FROM t_dictionary d 
+         JOIN t_dictionary_type dt ON d.dict_type_id = dt.id
+         WHERE d.dict_value = #{dictValue} AND dt.type_code = #{code} LIMIT 1;
+	</select>
+	
+	<select id="queryByCode" resultMap="BaseResultMap">
+	     SELECT d.dict_key, d.dict_value, d.sort FROM t_dictionary d JOIN 
+	     t_dictionary_type dt ON d.dict_type_id = dt.id
+	     WHERE dt.type_code = #{code} ORDER BY d.sort
+	</select>
+	
+	<delete id="deleteByDictTypeId" parameterType="java.lang.Integer">
+	     DELETE FROM t_dictionary WHERE dict_type_id = #{dictTypeId}
+	</delete>
+	
+	<select id="getByCode" resultType="java.lang.String">
+	     SELECT d.dict_value FROM t_dictionary d JOIN 
+	     t_dictionary_type dt ON d.dict_type_id = dt.id
+	     WHERE dt.type_code IN 
+         <foreach collection="codeList" item="item" index="index" open="("
+	         separator="," close=")">
+	         #{item}
+         </foreach>
+	</select>
+	
+	<select id="getByCodeList" resultMap="DtoMap">
+	     SELECT d.dict_key,d.dict_value,dt.type_code FROM t_dictionary d JOIN 
+	     t_dictionary_type dt ON d.dict_type_id = dt.id
+	     <where>
+	         <if test="codeList != null and codeList.size() != 0">
+	             AND dt.type_code IN 
+	             <foreach collection="codeList" item="item" index="index" open="("
+	                 separator="," close=")">
+	                 #{item}
+                 </foreach>
+	         </if>
+	     </where>
+	</select>
+</mapper>

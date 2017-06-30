@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns="http://www.springframework.org/schema/beans"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- Shiro过滤器 核心-->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <!-- Shiro的核心安全接口,这个属性是必须的 -->
+        <property name="securityManager" ref="securityManager"/>
+        <!-- 身份认证失败，则跳转到登录页面的配置 -->
+        <property name="loginUrl" value="/login.html"/>
+        <!-- 身份认证成功后跳转到系统首页 -->
+        <property name="successUrl" value="/admin/index.html"/>
+        <!-- 权限认证失败，则跳转到指定页面 -->
+        <property name="unauthorizedUrl" value="/unauthorized"/>
+        <!-- Shiro自定义认证过滤器 -->
+        <property name="filters"> 
+            <map> 
+                 <entry key="authc" value-ref="customerFormAuthenticationFilter"/>
+<!--                  <entry key="appAuthc" value-ref="appShiroAuthenticationFilter"></entry> -->
+            </map> 
+        </property>
+        <!-- Shiro连接约束配置,即过滤链的定义 -->
+        <property name="filterChainDefinitions">
+            <value>
+                <!--anon 表示匿名访问，不需要认证以及授权-->
+                /static/**=anon
+                /img/favicon.ico = anon,noSessionCreation
+                /template/system/public/**=anon
+                /login=anon
+                /toLogin=anon
+                /app/user/updateUserinfo=authc
+                /app/user/**=anon
+                /app/module/**=anon
+                /app/advertise/**=anon
+                /app/appLifeConfig/**=anon
+                /app/puhui/class/**=anon
+                /app/puhui/merchant/**=anon
+                /app/member/**=anon
+                /app/Geetest/**=anon
+                /app/guangchang/topic/getList=anon
+                /app/guangchang/topic/add=anon
+                /app/guangchang/topic/get=anon
+                /app/guangchang/discussion/getList=anon
+                /app/guangchang/discussion/get=anon
+                /app/guangchang/comment/getList=anon
+                /upload/**=anon
+                /files/**=anon
+                /tenpay/**=anon
+                /alipay/**=anon
+                /app/marry/**=anon
+                /zjtenpay/**=anon
+                /zjalipay/**=anon
+                <!--authc表示需要认证 没有进行身份认证是不能进行访问的-->
+                 /**=authc
+            </value>
+        </property>
+    </bean>
+    
+    <bean id="wapsession" class="org.apache.shiro.web.servlet.SimpleCookie">
+        <constructor-arg name="name" value="token"/>
+        <property name="maxAge" value="2592000"/>
+    </bean>
+
+    <bean id="rememberMeCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+        <constructor-arg value="rememberMe"/>
+        <property name="httpOnly" value="true"/>
+        <!-- 30天 -->
+        <property name="maxAge" value="2592000"/>
+    </bean>
+
+    <bean id="rememberMeManager" class="org.apache.shiro.web.mgt.CookieRememberMeManager">
+        <property name="cipherKey" value="#{T(org.apache.shiro.codec.Base64).decode('4AvVhmFLUs0KTA3Kprsdag==')}"/>
+        <property name="cookie" ref="rememberMeCookie"/>
+    </bean>
+    
+    <!-- securityManager安全管理器 -->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="authenticator" ref="authenticator"/>
+        <property name="realms">
+            <list>
+                <ref bean="pcShiroRealm"/>
+                <ref bean="appShiroRealm"/>
+                <ref bean="thirdPathShiroRealm"/>
+            </list>
+        </property>
+        <!-- 注入缓存管理器 
+        <property name="cacheManager" ref="cacheManager"/> -->
+        <!-- 注入session管理器 -->
+        <property name="sessionManager" ref="sessionManager"/>
+        <property name="rememberMeManager" ref="rememberMeManager"/>
+        <!-- 记住我 -->
+    </bean>
+    
+    <!-- 配置使用自定义认证器，可以实现多Realm认证，并且可以指定特定Realm处理特定类型的验证 -->
+    <bean id="authenticator" class="com.ehome.core.shiro.security.Authenticator.CustomizedModularRealmAuthenticator">
+     <!-- <property name="definedRealms">
+             <map>     
+                <entry key="appShiroRealm" value-ref="appShiroRealm" />     
+                 <entry key="pcShiroRealm" value-ref="pcShiroRealm" />    
+             </map>    
+         </property> -->
+     <!-- 配置认证策略，只要有一个Realm认证成功即可，并且返回所有认证成功信息 
+          authenticationStrategy类有三种策略类型：
+          AtLeastOneSuccessfulStrategy：只要一个或者多个Realm认证通过，则整体身份认证就会视为成功
+          FirstSuccessfulStrategy：只有第一个验证通过，才会视为整体认证通过。其他的会被忽略
+          AllSuccessfulStrategy：只有所有的Realm认证成功，才会被视为认证通过
+     -->
+        <property name="authenticationStrategy">
+            <bean class="org.apache.shiro.authc.pam.AtLeastOneSuccessfulStrategy"></bean>
+        </property>
+    </bean>
+    
+    <!-- 自定义AppRealm和PcRealm -->
+    <bean id="appShiroRealm" class="com.ehome.core.shiro.security.realm.AppShiroRealm">
+        <property name="credentialsMatcher" ref="credentialsMatcher"/>
+    </bean>
+    <bean id="pcShiroRealm" class="com.ehome.core.shiro.security.realm.PcShiroRealm">
+        <property name="credentialsMatcher" ref="credentialsMatcher"/>
+    </bean>
+    <bean id="thirdPathShiroRealm" class="com.ehome.core.shiro.security.realm.ThirdPathShiroRealm">
+        <property name="credentialsMatcher" ref="credentialsMatcher"/>
+    </bean>
+    
+    <!-- 自定义Session管理工具 -->
+    <bean id="redisSessionDAO" class="com.ehome.core.shiro.security.RedisSessionDao"/>
+
+    <bean id="credentialsMatcher"
+          class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+        <property name="hashAlgorithmName" value="md5"/>
+        <property name="hashIterations" value="2"/>
+    </bean>
+
+    <bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+        <!-- 设置全局会话超时时间，默认30分钟(1800000) -->
+        <!-- <property name="globalSessionTimeout" value="2592000000"/> -->
+        <!-- 会话验证器调度时间 -->
+        <property name="sessionValidationInterval" value="1800000" /> 
+        <!-- 定时检查失效的session --> 
+        <property name="sessionValidationSchedulerEnabled" value="true"/>
+        <!-- 是否在会话过期后会调用SessionDAO的delete方法删除会话 默认true -->  
+        <property name="deleteInvalidSessions" value="true" />  
+        <property name="sessionDAO" ref="redisSessionDAO"/>
+        <property name="sessionIdUrlRewritingEnabled" value="false" />
+        <property name="sessionIdCookie" ref="wapsession"/>
+        <property name="sessionIdCookieEnabled" value="true"/>
+    </bean>
+    
+    <!-- 自定义认证过滤器 
+    <bean id="authenticationFilter" class="com.ehome.core.shiro.ShiroAuthenticationFilter"/> -->
+    <bean id="customerFormAuthenticationFilter" class="com.ehome.core.shiro.CustomerFormAuthenticationFilter"/>
+    
+    <!-- 保证实现了Shiro内部lifecycle函数的bean执行 -->
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+
+    <bean id="securityCacheService" class="com.ehome.core.shiro.security.RedisCacheServiceImpl" />
+</beans>

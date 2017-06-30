@@ -1,0 +1,192 @@
+<% include("/system/public/header.html",{title:'header'}){} %> <%
+layout("/system/public/aside.html",{title:'header'}){} %>
+<script type="text/javascript"></script>
+
+<!-- BEGIN WRAPPER  -->
+<div class="editalbeWrap">
+	<section id="main-content">
+		<!-- BEGIN WRAPPER  -->
+		<section class="wrapper site-min-height">
+			<section class="panel">
+				<header class="panel-heading">
+					<span class="label label-primary">服务配置</span> <span
+						class="tools pull-right"> <a href="javascript:;"
+						class="fa fa-chevron-down"></a> <a href="javascript:;"
+						class="fa fa-times"></a>
+					</span>
+				</header>
+				<div class="panel-body">
+					<div class="adv-table editable-table ">
+						<div class="clearfix">
+
+							<div class="btn-group pull-right">
+								<button class="btn btn-primary dropdown-toggle"
+									data-toggle="dropdown">
+									工具栏<i class="fa fa-angle-down"></i>
+								</button>
+								<ul class="dropdown-menu pull-right">
+									<li><a href="#">打印</a></li>
+									<li><a href="#">另存为PDF</a></li>
+									<li><a href="#">导出到Excel</a></li>
+								</ul>
+							</div>
+						</div>
+						<div class="clearfix">
+
+							<form class="form-inline" role="form" name="searchForm">
+								<div class="form-group">
+									<input type="text" class="form-control" name="lifeName"
+										placeholder="请输入服务名称">
+								</div>
+								<div class="form-group">
+									<select class="form-control" style="width: 140px"
+										name="provinceId" id="province"
+										onchange="provinceChange(this.value)">
+										<option value='0'>--请选择省份--</option>
+									</select>
+								</div>
+								<div class="form-group">
+									<select class="form-control lxl-city-select"
+										style="width: 140px" name="cityId" id="city">
+										<option value='0'>--请选择城市--</option>
+									</select>
+								</div>
+								<button type="submit" name="search" class="btn btn-success">检索</button>
+								<button type="reset"
+									class="btn btn-success btn-success-re lxl-input-reset">重置检索</button>
+								<div class="btn-group">
+									<a href="#editable-sample_new" name="new-life-table"
+										data-toggle="modal" class="btn btn-success green"> 新增 <i
+										class="fa fa-plus"></i>
+									</a>
+								</div>
+							</form>
+							</br>
+
+						</div>
+						<div class="space15"></div>
+						<table class="table table-striped table-hover table-bordered"
+							id="life-tableList">
+							<thead>
+								<tr>
+									<th width="5%" class="center"><input type="checkbox"
+										class="checkall" /></th>
+									<th width="5%" class="hidden-phone">序号</th>
+									<th width="10%" class="hidden-phone">图标</th>
+									<th width="10%" class="hidden-phone">服务名称</th>
+									<th width="10%" class="hidden-phone">URL</th>
+									<th width="10%" class="hidden-phone">首页推荐</th>
+									<th width="10%" class="hidden-phone">服务提供</th>
+									<th width="10%" class="hidden-phone">排序</th>
+									<th width="10%" class="hidden-phone">状态</th>
+									<th width="20%" class="hidden-phone">操作</th>
+								</tr>
+							</thead>
+							<tbody>
+
+							</tbody>
+						</table>
+
+						<ul class="pagination"></ul>
+
+					</div>
+				</div>
+			</section>
+		</section>
+		<!-- END WRAPPER  -->
+	</section>
+</div>
+
+
+<script src="${ctxPath}/static/system/olive/all/js/jquery.form.js"></script>
+<script
+	src="${ctxPath}/static/system/olive/all/js/jquery.validate.min.js"></script>
+
+<script
+	src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script>
+<script
+	src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script>
+<!-- DATATABLE JS  -->
+<!-- DATATABLE JS  -->
+<script src="${ctxPath}/static/web/life/lifeconfig/js/life-list.js"></script>
+<script type="text/javascript">
+	$(function() {
+		$(".lxl-input-reset").on('click',
+				function() {
+					$('.lxl-city-select option').remove();
+					$('.lxl-city-select').append('<option value="0">--请选择城市--</option>');
+				});
+	});
+
+	//加载省
+
+	$.ajax({
+		url : '${ctxPath}/life/getProvince',
+		type : 'POST',
+		dataType : 'json',
+		success : function(data) {
+			var obj = data.data;
+			$('#province').empty();
+			var tabDataHtml = "";
+			tabDataHtml = tabDataHtml + "<option value='0'>--请选择省份--</option>";
+			for (var k = 0; k < obj.length; k++) {
+				tabDataHtml = tabDataHtml
+						+ "<option value="+obj[k].provinceId+">"
+						+ obj[k].provinceName + "</option>";
+			}
+			$('#province').append(tabDataHtml);
+		}
+	});
+
+	function provinceChange(id) {
+		if (id == "0") {
+			$('#city').empty();
+			$('#county').empty();
+			$('#city').append("<option value='0'>--请选择城市--</option>");
+			return;
+		}
+		$.ajax({
+			url : '${ctxPath}/life/getByPid?provinceId=' + id,
+			type : 'POST',
+			dataType : 'json',
+			success : function(data) {
+				var obj = data.data;
+				$('#city').empty();
+				var tabDataHtml = "";
+				tabDataHtml = tabDataHtml
+						+ "<option value='0'>--请选择城市--</option>";
+				for (var k = 0; k < obj.length; k++) {
+					tabDataHtml = tabDataHtml
+							+ "<option value="+obj[k].cityId+">"
+							+ obj[k].cityName + "</option>";
+				}
+				$('#city').append(tabDataHtml);
+			}
+		});
+	}
+</script>
+<script type="text/javascript">
+	jQuery(document).ready(function() {
+		layui.use('layer', function() {
+			var layer = layui.layer;
+			//新建帐号
+			jQuery('a[name=new-life-table]').on('click', function(e) {
+				e.preventDefault();
+				var lifeId = jQuery(this).attr('data-id');
+				parent.layer.open({
+					type : 2,
+					title : '新增服务',
+					area : [ '600px', '700px' ],
+					content : '../life/add-life-page.html?lifeId=' + lifeId,
+					end : function() {
+
+					}
+				});
+			});
+		});
+		lifeTable.init();//初始化表格
+	});
+</script>
+<!-- END MAIN CONTENT -->
+
+<% layout("/system/public/footer.html",{title:'header'}){} %>

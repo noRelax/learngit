@@ -1,0 +1,324 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>维权审批</title>
+<link href="${ctxPath}/static/system/public/css/bootstrap-3.3.4.css"
+	rel="stylesheet">
+<!-- BOOTSTRAP CSS -->
+
+<script type="text/javascript"
+	src="${ctxPath}/static/system/olive/all/js/jquery.js"></script>
+<style>
+.scrollContent {
+	padding: 10px;
+	line-height: 27px;
+	height: auto;
+	max-height: 500px;
+	overflow-y: auto;
+}
+</style>
+</head>
+<body style="margin:20px">
+	<table width="90%" border="0" style="margin-left:50px">
+		<caption align="top">
+			<p style="text-align:center;">法 律 援 助 申 请 表</p>
+		</caption>
+		<tr>
+			<td align="right">${data.applicationTime}</td>
+		</tr>
+	</table>
+	<table width="751" height="500" border="1" cellspacing="0"
+		style="text-align: center; margin-left:30px">
+		<tr height="22">
+			<td colspan="2" width="187">姓名</td>
+			<td colspan="2" width="187">${data.name}</td>
+			<td width="94">性别</td>
+			<td width="94">${data.sex}</td>
+			<td width="94">民族</td>
+			<td width="94">${data.nation}</td>
+		</tr>
+		<tr>
+			<td colspan="2">出生日期</td>
+			<td colspan="2">${data.birthday }</td>
+			<td colspan="2">身份证号码</td>
+			<td colspan="2">${data.IDcard }</td>
+		</tr>
+		<tr>
+			<td colspan="2">户籍所在地</td>
+			<td colspan="2">${data.registered }</td>
+			<td colspan="2">住宅电话</td>
+			<td colspan="2">${data.homeTel }</td>
+		</tr>
+		<tr>
+			<td colspan="2">工作单位</td>
+			<td colspan="2">${data.company }</td>
+			<td colspan="2">工作电话</td>
+			<td colspan="2">${data.workPhone }</td>
+		</tr>
+		<tr>
+			<td colspan="2">通讯地址</td>
+			<td colspan="4">${data.address }</td>
+			<td>邮政编码</td>
+			<td>${data.postcode }</td>
+		</tr>
+		<tr>
+			<td colspan="2">文化程度</td>
+			<td width="93">${data.education }</td>
+			<td width="94">职业</td>
+			<td colspan="2">${data.industry }</td>
+			<td>健康状况</td>
+			<td>${data.health }</td>
+		</tr>
+		<tr>
+			<td colspan="8" style="text-align: left;">
+				<div class="scrollContent">
+					申请事项及主要理由：<br /> &nbsp;&nbsp;${data.reasons } <br />
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="3" width="282">申请事项现所处法律程序</td>
+			<td colspan="5" width="465">${data.legalProceedings }</td>
+		</tr>
+		<!-- <tr>
+			<td colspan="8">提交材料目录</td>
+		</tr>
+		<tr>
+			<td colspan="2" >材料名称</td>
+			<td colspan="2" >页数</td>
+			<td colspan="2" >材料名称</td>
+			<td colspan="2" >页数</td>
+		</tr>
+		<tr height="22">
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2"></td>
+		</tr>
+		<tr height="22">
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2"></td>
+		</tr>
+		<tr height="22">
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2"></td>
+		</tr>
+		<tr height="22">
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2" ></td>
+			<td colspan="2"></td>
+		</tr> -->
+	</table>
+	<br>
+	<div>
+		<% if(!isEmpty(idcardPic)){ %>
+		<p>本人身份证：</p>
+		<% for(pic in idcardPic){ %> <img src="${ctxPath}${pic.url}"
+			onclick="javascript:window.open(this.src);" title="查看图片" width="50"
+			height="50"> <%}%> <%}%> <% if(!isEmpty(proofPic)){ %>
+		<p>困难证明：</p>
+		<% for(pic in proofPic){ %> <img src="${ctxPath}${pic.url}"
+			onclick="javascript:window.open(this.src);" title="查看图片" width="50"
+			height="50"> <%}%> <%}%>
+	</div>
+	<table border="1" width="90%">
+		<tr>
+			<td width="10%">审批机构</td>
+			<td width="10%">审批人</td>
+			<td width="25%">审批意见</td>
+			<td width="15%">审批结果</td>
+			<td width="15%">审批时间</td>
+		</tr>
+		<% for(var i=1;i
+		<approveList.~size;i++){
+		%>
+		<tr>
+			<td>${approveList[i].taskName}</td>
+			<td>${approveList[i].approveUserName}</td>
+			<td>${approveList[i].applyMsg}</td>
+			<td>${approveList[i].direction}</td>
+			<td>${approveList[i].approveTime}</td>
+		</tr>
+		<%}%> 
+	</table>
+	<br>
+	<form name="form1" id="form1"
+		action="help/rightApply/task/complete/${taskId}/${processInstanceId}">
+		<div align="center" style="margin: 0 auto;width: 90%;">
+			<table border="1">
+				<tr>
+					<td>审批意见：</td>
+					<td><textarea name="applyMsg" id="applyMsg" cols="30"
+							style="resize:none" rows="4"></textarea> <br /> <span
+						id="text-count"></span></td>
+				</tr>
+
+				<!-- <tr id="fileUpload" >
+				  <td>
+					  上传附件：
+				 </td>
+				 <td>
+					<input type="file" name="fp_file" id="file"  placeholder="添加附件" title="添加附件"/>
+				</td>
+				</tr> -->
+			</table>
+		</div>
+		<input type="hidden" name="taskId" value="${taskId}"> <input
+			type="hidden" name="processInstanceId" value="${processInstanceId}">
+		<br>
+		<div>
+			<table style="width:45%;">
+				<tr>
+					<td>审批操作：</td>
+					<td><select id="result">
+							<option value="1">同意</option>
+							<option value="2">退回上一级</option>
+							<option value="3">不同意</option>
+					</select></td>
+					<td style="vertical-align:top;padding-left:120px"><a
+						id="commit" class="btn btn-small btn-success" onclick="doSave();">提交</a>
+					</td>
+					<!-- <td style="vertical-align:top;"><a id="backOne" class="btn btn-small btn-danger" onclick="backOne();" style="margin-left:100px">驳回上一步</a>
+					</td>
+					<td style="vertical-align:top;"><a id="end" class="btn btn-small btn-danger" onclick="end();" style="margin-left:50px">不通过</a>
+					</td> -->
+
+				</tr>
+			</table>
+		</div>
+	</form>
+</body>
+
+<script type="text/javascript">
+	$(function() {
+
+		/*字数限制*/
+		$("#applyMsg").on("input propertychange", function() {
+			var $this = $(this), _val = $this.val(), count = "";
+			if (_val.length > 200) {
+				$this.val(_val.substring(0, 200));
+			}
+			count = 200 - $this.val().length;
+			$("#text-count").text("最多输入200个字，还可输入：" + count);
+		});
+
+	});
+
+	function doSave() {
+		var result = $("#result").val();
+		if (result == 1) {
+			commit();
+		} else if (result == 2) {
+			backOne();
+		} else if (result == 3) {
+			end();
+		}
+	}
+
+	function commit() {
+		if (confirm("确定提交流程吗？")) {
+
+			$('#commit').attr('disabled', "true");
+			//$('#backOne').attr('disabled',"true");
+			//$('#end').attr('disabled',"true");
+			$
+					.ajax({
+						type : "POST",
+						url : '${ctxPath}/help/rightApply/task/complete/${taskId}/${processInstanceId}',
+						data : {
+							"applyMsg" : $("#applyMsg").val()
+						},
+						dataType : 'text',
+						success : function(data) {
+							var obj = JSON.parse(data); //由JSON字符串转换为JSON对象
+							alert(obj.msg);
+							if (obj.code == "10000") {
+								var index = parent.layer
+										.getFrameIndex(window.name); //先得到当前iframe层的索引
+								parent.layer.close(index); //再执行关闭  
+								window.parent.onload = parent.refresh();
+							}
+						},
+						error : function(error) {
+						}
+					});
+		}
+
+	}
+
+	function backOne() {
+
+		if (confirm("确定驳回上一步吗？")) {
+			$('#commit').attr('disabled', "true");
+			//$('#backOne').attr('disabled',"true");
+			//$('#end').attr('disabled',"true");
+			var id = "${taskId}";
+			var processInstanceId = "${processInstanceId}";
+
+			$.ajax({
+				type : "POST",
+				url : '${ctxPath}/help/rightApply/backProcess',
+				data : {
+					"taskId" : id,
+					"tag" : "1",
+					"processInstanceId" : processInstanceId,
+					"applyMsg" : $("#applyMsg").val()
+				},
+				dataType : 'text',
+				success : function(data) {
+					var obj = JSON.parse(data); //由JSON字符串转换为JSON对象
+					alert(obj.msg);
+					if (obj.code == "10000") {
+						var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+						parent.layer.close(index); //再执行关闭  
+						window.parent.onload = parent.refresh();
+					}
+				},
+				error : function(error) {
+				}
+			});
+		}
+
+	}
+
+	function end() {
+
+		if (confirm("确定不通过？")) {
+			$('#commit').attr('disabled', "true");
+			//$('#backOne').attr('disabled',"true");
+			//$('#end').attr('disabled',"true");
+			var id = "${taskId}";
+			var processInstanceId = "${processInstanceId}";
+
+			$.ajax({
+				type : "POST",
+				url : '${ctxPath}/help/rightApply/backProcess',
+				data : {
+					"taskId" : id,
+					"tag" : "0",
+					"processInstanceId" : processInstanceId,
+					"applyMsg" : $("#applyMsg").val()
+				},
+				dataType : 'text',
+				success : function(data) {
+					var obj = JSON.parse(data); //由JSON字符串转换为JSON对象
+					alert(obj.msg);
+					if (obj.code == "10000") {
+						var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+						parent.layer.close(index); //再执行关闭  
+						window.parent.onload = parent.refresh();
+					}
+				},
+				error : function(error) {
+				}
+			});
+		}
+
+	}
+</script>
+</html>

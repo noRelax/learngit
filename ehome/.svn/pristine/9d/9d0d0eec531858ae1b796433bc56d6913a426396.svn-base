@@ -1,0 +1,22 @@
+<%
+include("/system/public/header.html",{title:'header'}){} 
+%>
+
+<%
+layout("/system/public/aside.html",{title:'header'}){} 
+%>
+
+
+      <div class="container">
+         <section class="error-wrapper">
+            <h1>401</h1>
+            <h2>你没有操作权限,禁止访问</h2>
+            <h2>异常信息：${message}</h2>
+         </section>
+      </div>
+
+<%
+layout("/system/public/footer.html",{title:'header'}){} 
+%>
+
+

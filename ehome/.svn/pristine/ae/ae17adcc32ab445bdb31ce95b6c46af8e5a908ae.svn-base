@@ -1,0 +1,51 @@
+package com.ehome.cloud.demo.service.impl;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.mybatis.spring.SqlSessionTemplate;
+import org.springframework.stereotype.Service;
+
+import com.ehome.cloud.demo.model.Country;
+import com.ehome.cloud.demo.service.ICountryService;
+import com.ehome.core.frame.BaseService;
+import com.github.pagehelper.PageHelper;
+
+import tk.mybatis.mapper.entity.Condition;
+import tk.mybatis.mapper.util.StringUtil;
+
+
+@Service("countryService")
+public class CountryServiceImpl extends BaseService<Country> implements ICountryService {
+
+    @Resource(name = "sqlSessionTemplate")
+    private SqlSessionTemplate sqlSessionTemplate;
+    
+    private void test(){
+        sqlSessionTemplate.selectOne("mapper-id", null);
+    }
+    
+    @Override
+    public List<Country> selectByCountry(Country country, int page, int rows) {
+    	Condition example = new Condition(Country.class);
+    	Condition.Criteria criteria = example.createCriteria();
+    	//条件查询
+        if (StringUtil.isNotEmpty(country.getCountryname())) {
+            criteria.andLike("countryname", "%" + country.getCountryname() + "%");
+        }
+        if (StringUtil.isNotEmpty(country.getCountrycode())) {
+            criteria.andLike("countrycode", "%" + country.getCountrycode() + "%");
+        }
+        if (country.getId() != null) {
+            criteria.andEqualTo("id", country.getId());
+        }
+        //排序
+        example.orderBy("countryname").orderBy("countrycode").desc();
+        
+        //分页查询
+        PageHelper.startPage(page, rows);
+        return selectByCondition(example);
+    }
+
+}

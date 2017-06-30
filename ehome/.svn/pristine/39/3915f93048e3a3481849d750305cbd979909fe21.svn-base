@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>
+			新建个人工作简历
+		</title>
+		<meta name="renderer" content="webkit">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<link href="${ctxPath}/static/ui/layui/css/layui.css" rel="stylesheet">
+	</head>
+	<body>
+		<form class="layui-form" style="padding:15px" action="">
+		    <input type="hidden" name="memberId" value="${mrModel.memberId}"/>
+		    <input type="hidden" name="id" value="${mrModel.id}"/>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					企业名称
+				</label>
+				<div class="layui-input-block">
+					<input type="text" name="companyName" required lay-verify="required" placeholder="请输入企业名称"
+					autocomplete="off" class="layui-input" value="${mrModel.companyName}" style="width:270px">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">
+					职务
+				</label>
+				<div class="layui-input-block">
+					<input type="text" name="job" required lay-verify="required" placeholder="请输入职务"
+					autocomplete="off" class="layui-input" value="${mrModel.job}" style="width:270px">
+				</div>
+			</div>
+			<div class="layui-form-item">
+			    <div class="layui-inline">
+			      <label class="layui-form-label">入职时间</label>
+			      <div class="layui-input-inline">
+			        <input type="text" name="joinedDate" id="joinedDate" lay-verify="date" placeholder="yyyy-mm-dd" autocomplete="off" class="layui-input" onclick="layui.laydate({elem: this})">
+			      </div>
+			    </div>
+			</div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+			       <label class="layui-form-label">离职时间</label>
+			       <div class="layui-input-inline">
+			          <input type="text" name="releaseDate" id="releaseDate" lay-verify="date" placeholder="yyyy-mm-dd" autocomplete="off" class="layui-input" onclick="layui.laydate({elem: this})">
+			       </div>
+			    </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+				<div class="layui-inline">
+			        <label class="layui-form-label">工作内容</label>
+			        <div class="layui-input-block">
+				      <textarea name="jobContent" placeholder="请输入工作内容" class="layui-textarea" style="width:300px">${mrModel.jobContent}</textarea>
+				    </div>
+			    </div>
+			</div>
+			<div class="layui-form-item">
+				<div class="layui-input-block">
+					<button class="layui-btn" lay-submit lay-filter="formDemo">
+						立即提交
+					</button>
+					<button type="reset" class="layui-btn layui-btn-primary">
+						重置
+					</button>
+				</div>
+			</div>
+		</form>
+		<script src="${ctxPath}/static/system/olive/all/js/jquery-1.8.3.min.js"></script>
+		<script src="${ctxPath}/static/ui/layui/layui.js"></script>
+		<script>
+		    function formatTen(num) { 
+		    	return num > 9 ? (num + "") : ("0" + num); 
+		    } 
+		    function formatDate(date) { 
+		    	var year = date.getFullYear(); 
+		    	var month = date.getMonth() + 1; 
+		    	var day = date.getDate(); 
+		    	return year + "-" + formatTen(month) + "-" + formatTen(day); 
+		    }
+		    var joinedDate = '${mrModel.joinedDate}';
+		    var releaseDate = '${mrModel.releaseDate}';
+		    var jdate = new Date(joinedDate);
+		    var rdate = new Date(releaseDate);
+		    jQuery('input[name=joinedDate]').val(formatDate(jdate));
+		    jQuery('input[name=releaseDate]').val(formatDate(rdate));
+			layui.use(['form', 'laydate'],function() {
+				var form = layui.form()
+				  ,layer = layui.layer
+				  ,laydate = layui.laydate;
+				//laydate(start);
+				//监听提交
+				form.on('submit(formDemo)',function(data) {
+						$.post('../../member/resume/addMemberResume',data.field,function(data){
+							if(data.status == 10000){
+								parent.layer.alert(data.data, {title : '操作提示', icon : 1, time:2000, end: function(){
+									window.parent.location.reload();  
+									parent.layer.closeAll();
+								}});
+							}else{
+								parent.layer.alert(data.data,{title : '操作提示',icon: 2});
+							}
+						},'json');
+						return false;
+				}); 
+			});
+		</script>
+	</body>
+
+</html>

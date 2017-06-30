@@ -1,0 +1,989 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>
+			修改会员
+		</title>
+		<meta name="renderer" content="webkit">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<link href="${ctxPath}/static/system/public/css/bootstrap-3.3.4.css" rel="stylesheet"><!-- BOOTSTRAP CSS -->
+		<link href="${ctxPath}/static/ui/layui/css/layui.css" rel="stylesheet">
+	    <style type="text/css">	
+			.dataTables_paginate.paging_bootstrap.pagination li {
+				float: left;
+				margin: 0 1px;
+				border: 1px solid #ddd;
+				border-radius: 3px;
+				-webkit-border-radius: 3px;
+			}
+			
+			.dataTables_paginate.paging_bootstrap.pagination li.disabled a {
+				color: #c7c7c7;
+			}
+			
+			.dataTables_paginate.paging_bootstrap.pagination li a {
+				color: #797979;
+				padding: 5px 10px;
+				display: inline-block;
+			}
+			
+			.dataTables_paginate.paging_bootstrap.pagination li:hover a, .dataTables_paginate.paging_bootstrap.pagination li.active a {
+				color: #fff;
+				background: #3a9fbc;
+				border-radius: 3px;
+				-webkit-border-radius: 3px;
+				border: 1px solid #2489a6;
+			}
+			
+			.dataTables_paginate.paging_bootstrap.pagination {
+				float: right;
+				margin-top: -5px;
+				margin-bottom: 15px;
+			}
+			.layui-form-label {
+			    float: left;
+			    display: block;
+			    padding: 9px 15px;
+			    width: 110px;
+			    font-weight: 400;
+			    text-align: right;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="layui-tab" lay-filter="demo" style="margin-top:0px">
+		   <input type="hidden" name="id" value="${memberModel.id}"></input>
+           <ul class="layui-tab-title">
+              <li class="layui-this" lay-id="11" name="info">基本信息</li>
+              <li lay-id="22">家庭成员</li>
+              <li lay-id="33">个人工作简历</li>
+              <li lay-id="44">帮扶申请信息</li>
+           </ul>
+           <div class="layui-tab-content">
+              <div class="layui-tab-item">
+					<form class="layui-form" style="padding:15px" action="">
+						<div class="layui-form-item">
+							<div class="layui-inline">
+						      <label class="layui-form-label">*姓名</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="memberName" value="${memberModel.memberName}" required lay-verify="required" placeholder="请输入姓名"
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+						    <div class="layui-inline" style="margin-left:41px">
+								<label class="layui-form-label">*性别</label>
+							    <div class="layui-input-block" name="sex" style="width:243px">
+							    </div>
+						    </div>
+						</div>
+						
+						<div class="layui-form-item">
+							<div class="layui-inline">
+						      <label class="layui-form-label">*联系电话</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="tel" value="${memberModel.tel}" required lay-verify="phone" placeholder="请输入联系电话"
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+							<div class="layui-inline" style="margin-left:41px">
+						      <label class="layui-form-label">*身份证号码</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="idCard" value="${memberModel.idCard}" required lay-verify="identity" autocomplete="off" placeholder="请输入身份证号码"
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+						</div>
+						
+						<div class="layui-form-item">
+							<div class="layui-inline">
+						      <label class="layui-form-label">职务</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="job" value="${memberModel.job}" placeholder="请输入职务"
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+						    <div class="layui-inline" style="margin-left:41px">
+						      <label class="layui-form-label">现居住地址</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="address" value="${memberModel.address}" placeholder="请输入现居住地址"
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+						</div>
+						
+						<div class="layui-form-item">
+						    <div class="layui-inline">
+							    <label class="layui-form-label">学历</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="education" lay-filter="aihao" lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						    <div class="layui-inline">
+							    <label class="layui-form-label">学位</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="degree" lay-filter="aihao" lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						</div>
+						
+						<div class="layui-form-item">
+						    <div class="layui-inline">
+							    <label class="layui-form-label">政治面貌</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="political" lay-filter="aihao" lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						    <div class="layui-inline">
+							    <label class="layui-form-label">会员状态</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="status" lay-filter="aihao" lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						</div>
+						<div class="layui-form-item">
+							<div class="layui-inline">
+							    <label class="layui-form-label">民族</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="nation" lay-filter="aihao" lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						   <div class="layui-inline">
+						        <label class="layui-form-label">婚姻状况</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="maritalStatus" lay-filter="aihao" lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						</div>
+						<div class="layui-form-item">
+						    <label class="layui-form-label">户口所在地</label>
+						    <div class="layui-input-inline">
+						      <select name="province"  id="province" lay-filter="province" lay-verify="required">
+						        <option value="0">请选择省</option>
+						      </select>
+						    </div>
+						    <div class="layui-input-inline">
+						      <select name="city"  id="city" lay-filter="city" lay-verify="required">
+						        <option value="0">请选择市</option>
+						      </select>
+						    </div>
+						    <div class="layui-input-inline">
+						      <select name="area"  id="area">
+						        <option value="0">请选择县/区</option>
+						      </select>
+						    </div>
+						  </div>
+						
+						<div class="layui-form-item layui-form-text">
+							<div class="layui-inline" >
+						        <label class="layui-form-label">有何特长</label>
+						        <div class="layui-input-block">
+							      <textarea name="specialty" placeholder="请输入特长" class="layui-textarea" style="width:300px">${memberModel.specialty}</textarea>
+							    </div>
+						    </div>
+						    <div class="layui-inline">
+						        <label class="layui-form-label">工会基层委员会意见</label>
+						        <div class="layui-input-block">
+							      <textarea name="opinion" placeholder="请输入工会基层委员会意见" class="layui-textarea" style="width:300px">${memberModel.opinion}</textarea>
+							    </div>
+						    </div>
+						</div>
+						
+						<div class="layui-form-item layui-form-text">
+
+							<div class="layui-inline">
+						        <label class="layui-form-label">备注</label>
+						        <div class="layui-input-block">
+							      <textarea name="remark" placeholder="请输入备注" class="layui-textarea" style="width:700px">${memberModel.remark}</textarea>
+							    </div>
+						    </div>
+						</div>
+						
+						<div class="layui-form-item">
+							<div class="layui-input-block">
+								<button class="layui-btn" name="save" lay-submit lay-filter="formDemo">
+									立即提交
+								</button>
+								<button type="reset" class="layui-btn layui-btn-primary">
+									重置
+								</button>
+							</div>
+						</div>
+					</form>
+              </div>
+              <div class="layui-tab-item">
+                    <div class="clearfix" style="padding:0 0 10px 0">
+                           <div class="btn-group">
+                              <a href="javascript:;" name="home_new" class="btn btn-success green">
+                                                                                   新增家庭联系人 <i class="fa fa-plus"></i>
+                              </a>
+                           </div>
+                    </div>
+                    <div class="space15"></div>
+			        <table class="table table-striped table-hover table-bordered" id="home-list">
+			           <thead>
+			           <tr>
+			              <th  class="hidden-phone">家庭成员</th>
+			              <th  class="hidden-phone">联系方式</th>
+			              <th  class="hidden-phone">家庭成员关系</th>
+			              <th  class="hidden-phone">操作</th>
+			           </tr>
+			           </thead>
+			        <tbody>
+			        </tbody>
+			      </table>
+              </div>
+              <div class="layui-tab-item">
+                    <div class="clearfix" style="padding:0 0 10px 0">
+                           <div class="btn-group">
+                              <a href="javascript:;" name="resume_new" class="btn btn-success green">
+                                                                                   新增工作简历 <i class="fa fa-plus"></i>
+                              </a>
+                           </div>
+                    </div>
+                    <div class="space15"></div>
+			        <table class="table table-striped table-hover table-bordered" id="resume-list">
+			           <thead>
+			           <tr>
+			              <th  class="hidden-phone">企业名称</th>
+			              <th  class="hidden-phone">职务</th>
+			              <th  class="hidden-phone">入职时间</th>
+			              <th  class="hidden-phone">离职时间</th>
+			              <th  class="hidden-phone">工作内容</th>
+			              <th  class="hidden-phone">操作</th>
+			           </tr>
+			           </thead>
+			        <tbody>
+			        </tbody>
+			      </table>
+              </div>
+              <!-- 帮扶申请信息 -->
+              <div class="layui-tab-item">
+					<form class="layui-form" style="padding:15px" action="">
+					    <input type="hidden" name="helpId" value="${memberHelpDto.id}"/>
+					    <div class="layui-form-item">
+						    <div class="layui-inline">
+							    <label class="layui-form-label">帮扶项目</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="helpType" lay-filter="aihao">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						    <div class="layui-inline">
+							    <label class="layui-form-label">困难类别</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="difficultType" lay-filter="aihao" required lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						    <div class="layui-inline">
+							    <label class="layui-form-label">健康状况</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="health" lay-filter="aihao">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						</div>	
+					    <div class="layui-form-item">
+						    <div class="layui-inline">
+							    <label class="layui-form-label">残疾类别</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="disabilityType" lay-filter="aihao" required lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						    <div class="layui-inline">
+							    <label class="layui-form-label">工作状态</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="workStatus" lay-filter="aihao">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						    <div class="layui-inline">
+							    <label class="layui-form-label">劳模类型</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="modelType" lay-filter="aihao" required lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						</div>	
+						<div class="layui-form-item">
+						    <div class="layui-inline">
+							    <label class="layui-form-label">住房类型</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="housingType" lay-filter="aihao">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						    <div class="layui-inline">
+							    <label class="layui-form-label">所属行业</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="industry" lay-filter="aihao" required lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						    <div class="layui-inline">
+							    <label class="layui-form-label">单位性质</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="unitProperties" lay-filter="aihao">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						</div>				
+						<div class="layui-form-item">
+						    <div class="layui-inline">
+							    <label class="layui-form-label">企业状况</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="companyStatus" lay-filter="aihao" required lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						    <div class="layui-inline">
+							    <label class="layui-form-label">是否单亲</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="isSingleParent" lay-filter="aihao">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						    <div class="layui-inline">
+							    <label class="layui-form-label">医保状况</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="medicalInsurance" lay-filter="aihao" required lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						</div>
+						<div class="layui-form-item">
+						    <div class="layui-inline">
+							    <label class="layui-form-label">是否有一定自救能力</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="isHasSelfSave" lay-filter="aihao">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						    <div class="layui-inline">
+							    <label class="layui-form-label">是否为零就业家庭</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="isZeroJob" lay-filter="aihao" required lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						</div>
+						<div class="layui-form-item">
+							    <label class="layui-form-label">致困原因</label>
+							    <div class="layui-input-block"  name="povertyCausesDiv">
+							    </div>
+						</div>
+						<div class="layui-form-item">
+							<div class="layui-inline">
+						      <label class="layui-form-label">家庭人口</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="familyNum" value="${memberHelpDto.familyNum}" required lay-verify="number" placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+							<div class="layui-inline" style="margin-left:41px">
+						      <label class="layui-form-label">家庭年人均收入</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="incomeAvg" value="${memberHelpDto.incomeAvg}" required autocomplete="off" placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+						    <div class="layui-inline" style="margin-left:41px">
+							    <label class="layui-form-label">户口类别</label>
+							    <div class="layui-input-block" style="width:250px">
+							      <select name="cardType" lay-filter="aihao" required lay-verify="required">
+							        <option value=""></option>
+							      </select>
+							    </div>
+						    </div>
+						</div>
+						<div class="layui-form-item">
+							<div class="layui-inline">
+						      <label class="layui-form-label">建筑面积</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="housingArea" value="${memberHelpDto.housingArea}" required placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+							<div class="layui-inline" style="margin-left:41px">
+						      <label class="layui-form-label">手机号码</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="phone" value="${memberHelpDto.phone}" required lay-verify="phone" autocomplete="off" placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+						    <div class="layui-inline" style="margin-left:41px">
+						      <label class="layui-form-label">其他联系方式</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="concatType" value="${memberHelpDto.concatType}" required lay-verify="phone" placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+						</div>
+						<div class="layui-form-item">
+							<div class="layui-inline">
+						      <label class="layui-form-label">工作单位</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="company" value="${memberHelpDto.company}" required placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+							<div class="layui-inline" style="margin-left:41px">
+						      <label class="layui-form-label">本人月平均收入</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="monthlyIncome" value="${memberHelpDto.monthlyIncome}" required autocomplete="off" placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+							<div class="layui-inline" style="margin-left:41px">
+						      <label class="layui-form-label">邮政编码</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="postcode" value="${memberHelpDto.postcode}" required autocomplete="off" placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+						</div>
+						<div class="layui-form-item">
+							<div class="layui-inline">
+						      <label class="layui-form-label">家庭其他非薪资年收入</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="familySalaryIncome" value="${memberHelpDto.familySalaryIncome}" required placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+							<div class="layui-inline" style="margin-left:41px">
+						      <label class="layui-form-label">家庭年度总收入</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="incomeTotal" value="${memberHelpDto.incomeTotal}" required autocomplete="off" placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+						    <div class="layui-inline" style="margin-left:41px">
+						      <label class="layui-form-label">家庭月人均收入</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="avgMonthlyIncome" value="${memberHelpDto.avgMonthlyIncome}" required placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+						</div>
+						<div class="layui-form-item">
+							<div class="layui-inline">
+						      <label class="layui-form-label">开户银行</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="openBank" value="${memberHelpDto.openBank}" required autocomplete="off" placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+						    <div class="layui-inline" style="margin-left:41px">
+						      <label class="layui-form-label">支行名称</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="branchBank" value="${memberHelpDto.branchBank}" required placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+							<div class="layui-inline" style="margin-left:41px">
+						      <label class="layui-form-label">银行卡号</label>
+						      <div class="layui-input-inline">
+								<input type="text" name="cardNum" value="${memberHelpDto.cardNum}" required autocomplete="off" placeholder=""
+								autocomplete="off" class="layui-input" style="width:250px">
+						      </div>
+						    </div>
+						</div>
+						<div class="layui-form-item">
+							<div class="layui-inline">
+						      <label class="layui-form-label">出生日期</label>
+						      <div class="layui-input-inline">
+						        <input type="text" name="brithdayName" id="brithdayName" lay-verify="date" placeholder="yyyy-mm-dd" autocomplete="off" class="layui-input" onclick="layui.laydate({elem: this})">
+						      </div>
+						    </div>
+							<div class="layui-inline" style="margin-left:41px">
+						      <label class="layui-form-label">工作时间</label>
+						      <div class="layui-input-inline">
+						        <input type="text" name="workYearName" id="workYearName" lay-verify="date" placeholder="yyyy-mm-dd" autocomplete="off" class="layui-input" onclick="layui.laydate({elem: this})">
+						      </div>
+						    </div>
+						</div>
+						<div class="layui-form-item">
+							<div class="layui-input-block">
+								<button class="layui-btn" name="save" lay-submit lay-filter="formDemo2">
+									立即提交
+								</button>
+								<button type="reset" class="layui-btn layui-btn-primary">
+									重置
+								</button>
+							</div>
+						</div>
+					</form>
+              </div>
+              <!-- ///// -->
+           </div>
+        </div>
+	
+		<script src="${ctxPath}/static/system/olive/all/js/jquery-1.8.3.min.js"></script>
+		<script src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script><!-- DATATABLE JS  -->
+        <script src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script><!-- DATATABLE JS  -->
+		<script src="${ctxPath}/static/ui/layui/layui.js"></script>	
+		<script src="${ctxPath}/static/web/member/mem/js/home_table.js"></script>
+		<script src="${ctxPath}/static/web/member/mem/js/resume_table.js"></script> 
+		<script>
+		
+        var sex = jQuery('div[name=sex]');
+        var sexVal='${memberModel.sex}';
+        var memStatus = jQuery('select[name=status]');
+        var education = jQuery('select[name=education]');
+        var degree = jQuery('select[name=degree]');
+        var political = jQuery('select[name=political]');
+        var nation = jQuery('select[name=nation]');
+        var maritalStatus=jQuery('select[name=maritalStatus]');
+
+        var dictSex = '${dictSex}',dictMemStatus='${dictMemStatus}',dictEducation='${dictEducation}',
+        dictDegree='${dictDegree}',dictPolitical='${dictPolitical}',dictNation='${dictNation}',dictMaritalStatus='${dictMaritalStatus}';
+
+        if(dictSex!=null){
+      	  dictSex = jQuery.parseJSON(dictSex);
+        	for(var x in dictSex){
+        		if(sexVal==dictSex[x].dictKey){
+        			sex.append('<input type="radio" name="sex" value="'+dictSex[x].dictKey+'" title="'+dictSex[x].dictValue+'" checked="">')
+        		}else{
+        			sex.append('<input type="radio" name="sex" value="'+dictSex[x].dictKey+'" title="'+dictSex[x].dictValue+'">')
+        		}
+        	}
+        }
+        if(dictMemStatus!=null){
+      	  dictMemStatus = jQuery.parseJSON(dictMemStatus);
+        	for(var x in dictMemStatus)
+        		memStatus.append("<option value='"+dictMemStatus[x].dictKey+"'>"+dictMemStatus[x].dictValue+"</option>"); 
+        }
+        if(dictEducation!=null){
+      	  dictEducation = jQuery.parseJSON(dictEducation);
+        	for(var x in dictEducation)
+        		education.append("<option value='"+dictEducation[x].dictKey+"'>"+dictEducation[x].dictValue+"</option>"); 
+        }
+        if(dictDegree!=null){
+        	dictDegree = jQuery.parseJSON(dictDegree);
+          	for(var x in dictDegree)
+          		degree.append("<option value='"+dictDegree[x].dictKey+"'>"+dictDegree[x].dictValue+"</option>"); 
+        }
+        if(dictPolitical!=null){
+      	  dictPolitical = jQuery.parseJSON(dictPolitical);
+        	for(var x in dictPolitical)
+        		political.append("<option value='"+dictPolitical[x].dictKey+"'>"+dictPolitical[x].dictValue+"</option>"); 
+        }
+        if(dictNation!=null){
+        	dictNation = jQuery.parseJSON(dictNation);
+          	for(var x in dictNation)
+          		nation.append("<option value='"+dictNation[x].dictKey+"'>"+dictNation[x].dictValue+"</option>"); 
+          }
+        if(dictMaritalStatus!=null){
+        	dictMaritalStatus = jQuery.parseJSON(dictMaritalStatus);
+          	for(var x in dictMaritalStatus)
+          		maritalStatus.append("<option value='"+dictMaritalStatus[x].dictKey+"'>"+dictMaritalStatus[x].dictValue+"</option>");
+          }
+        
+        var helpType=jQuery('select[name=helpType]');
+        var difficultType=jQuery('select[name=difficultType]');
+        var health=jQuery('select[name=health]');
+        var disabilityType=jQuery('select[name=disabilityType]');
+        var workStatus=jQuery('select[name=workStatus]');
+        var modelType=jQuery('select[name=modelType]');
+        var housingType=jQuery('select[name=housingType]');
+        var industry=jQuery('select[name=industry]');
+        var unitProperties=jQuery('select[name=unitProperties]');
+        var companyStatus=jQuery('select[name=companyStatus]');
+        var isSingleParent=jQuery('select[name=isSingleParent]');
+        var medicalInsurance=jQuery('select[name=medicalInsurance]');
+        var isHasSelfSave=jQuery('select[name=isHasSelfSave]');
+        var isZeroJob=jQuery('select[name=isZeroJob]');
+       // var povertyCauses=jQuery('select[name=povertyCauses]');
+        var cardType=jQuery('select[name=cardType]');
+        
+        var dictHelpType='${dictHelpType}',dictDifficultType='${dictDifficultType}',dictHealth='${dictHealth}',dictDisabilityType='${dictDisabilityType}',
+        dictWorkStatus='${dictWorkStatus}',dictModelType='${dictModelType}',dictHousingType='${dictHousingType}',dictIndustry='${dictIndustry}'
+        ,dictUnitProperties='${dictUnitProperties}',dictCompanyStatus='${dictCompanyStatus}',dictIsSingleParent='${dictIsSingleParent}',dictMedicalInsurance='${dictMedicalInsurance}',
+        dictIsHasSelfSave='${dictIsHasSelfSave}',dictIsZeroJob='${dictIsZeroJob}',dictPovertyCauses='${dictPovertyCauses}',dictCardType='${dictCardType}';
+        
+        if(dictHelpType!=null){
+        	dictHelpType = jQuery.parseJSON(dictHelpType);
+          	for(var x in dictHelpType)
+          		helpType.append("<option value='"+dictHelpType[x].dictKey+"'>"+dictHelpType[x].dictValue+"</option>");
+          }
+        if(dictDifficultType!=null){
+        	dictDifficultType = jQuery.parseJSON(dictDifficultType);
+          	for(var x in dictDifficultType)
+          		difficultType.append("<option value='"+dictDifficultType[x].dictKey+"'>"+dictDifficultType[x].dictValue+"</option>");
+          }
+        if(dictHealth!=null){
+        	dictHealth = jQuery.parseJSON(dictHealth);
+          	for(var x in dictHealth)
+          		health.append("<option value='"+dictHealth[x].dictKey+"'>"+dictHealth[x].dictValue+"</option>");
+          }
+        if(dictDisabilityType!=null){
+        	dictDisabilityType = jQuery.parseJSON(dictDisabilityType);
+          	for(var x in dictDisabilityType)
+          		disabilityType.append("<option value='"+dictDisabilityType[x].dictKey+"'>"+dictDisabilityType[x].dictValue+"</option>");
+          }
+        if(dictWorkStatus!=null){
+        	dictWorkStatus = jQuery.parseJSON(dictWorkStatus);
+          	for(var x in dictWorkStatus)
+          		workStatus.append("<option value='"+dictWorkStatus[x].dictKey+"'>"+dictWorkStatus[x].dictValue+"</option>");
+          }
+        if(dictModelType!=null){
+        	dictModelType = jQuery.parseJSON(dictModelType);
+          	for(var x in dictModelType)
+          		modelType.append("<option value='"+dictModelType[x].dictKey+"'>"+dictModelType[x].dictValue+"</option>");
+          }
+        if(dictHousingType!=null){
+        	dictHousingType = jQuery.parseJSON(dictHousingType);
+          	for(var x in dictHousingType)
+          		housingType.append("<option value='"+dictHousingType[x].dictKey+"'>"+dictHousingType[x].dictValue+"</option>");
+          }
+        if(dictIndustry!=null){
+        	dictIndustry = jQuery.parseJSON(dictIndustry);
+          	for(var x in dictIndustry)
+          		industry.append("<option value='"+dictIndustry[x].dictKey+"'>"+dictIndustry[x].dictValue+"</option>");
+          }
+        if(dictUnitProperties!=null){
+        	dictUnitProperties = jQuery.parseJSON(dictUnitProperties);
+          	for(var x in dictUnitProperties)
+          		unitProperties.append("<option value='"+dictUnitProperties[x].dictKey+"'>"+dictUnitProperties[x].dictValue+"</option>");
+          }
+        if(dictCompanyStatus!=null){
+        	dictCompanyStatus = jQuery.parseJSON(dictCompanyStatus);
+          	for(var x in dictCompanyStatus)
+          		companyStatus.append("<option value='"+dictCompanyStatus[x].dictKey+"'>"+dictCompanyStatus[x].dictValue+"</option>");
+          }
+        if(dictIsSingleParent!=null){
+        	dictIsSingleParent = jQuery.parseJSON(dictIsSingleParent);
+          	for(var x in dictIsSingleParent)
+          		isSingleParent.append("<option value='"+dictIsSingleParent[x].dictKey+"'>"+dictIsSingleParent[x].dictValue+"</option>");
+          }
+        if(dictMedicalInsurance!=null){
+        	dictMedicalInsurance = jQuery.parseJSON(dictMedicalInsurance);
+          	for(var x in dictMedicalInsurance)
+          		medicalInsurance.append("<option value='"+dictMedicalInsurance[x].dictKey+"'>"+dictMedicalInsurance[x].dictValue+"</option>");
+          }
+        if(dictIsHasSelfSave!=null){
+        	dictIsHasSelfSave = jQuery.parseJSON(dictIsHasSelfSave);
+          	for(var x in dictIsHasSelfSave)
+          		isHasSelfSave.append("<option value='"+dictIsHasSelfSave[x].dictKey+"'>"+dictIsHasSelfSave[x].dictValue+"</option>");
+          }
+        if(dictIsZeroJob!=null){
+        	dictIsZeroJob = jQuery.parseJSON(dictIsZeroJob);
+          	for(var x in dictIsZeroJob)
+          		isZeroJob.append("<option value='"+dictIsZeroJob[x].dictKey+"'>"+dictIsZeroJob[x].dictValue+"</option>");
+          }
+        
+        var cause= '${memberHelpDto.povertyCauses}';
+        var html="";
+        var povertyCauses =jQuery('div[name=povertyCausesDiv]');
+        if(dictPovertyCauses!=null){
+        	dictPovertyCauses = jQuery.parseJSON(dictPovertyCauses);
+          	for(var x in dictPovertyCauses){
+          		if(jQuery.inArray(dictPovertyCauses[x].dictKey, cause) >= 0){
+          			 html+='<input type="checkbox" checked="" name="povertyCauses" value='+dictPovertyCauses[x].dictKey+' title='+dictPovertyCauses[x].dictValue+'>';
+          		}else{
+          			 html+='<input type="checkbox" name="povertyCauses" value='+dictPovertyCauses[x].dictKey+' title='+dictPovertyCauses[x].dictValue+'>';
+          		}
+          	}
+        }
+        povertyCauses.append(html);
+        if(dictCardType!=null){
+        	dictCardType = jQuery.parseJSON(dictCardType);
+          	for(var x in dictCardType)
+          		cardType.append("<option value='"+dictCardType[x].dictKey+"'>"+dictCardType[x].dictValue+"</option>");
+          }
+        
+        
+	    var userType = '${memberModel.status}';
+	    var educationVal='${memberModel.education}';
+	    var degreeVal='${memberModel.degree}';
+	    var politicalVal='${memberModel.political}';
+	    var nationVal='${memberModel.nation}'; 
+	    var maritalStatusVal='${memberModel.maritalStatus}';
+	    memStatus.val(userType);
+	    education.val(educationVal);
+	    degree.val(degreeVal);
+	    political.val(politicalVal);
+	    nation.val(nationVal);
+	    maritalStatus.val(maritalStatusVal);
+	    
+         helpType.val('${memberHelpDto.helpType}');
+         difficultType.val('${memberHelpDto.difficultType}');
+         health.val('${memberHelpDto.health}');
+         disabilityType.val('${memberHelpDto.disabilityType}');
+         workStatus.val('${memberHelpDto.workStatus}');
+         modelType.val('${memberHelpDto.modelType}');
+         housingType.val('${memberHelpDto.housingType}');
+         industry.val('${memberHelpDto.industry}');
+         unitProperties.val('${memberHelpDto.unitProperties}');
+         companyStatus.val('${memberHelpDto.companyStatus}');
+         isSingleParent.val('${memberHelpDto.isSingleParent}');
+         medicalInsurance.val('${memberHelpDto.medicalInsurance}');
+         isHasSelfSave.val('${memberHelpDto.isHasSelfSave}');
+         isZeroJob.val('${memberHelpDto.isZeroJob}');
+         //povertyCauses.val('${memberHelpDto.povertyCauses}');
+         cardType.val('${memberHelpDto.cardType}');
+         
+		 function formatTen(num) { 
+		    	return num > 9 ? (num + "") : ("0" + num); 
+		 } 
+		 function formatDate(date) { 
+		    	var year = date.getFullYear(); 
+		    	var month = date.getMonth() + 1; 
+		    	var day = date.getDate(); 
+		    	return year + "-" + formatTen(month) + "-" + formatTen(day); 
+		 }
+		 
+	    var workYearDate = '${memberHelpDto.workYear}';
+	    var brithdayDate = '${memberHelpDto.brithday}';
+	    var workYear = new Date(workYearDate);
+	    var brithday = new Date(brithdayDate);
+	    jQuery('input[name=workYearName]').val(formatDate(workYear));
+	    jQuery('input[name=brithdayName]').val(formatDate(brithday));
+	    
+		layui.use(['layer','element','form','laydate'], function(){
+			  var layer = layui.layer;
+			  var laydate = layui.laydate;
+			  var $ = layui.jquery
+			  ,element = layui.element(); //Tab的切换功能，切换事件监听等，需要依赖element模块
+			  element.tabChange('demo', 11);//初始化功能必须要
+			  
+			  var form = layui.form();
+			  homeTable.init(1);
+			  resumeTable.init(1);
+			  jQuery('a[name=home_new]').on('click',function(e){
+  					e.preventDefault();	
+  					var pkId = jQuery(this).attr('data-id');
+  					parent.layer.open({
+  					    type: 2,
+  					    title: '新建',
+  					    area: ['700px', '600px'],
+  					    content:'../member/home/add-member-home.html?memberId='+jQuery('input[name=id]').val(),
+  					    end:function(){
+  					    	
+  					    }
+  					});
+  			  });
+			  jQuery('a[name=resume_new]').on('click',function(e){
+					e.preventDefault();	
+					var pkId = jQuery(this).attr('data-id');
+					parent.layer.open({
+					    type: 2,
+					    title: '新建',
+					    area: ['600px', '500px'],
+					    content:'../member/resume/add-member-resume.html?memberId='+jQuery('input[name=id]').val(),
+					    end:function(){
+					    	
+					    }
+					});
+			  });
+			  //提交会员表单
+			  form.on('submit(formDemo)',function(data) {
+				        data.field.isAdd = 1;
+				        data.field.id=jQuery('input[name=id]').val();
+						$.post('../member/saveMember',data.field,function(data){
+							if(data.status == 10000){
+								parent.layer.alert('操作成功', {title : '操作提示', icon : 1, time:2000, end: function(){
+									//jQuery('input[name=memberId]').val(data.data);
+									//jQuery('button[name=save]').attr('class','layui-btn layui-btn-disabled');
+									window.parent.location.reload();  
+									parent.layer.closeAll();
+								}});
+							}else{
+								parent.layer.alert(data.data,{title : '操作提示',icon: 2});
+							}
+						},'json');
+				    return false;
+				});
+			  
+			  //提交帮扶信息 
+			  form.on('submit(formDemo2)',function(data){
+			        data.field.memberId=jQuery('input[name=id]').val();
+			        data.field.id = jQuery('input[name=helpId]').val();
+			        var causesArr = [];
+			        var causeField = jQuery('input[name=povertyCauses]');
+			        for(var x in causeField){
+			        	if(causeField[x].checked){
+			        		causesArr.push($(causeField[x]).val());
+			        	}
+			        }
+			        data.field.povertyCauses = causesArr.join(',');
+					$.post('../helpApply/updateMemberHelp',data.field,function(data){
+						if(data.status == 10000){
+							parent.layer.alert('操作成功', {title : '操作提示', icon : 1, time:2000, end: function(){
+								window.parent.location.reload();  
+								parent.layer.closeAll();
+							}});
+						}else{
+							parent.layer.alert(data.data,{title : '操作提示',icon: 2});
+						}
+					},'json');
+			    return false;
+			  });
+			  
+				var province = ${memberModel.province!(-1)};
+				var city = ${memberModel.city!(-1)};
+				var area = ${memberModel.area!(-1)};
+				//加载省
+				  $.ajax({
+				  	url : '${ctxPath}/area/getProvince',
+				  	type : 'POST',
+				  	dataType : 'json',
+				  	success : function(data) {
+				  		var obj = data.data;
+				  		$('#province').empty();
+				  		var tabDataHtml = "";
+				  		tabDataHtml = tabDataHtml
+				  		+ "<option value='0'>请选择省</option>";
+				  		for (var k = 0; k < obj.length; k++) {
+				  			tabDataHtml = tabDataHtml
+				  			+ "<option value="+obj[k].id
+				  			if (obj[k].id == province)
+				  				tabDataHtml = tabDataHtml+" selected"
+				  			
+				  			tabDataHtml = tabDataHtml+">"+ obj[k].areaName + "</option>";
+				  		}
+				  		$('#province').append(tabDataHtml);
+				  			//省加载完加载市
+							 $.ajax({
+						    		url : '${ctxPath}/area/getByPid?pid='+province,
+						    		type : 'POST',
+						    		dataType : 'json',
+						    		success : function(data) {
+						    			var obj = data.data;
+						    			$('#city').empty();
+						    			var tabDataHtml = "";
+						    			tabDataHtml = tabDataHtml
+						    			+ "<option value='0'>请选择市</option>";
+						    			for (var k = 0; k < obj.length; k++) {
+						    				tabDataHtml = tabDataHtml
+								  			+ "<option value="+obj[k].id
+								  			if (obj[k].id == city)
+								  				tabDataHtml = tabDataHtml+" selected"
+								  			
+								  			tabDataHtml = tabDataHtml+">"+ obj[k].areaName + "</option>";
+						    			}
+						    			$('#city').append(tabDataHtml);
+						    			$('#area').empty();
+						    			$('#area').append("<option value='0'>请选择县/区</option>");
+						    			//市加载完加载区县
+											 $.ajax({
+										    		url : '${ctxPath}/area/getByPid?pid='+city,
+										    		type : 'POST',
+										    		dataType : 'json',
+										    		success : function(data) {
+										    			var obj = data.data;
+										    			$('#area').empty();
+										    			var tabDataHtml = "";
+										    			tabDataHtml = tabDataHtml
+										    			+ "<option value='0'>请选择县/区</option>";
+										    			for (var k = 0; k < obj.length; k++) {
+										    				tabDataHtml = tabDataHtml
+												  			+ "<option value="+obj[k].id
+												  			if (obj[k].id == area)
+												  				tabDataHtml = tabDataHtml+" selected"
+												  			tabDataHtml = tabDataHtml+">"+ obj[k].areaName + "</option>";
+										    			}
+										    			$('#area').append(tabDataHtml);
+										    			form.render();
+										    		}
+										    	});						    			
+							 			form.render();
+						    		}
+						    	});
+				  		form.render();
+				  	}
+				  });
+				  //根据省加载市
+				  form.on("select(province)", function(data){
+					  var id = data.value;
+						if(id == "0") {
+							$('#city').empty();
+							$('#area').empty();
+							$('#city').append("<option value='0'>请选择城市</option>");
+							$('#area').append("<option value='0'>请选择县/区</option>");
+							return;
+						}
+						$.ajax({
+				    		url : '${ctxPath}/area/getByPid?pid='+id,
+				    		type : 'POST',
+				    		dataType : 'json',
+				    		success : function(data) {
+				    			var obj = data.data;
+				    			$('#city').empty();
+				    			var tabDataHtml = "";
+				    			tabDataHtml = tabDataHtml
+				    			+ "<option value='0'>请选择市</option>";
+				    			for (var k = 0; k < obj.length; k++) {
+				    				tabDataHtml = tabDataHtml
+				    				+ "<option value="+obj[k].id+">"
+				    				+ obj[k].areaName + "</option>";
+				    			}
+				    			$('#city').append(tabDataHtml);
+				    			$('#area').empty();
+				    			$('#area').append("<option value='0'>请选择县/区</option>");
+				    			form.render();
+				    		}
+				    	});
+					});
+				  //根据市加载区县
+				  form.on("select(city)", function(data){
+					var id = data.value;
+					if(id == "0") {
+						$('#area').empty();
+						$('#area').append("<option value='0'>请选择县/区</option>");
+						return;
+					}
+					$.ajax({
+			    		url : '${ctxPath}/area/getByPid?pid='+id,
+			    		type : 'POST',
+			    		dataType : 'json',
+			    		success : function(data) {
+			    			var obj = data.data;
+			    			$('#area').empty();
+			    			var tabDataHtml = "";
+			    			tabDataHtml = tabDataHtml
+			    			+ "<option value='0'>请选择县/区</option>";
+			    			for (var k = 0; k < obj.length; k++) {
+			    				tabDataHtml = tabDataHtml
+			    				+ "<option value="+obj[k].id+">"
+			    				+ obj[k].areaName + "</option>";
+			    			}
+			    			$('#area').append(tabDataHtml);
+			    			form.render();
+			    		}
+			    	});
+				  });
+		});
+		</script>
+	</body>
+
+</html>

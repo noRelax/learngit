@@ -1,0 +1,330 @@
+/**
+ * @Project:ZGHome
+ * @FileName:TopicController.java
+ */
+package com.ehome.cloud.guangchang.controller;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang3.time.DateFormatUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.alibaba.fastjson.JSON;
+import com.ehome.cloud.guangchang.model.TopicModel;
+import com.ehome.cloud.guangchang.service.IDiscussionService;
+import com.ehome.cloud.guangchang.service.ITopicService;
+import com.ehome.cloud.sys.model.UploadFile;
+import com.ehome.cloud.sys.service.IUploadFileService;
+import com.ehome.core.frame.BaseController;
+import com.ehome.core.frame.BaseModelAndView;
+import com.ehome.core.frame.PageBean;
+import com.ehome.core.util.PageData;
+import com.ehome.core.util.ServletUtil;
+import com.github.pagehelper.PageInfo;
+
+/**
+ * @Title:TopicController
+ * @Description:TODO
+ * @author:张宗奎
+ * @date:2017年2月7日
+ * @version:
+ */
+@Controller
+@RequestMapping(value = "/topic")
+public class TopicController extends BaseController {
+
+	@Resource
+	private ITopicService iTopicService;
+
+	@Resource
+	private IDiscussionService iDiscussionService;
+
+	@Autowired
+	private IUploadFileService uploadFileService;
+
+	private String getRandom() {
+		return Long.toHexString(System.nanoTime());
+	}
+
+	private String getNowDate() {
+		return DateFormatUtils.format(Calendar.getInstance(), "yyyyMMdd");
+	}
+
+	/**
+	 * 获取列表
+	 */
+	@RequestMapping(value = "/list")
+	public ModelAndView getlist(HttpServletRequest request, HttpServletResponse response,
+			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false, defaultValue = "10") int rows) {
+
+		PageData pd = getPageData();
+		ModelAndView view = new BaseModelAndView("/huati/topic/list.html", request);
+		List<Map<String, Object>> list = iTopicService.selectListPage(pd, page, rows);
+		if (list != null) {
+			// StringBuffer ids = new StringBuffer();
+			// for (Map<String,Object> io : list) {
+			// if (io.get("picture_url") != null &&
+			// !io.get("picture_url").toString().isEmpty()) {
+			// ids.append("," + io.get("picture_url"));
+			// }
+			// }
+			// PageData pdata = new PageData();
+			// if (!ids.toString().isEmpty()) {
+			// pdata.put("list",
+			// Arrays.asList(ids.toString().substring(1).split(",")));
+			// List<Map<String,Object>> piclist =
+			// iTopicService.selectFileList(pdata);
+			// Map<String, String> filepaths = new HashMap<String, String>();
+			// if (piclist != null) {
+			// for (Map<String,Object> io : piclist) {
+			// if (io.get("id") != null && io.get("filepath") != null &&
+			// !io.get("id").toString().isEmpty()
+			// && !io.get("filepath").toString().isEmpty()) {
+			// filepaths.put(io.get("id").toString(),
+			// io.get("filepath").toString());
+			// }
+			// }
+			// }
+			//
+			// if (filepaths.size() > 0) {
+			// for (int i = 0; i < list.size(); i++) {
+			// Map<String,Object> io = list.get(i);
+			// if (io.get("picture_url") == null ||
+			// io.get("picture_url").toString().isEmpty())
+			// continue;
+			// String[] fileids = io.get("picture_url").toString().split(",");
+			// String fileurl = "";
+			// for (String ia : fileids) {
+			// if(filepaths.containsKey(ia)&&!filepaths.get(ia).isEmpty()){
+			// fileurl += ","+request.getContextPath()+filepaths.get(ia);
+			// }
+			// }
+			// if(!fileurl.isEmpty()){
+			// io.put("picture_url", fileurl.substring(1).split(","));
+			// }
+			// }
+			// }
+			// }
+			PageInfo<Map<String, Object>> pageInfo = new PageInfo<>(list);
+			view.addObject("pageInfo", JSON.toJSONString(pageInfo));
+			view.addObject("ContextPath", request.getContextPath());
+			PageBean<Map<String, Object>> pb = new PageBean<>(list, ServletUtil.getPageUrl(this.getRequest()));
+			view.addObject("pd", pd);
+			view.addObject("pageHtml", pb.pageHtml);
+		} else {
+			view.addObject("pageInfo", "{list:[]}");
+			view.addObject("pd", pd);
+			view.addObject("pageHtml", "");
+		}
+
+		return view;
+	}
+
+	@RequestMapping(value = "/spaceList")
+	public ModelAndView spaceList(HttpServletRequest request, HttpServletResponse response,
+			@RequestParam(required = false, defaultValue = "1") int page,
+			@RequestParam(required = false, defaultValue = "10") int rows) {
+		String isanonymous = request.getParameter("isanonymous") == null ? "0"
+				: request.getParameter("isanonymous").toString();
+
+		ModelAndView view = new BaseModelAndView("/huati/space/list.html", request);
+		PageData pd = new PageData();
+
+		try {
+
+			PageData pa = new PageData();
+			pa.put("isanonymous", isanonymous);
+
+			List<PageData> varlist = iDiscussionService.FindDiscussionList(pa, page, rows);
+
+			PageInfo<PageData> pageInfo = new PageInfo<>(varlist);
+			view.addObject("pageInfo", JSON.toJSONString(pageInfo));
+			PageBean<PageData> pb = new PageBean<>(varlist, ServletUtil.getPageUrl(this.getRequest()));
+			view.addObject("pd", pd);
+			view.addObject("pageHtml", pb.pageHtml);
+			view.addObject("varlist", varlist);
+		} catch (Exception e) {
+			logger.error(e.toString(), e);
+		}
+		return view;
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/deleteSpace")
+	public Object deleteSpace(HttpServletRequest request, HttpServletResponse response) {
+		if (request.getParameter("id") != null) {
+			iDiscussionService.deleteByKey(Integer.valueOf(request.getParameter("id")));
+			return "1";
+		}
+		return "0";
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/deleteTopic")
+	public Object deleteTopic(HttpServletRequest request, HttpServletResponse response) {
+		if (request.getParameter("id") != null) {
+			iTopicService.deleteByKey(Integer.valueOf(request.getParameter("id")));
+			return "1";
+		}
+		return "0";
+	}
+
+	private Map<String, Object> saveFile(HttpServletRequest request, String filePath, MultipartFile file) {
+
+		String title = "";
+		String content = "";
+
+		Map<String, Object> info = new HashMap<String, Object>();
+
+		File f = new File(filePath + getNowDate() + "/");
+
+		if (!f.exists()) {
+			f.mkdirs();
+		}
+
+		if (!file.isEmpty()) {
+			try {
+				String originalFilename = file.getOriginalFilename();
+				String targetPath = getNowDate() + "/" + getRandom()
+						+ originalFilename.substring(originalFilename.lastIndexOf("."));
+
+				File diskPath = new File(filePath + targetPath);
+				file.transferTo(diskPath);
+
+				int original = -1;
+				if (filePath.endsWith("/upload/")) {
+					original = 0;
+					info.put("path", "/upload/" + targetPath);
+				} else if (filePath.endsWith("/files/")) {
+					original = 1;
+					info.put("path", "/files/" + targetPath);
+				} else {
+					original = -1;
+					info.put("path", "");
+				}
+
+				UploadFile uploadFile = new UploadFile(file.getOriginalFilename(), diskPath.getName(),
+						info.get("path").toString(), original, title, content);
+				uploadFileService.save(uploadFile);
+
+				info.put("id", uploadFile.getId());
+				info.put("originalName", file.getOriginalFilename());
+				info.put("currentName", diskPath.getName());
+				// info.put("filePath", diskPath.getAbsolutePath());
+
+			} catch (IllegalStateException e) {
+				logger.info(e.getMessage());
+				e.printStackTrace();
+			} catch (IOException e) {
+				logger.info(e.getMessage());
+				e.printStackTrace();
+			}
+		}
+
+		return info;
+	}
+
+	@RequestMapping(value = "/editTopic")
+	public ModelAndView editTopic(HttpServletRequest request, HttpServletResponse response) {
+		PageData pd = getPageData();
+		PageData pdata = null;
+		if (pd.get("id") != null) {
+			pdata = iTopicService.findListItem(Integer.valueOf(pd.getString("id")));
+		} else {
+			pdata = new PageData();
+		}
+		ModelAndView view = new BaseModelAndView("/huati/topic/edit.html", request);
+		view.addObject("pd", pdata);
+		return view;
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/saveTopic")
+	public Object saveTopic(HttpServletRequest request, HttpServletResponse response,
+			@RequestParam(required = false, defaultValue = "file") MultipartFile file) {
+		String path = request.getSession().getServletContext().getRealPath("/") + "/files/";
+		PageData pd = new PageData(request);
+		Map<String, Object> info = saveFile(request, path, file);
+		TopicModel tm = new TopicModel();
+		try {
+			if (info.get("path") != null) {
+				tm.setPictureUrl(String.valueOf(info.get("path")));
+			}
+			tm.setAppUserId(Integer.valueOf(pd.getString("appuser_id")));
+			tm.setTitle(pd.getString("title"));
+			tm.setSubtitle(pd.getString("subtitle"));
+			tm.setIsofficial(Integer.valueOf(pd.getString("isofficial")));
+			tm.setTopicrule(pd.getString("topicrule"));
+			tm.setDiscussnum(Integer.valueOf(pd.getString("discussnum")));
+			tm.setOrdernum(Integer.valueOf(pd.getString("ordernum")));
+			tm.setDescription(pd.getString("editorValue"));
+			// tm.setUserId(Integer.valueOf(pd.getString("user_id")));
+			tm.setStatus(Integer.valueOf(pd.getString("status")));
+			SimpleDateFormat dateconv = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			if (pd.get("id") == null || pd.getString("id").isEmpty()) {
+				tm.setCreatetime(new Date());
+				iTopicService.saveNotNull(tm);
+			} else {
+				try {
+					tm.setId(Integer.valueOf(pd.getString("id")));
+					tm.setCreatetime(dateconv.parse(pd.get("createtime").toString()));
+				} catch (ParseException e) {
+					tm.setCreatetime(new Date());
+					e.printStackTrace();
+				}
+				iTopicService.updateNotNull(tm);
+			}
+			return "<script>alert('保存成功');parent.layer.close(parent.layid);</script>";
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "<script>alert('保存错误');parent.layer.close(parent.layid);</script>";
+	}
+
+	@RequestMapping(value = "/get")
+	public void select(TopicModel topicModel, HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		response.setContentType("text/html;charset=utf-8");
+		response.setCharacterEncoding("utf-8");
+
+		String id = request.getParameter("id");
+		topicModel = iTopicService.selectByKey(Integer.parseInt(id));
+		System.out.print(topicModel.toString());
+		// topicModel.setUserId(2);
+		// topicModel.setDesc("2");
+		// topicModel.setTitle("2");
+		// topicModel.setIsofficial(0);
+		// topicModel.setSubtitle("2");
+		// topicModel.setTopicrule("2");
+		// topicModel.setOrdernum(2);
+		// topicModel.setReplaytimes(2);
+		// topicModel.setStatus(2);
+		// topicModel.setPictureId("2");
+		// iTopicService.save(topicModel);
+
+		List<TopicModel> list = iTopicService.selectPage(1, 1);
+		for (TopicModel tm : list) {
+			System.out.println(tm.toString());
+		}
+
+	}
+}

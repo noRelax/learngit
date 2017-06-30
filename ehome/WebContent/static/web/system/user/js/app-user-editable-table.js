@@ -1,0 +1,294 @@
+$.ajaxSetup({
+	async : false
+});
+var EditableTable = function() {
+	'use strict';
+	return {
+		init : function() {
+			var searchBtn = jQuery('button[name=search]');
+			var resetBtn = jQuery('button[name=reset]');
+			var searchForm = jQuery('form[name=searchForm]');
+			searchBtn.on('click',handlerSearchClick);
+			resetBtn.on('click',handlerResetClick);
+
+			// 初始化表格对象
+			var oTable = $('#editable-sample')
+					.dataTable(
+							{
+								"iDisplayLength" : 10,
+								"sDom" : "<'row'<'col-lg-6'l><'col-lg-6'f>r>t<'row'<'col-lg-6'i><'col-lg-6'p>>",
+								"sPaginationType" : "bootstrap",
+								"bPaginite" : true,
+								"bLengthChange": false,
+								"oLanguage" : {
+									"sSearch" : "搜索",
+									"sZeroRecords" : "没有检索到数据",
+									"sInfoFiltered" : "数据表中共为 _MAX_ 条记录",
+									"sInfo" : "显示 _START_ 至 _END_ 条 &nbsp;&nbsp;共 _TOTAL_ 条",
+									"sInfoEmtpy" : "没有数据",
+									"sProcessing" : "正在加载数据...",
+									"oPaginate" : {
+										"sFirst" : "首页",
+										"sPrevious" : "前一页",
+										"sNext" : "后一页",
+										"sLast" : "末页"
+									}
+								},
+								"aoColumns" : [ {
+									"mData" : null
+								}, {
+									"mData" : "id"
+								}, // 此列不绑定数据源，用来显示序号
+								{
+									"mData" : "id"
+								}, {
+									"mData" : "userName"
+								}, {
+									"mData" : "nickName"
+								}, {
+									"mData" : "sex"
+								}, {
+									"mData" : "address"
+								}, {
+									"mData" : "orgainName"
+								}, {
+									"mData" : "isMember"
+								}, 
+								{
+									"mData" : "blackType"
+								}, 
+								{
+									"mData" : "invitationCode"
+								}, {
+									"mData" : "createTime"
+								}, {
+									"mData" : "userDesc"
+								}, {
+									"mData" : null
+								}
+								],
+								"ordering" : false, // 排序操作在服务端进行，所以可以关了。
+								"bFilter" : false,// 去掉搜索框
+								"bDestroy" : true,
+								"processing" : true,
+								"bServerSide" : true,
+								"sAjaxDataProp" : "data",// 是服务器分页的标志，必须有
+								"sAjaxSource" : "queryAppUser",
+								"aoColumnDefs" : [
+										{
+											"mRender" : function(data, type,
+													full) {
+												return '<input type="checkbox" class="checkchild" value="'+full.id+'"/>';
+											},
+											"aTargets" : [ 0 ]
+										},
+										{
+											"mRender" : function(data, type, full) {
+												var sex = '';
+												if(full.sex == '0'){
+													sex = '男';
+												}else if(full.sex == '1'){
+													sex = '女';
+												}else{
+													sex = full.sex;
+												}
+												return sex;
+											},
+											"aTargets" : [ 5 ]
+										},
+										{
+											"mRender" : function(data, type, full) {
+												var isMember = '';
+												if(full.isMember == '1'){
+													isMember = '是';
+												}else if(full.isMember == '0'){
+													isMember = '否';
+												}else{
+													isMember = full.isMember;
+												}
+												return isMember;
+											},
+											"aTargets" : [ 8 ]
+										},
+										{
+											"mRender" : function(data, type, full) {
+												var blackType = '';
+												if(full.blackType == '1'){
+													blackType = '评论黑名单';
+												}else if(full.blackType == '2'){
+													blackType = '广场黑名单';
+												}else if(full.blackType == '3'){
+													blackType = '活动黑名单';
+												}else{
+													blackType = '否'
+												}
+												return blackType;
+											},
+											"aTargets" : [ 9 ]
+										},
+										{
+											"mRender" : function(data, type,
+													full) {
+												return (new Date(full.createTime)).toLocaleDateString() + " " + (new Date(full.createTime)).toLocaleTimeString()
+											},
+											"aTargets" : [ 11 ]
+										},
+										{
+											"mRender" : function(data, type,
+													full) {
+												var str = "";
+												
+												str += '<a name="setBlack" class="btn btn-danger btn-xs" href="javascript:;" data-id="'
+														+ full.id
+														+ '">设置黑名单</a>';
+												
+												if(full.status == 1){
+													str += '<a class="btn btn-success btn-xs"  href="javascript:;" name="unfreeze" data-id="'
+														+ full.id
+														+ '"><span class="label">解除冻结</span></a>';
+												}else {
+													str += '<a class="btn btn-warning btn-xs"  href="javascript:;" name="freeze" data-id="'
+														+ full.id
+														+ '"><span class="label">未冻结</span></a>';
+												}
+												
+												str += '<a class="btn btn-danger btn-xs"  name="info" href="javascript:;" data-id="'
+														+ full.id
+														+ '"><span class="label">查看详情</span></a>';
+												return str;
+											},
+											"aTargets" : [ 13 ]
+										} ],
+								"fnServerData" : retrieveData
+							});			
+			var list = jQuery('table[id=editable-sample]');
+			
+			//冻结事件
+			list.on('click', 'a[name=freeze]', handlerFreezeClick);
+			//解除冻结事件
+			list.on('click', 'a[name=unfreeze]', handlerUnFreezeClick);
+			//设置黑名单
+			list.on('click', 'a[name=setBlack]', handlerSetBlackClick);
+			//查看详情
+			list.on('click', 'a[name=info]', handlerInfoClick);
+			function handlerFreezeClick(e){
+				e.preventDefault();
+				var pkId = jQuery(this).attr('data-id');
+				parent.layer.open({
+				    content: '确定要冻结该帐号吗?'
+					  ,btn: ['确定', '取消']
+					  ,yes: function(index, layero){
+							jQuery.post('../appUser/updateStatus',{"status":1,'id':pkId},function(data){
+								if(data.status == 10000){
+									parent.layer.alert(data.data, {title : '操作提示', icon : 1, time:2000, end: function(){
+										oTable.fnDraw();
+										parent.layer.closeAll();
+									}});
+								}else{
+									layer.alert(data.data,{title : '操作提示',icon: 2});
+								}
+						},'json');
+					  },btn2: function(index, layero){
+					  }
+					  ,cancel: function(){ 
+					  }
+					});
+			}
+			
+			function handlerUnFreezeClick(e) {
+				e.preventDefault();
+				var pkId = jQuery(this).attr('data-id');
+				parent.layer.open({
+			    content: '确定要解除冻结该帐号吗?'
+				  ,btn: ['确定', '取消']
+				  ,yes: function(index, layero){
+						jQuery.post('../appUser/updateStatus',{"status":0,'id':pkId},function(data){
+							if(data.status == 10000){
+								parent.layer.alert(data.data, {title : '操作提示', icon : 1, time:2000, end: function(){
+									oTable.fnDraw();
+									parent.layer.closeAll();
+								}});
+							}else{
+								layer.alert(data.data,{title : '操作提示',icon: 2});
+							}
+					},'json');
+				  },btn2: function(index, layero){
+				  }
+				  ,cancel: function(){ 
+				  }
+				});
+			}
+			
+			function handlerSetBlackClick(e){
+				e.preventDefault();
+				var pkId= jQuery(this).attr('data-id');
+				parent.layer.open({
+				    type: 2,
+				    title: '详情',
+				    area: ['580px', '400px'],
+				    content:'../appUser/toBlackTypePage?id='+pkId,
+				    end:function(){
+				    }
+				});
+			}
+			
+			function handlerInfoClick(e){
+				e.preventDefault();
+				var pkId = jQuery(this).attr('data-id');
+				parent.layer.open({
+					type: 2,
+				    title: '详情',
+				    area: ['580px', '600px'],
+				    offset:['10%', '40%'],
+				    content:'../appUser/queryInfo?id='+pkId,
+				    end:function(){
+				    }
+				});
+			}
+
+			function handlerSearchClick(e){
+				e.preventDefault();
+				oTable.fnDraw();
+			}
+			
+			function handlerResetClick(e){
+				e.preventDefault();
+				searchForm.clearForm();  
+			}
+			
+			function retrieveData(url, aoData, fnCallback) {
+				var start = aoData[3].value;
+				var rows = aoData[4].value;
+				var page = (start / rows) + 1;
+				var keyword = jQuery('input[name=keyword]').val();
+				var blackType = jQuery('select[name=blackType]').val();
+				$.ajax({
+					url : url,
+					data : {
+						"blackType" : blackType,
+						"keyword":keyword,
+						"sEcho" : aoData[0].value,
+						"rows" : rows,
+						"page" : page
+					},
+					async : false,
+					type : 'POST',
+					dataType : 'json',
+					success : function(result) {
+						if(result.status==10000)
+						   fnCallback(result.data);// 把返回的数据传给这个方法就可以了,datatable会自动绑定数据的
+						else if(result.status==10005)
+							window.location.href="../unAuthorized.html";
+						else
+							parent.layer.alert(result.data, {title : '操作提示', icon : 2});
+					}
+				});
+			}
+
+			$("#zcheckbox").click(function () {
+			      var check = $(this).prop("checked");
+			      $(".checkchild").prop("checked", check);
+			});
+		}
+	};
+}();

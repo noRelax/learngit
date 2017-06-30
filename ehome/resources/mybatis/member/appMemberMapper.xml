@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.member.mapper.AppMemberMapper">
+	<!--查询基层工会 -->
+	<select id="queryBaseUnion" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		select  id,orgain_code,orgain_name,parent_id,sort,is_end_level,remark,orgain_type,level_num,province,city,county,street,status,pids
+		from t_orgain where 1=1 and orgain_type=2
+		<if test="orgain_name !=null and orgain_name !=''">
+	     	and orgain_name LIKE CONCAT('%',CONCAT(#{orgain_name},'%'))
+	     	order by convert(orgain_name using gbk)
+		</if>
+     		limit #{page},#{rows}
+	</select>
+	
+	<!--新增入会申请-->
+	<insert id="insertApply" parameterType="java.util.HashMap" useGeneratedKeys="true" keyProperty="id">
+	   insert into t_member(
+	   		member_name,basic_union_id,upper_union_id,app_user_id,status,birthday,position,job,political,nation,create_time,id_card,sex,education,degree,tel,address,specialty,opinion,remark,audit_status,user_resource,user_id,is_active,province,city,area,marital_status
+		 	) 
+		 values(
+		    #{member_name},#{basic_union_id},#{upper_union_id},#{app_user_id},#{status},STR_TO_DATE(#{birthday},'%Y-%m-%d'),#{position},#{job},#{political},#{nation},now(),#{id_card},#{sex},#{education},#{degree},#{tel},#{address},#{specialty},#{opinion},#{remark},#{audit_status},#{user_resource},#{user_id},#{is_active},#{province},#{city},#{area},#{marital_status}
+	   )
+	</insert>
+	
+	<!--更新会员信息-->
+	<update id="updateApply" parameterType="map">
+		update t_member 
+		<trim prefix="set" suffixOverrides=","> 
+			<if test="member_name!=null and member_name!=''">member_name=#{member_name},</if>
+			<if test="basic_union_id!=null and basic_union_id!=''">basic_union_id=#{basic_union_id},</if>
+			<if test="upper_union_id!=null and upper_union_id!=''">upper_union_id=#{upper_union_id},</if>
+			<if test="app_user_id!=null and app_user_id!=''">app_user_id=#{app_user_id},</if>
+			<if test="status!=null and status!=''">status=#{status},</if>
+			<if test="birthday!=null and birthday!=''">birthday=STR_TO_DATE(#{birthday},'%Y-%m-%d'),</if>
+			<if test="position!=null and position!=''">position=#{position},</if>
+			<if test="job!=null and job!=''">job=#{job},</if>
+			<if test="political!=null and political!=''">political=#{political},</if>
+			<if test="nation!=null and nation!=''">nation=#{nation},</if>
+			<if test="id_card!=null and id_card!=''">id_card=#{id_card},</if>
+			<if test="sex!=null and sex!=''">sex=#{sex},</if>
+			<if test="education!=null and education!=''">education=#{education},</if>
+			<if test="degree!=null and degree!=''">degree=#{degree},</if>
+			<if test="tel!=null and tel!=''">tel=#{tel},</if>
+			<if test="address!=null and address!=''">address=#{address},</if>
+			<if test="specialty!=null and specialty!=''">specialty=#{specialty},</if>
+			<if test="opinion!=null and opinion!=''">opinion=#{opinion},</if>
+			<if test="remark!=null and remark!=''">remark=#{remark},</if>
+			<if test="audit_status!=null and audit_status!=''">audit_status=#{audit_status},</if>
+			<if test="user_resource!=null and user_resource!=''">user_resource=#{user_resource},</if>
+			<if test="user_id!=null and user_id!=''">user_id=#{user_id},</if>
+			<if test="is_active!=null and is_active!=''">is_active=#{is_active},</if>
+			<if test="province!=null and province!=''">province=#{province},</if>
+			<if test="city!=null and city!=''">city=#{city},</if>
+			<if test="area!=null and area!=''">area=#{area},</if>
+			<if test="marital_status!=null and marital_status!=''">marital_status=#{marital_status},</if>
+		</trim>
+		where  app_user_id=#{app_user_id}
+	</update>
+	
+	<!--插入操作记录-->
+	<insert id="insertRecord" parameterType="java.util.HashMap" useGeneratedKeys="true" keyProperty="id">
+	   insert into t_member_record(
+	   		from_basic_union_id,member_id,audit_status,audit_desc,create_time,to_basic_union_id
+		 	) 
+		 values(
+		    #{from_basic_union_id},#{member_id},#{audit_status},#{audit_desc},now(),#{to_basic_union_id}
+	   )
+	</insert>
+	
+	<insert id="insertFamilyMember" parameterType="java.util.HashMap">
+		INSERT INTO t_member_home (family_relationship,member_id) VALUES
+		<foreach item="item" collection="list" index="index" separator=",">  
+	      (#{item.family_relationship},#{item.member_id})    
+		</foreach> 
+	</insert>
+	
+	<insert id="insertMemberJianLi" parameterType="java.util.HashMap">
+		INSERT INTO t_member_resume (company_name,job,joined_date,release_date,member_id,job_content) VALUES
+		<foreach item="item" collection="list" index="index" separator=",">  
+	      (#{item.company_name},#{item.job},#{item.joined_date},#{item.release_date},#{item.member_id},#{item.job_content})  
+		</foreach> 
+	</insert>
+	
+	
+	<delete id="deleteRecord" parameterType="java.lang.Integer">
+	    DELETE FROM t_member_home WHERE member_id = #{member_id}
+	</delete>
+	
+	<delete id="deleteJinaLi" parameterType="java.lang.Integer">
+	    DELETE FROM t_member_resume WHERE member_id = #{member_id}
+	</delete>
+	
+	<select id="queryApplyInfoById"  parameterType="java.lang.Integer" resultType="java.util.HashMap">
+		SELECT
+			t.id,
+			t.member_name,
+			t.basic_union_id,
+			g.orgain_name AS basic_union_name,
+			t.upper_union_id,
+			t.app_user_id,
+			t. STATUS,
+			t.birthday,
+			t.position,
+			t.job,
+			t.political,
+			t.nation,
+			t.create_time,
+			t.id_card,
+			t.sex,
+			t.education,
+			t.degree,
+			t.tel,
+			t.address,
+			t.specialty,
+			t.opinion,
+			t.remark,
+			t.audit_status,
+			t.user_resource,
+			t.user_id,
+			t.is_active,
+			t.province,
+			t.city,
+			t.area,
+			t.marital_status,
+			concat(a2.area_name, '-', a1.area_name)AS hukou,
+			GROUP_CONCAT(family_relationship)AS family_relationships,
+			t3.*
+		FROM
+			t_member t
+		INNER JOIN t_orgain g ON g.id = t.basic_union_id
+		INNER JOIN t_area a1 ON a1.id = t.city
+		INNER JOIN t_area a2 ON a2.id = t.province
+		LEFT JOIN t_member_home h ON h.member_id = t.id
+		LEFT JOIN(
+			SELECT
+				GROUP_CONCAT(t1.company_name)AS company_names,
+				t1.member_id,
+				GROUP_CONCAT(t1.job)AS jobs,
+				GROUP_CONCAT(t1.joined_date)AS joined_dates,
+				GROUP_CONCAT(t1.release_date)AS release_dates,
+				GROUP_CONCAT(t1.job_content SEPARATOR '%26')AS job_contents
+			FROM
+				t_member_resume t1
+			JOIN t_member t2 ON t1.member_id = t2.id
+			GROUP BY
+				t1.member_id
+		)t3 ON t.id = t3.member_id
+		WHERE
+		t.app_user_id =#{app_user_id}
+	</select>
+	
+	<select id="queryProvinceCityByname"  parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		 select id,area_name from t_area where 
+		 (area_name  LIKE CONCAT(#{province_name},'%')  and level=1) 
+		 or 
+		 (area_name like CONCAT(#{city_name},'%') and level=2) order by id 
+	</select>
+	
+	<select id="queryCityByname"  parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		 select id,area_name from t_area where  
+		 area_name like CONCAT(#{cityName},'%') and level=2 order by id 
+	</select>
+	<select id="queryOrgainPId"  parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		select parent_id as id from t_orgain where id=#{id}
+	</select>
+	
+	<select id="queryOrgian"  parameterType="java.util.HashMap" resultType="java.util.HashMap">
+		select id,orgain_type,orgain_name from t_orgain where id=#{id}
+	</select>
+
+	<select id="queryCityNameByCityId"  parameterType="java.util.HashMap" resultType="java.lang.String">
+		select area_name from t_area where id=#{city} and level=2 
+	</select>
+</mapper>

@@ -1,0 +1,293 @@
+<% include("/system/public/header.html",{title:'header'}){} %>
+<% layout("/system/public/aside.html",{title:'header'}){} %>
+<script type="text/javascript"></script>
+
+<!-- BEGIN WRAPPER  -->
+<div class="editalbeWrap">
+	<section id="main-content">
+		<!-- BEGIN WRAPPER  -->
+		<section class="wrapper site-min-height">
+			<section class="panel">
+				<header class="panel-heading">
+					<span class="label label-primary"></span> <span
+						class="tools pull-right"> <a href="javascript:;"
+						class="fa fa-chevron-down"></a> <a href="javascript:;"
+						class="fa fa-times"></a>
+					</span>
+				</header>
+				<div class="panel-body">
+					<div class="adv-table editable-table ">
+						<div class="clearfix">
+							<div class="btn-group">
+								<input type="hidden" id="mmids"/><!-- 保存多选的id -->
+								<a id="setType"	data-toggle="modal" class="btn btn-info" onclick="setType()"> 批量设置类型 <i
+									class="fa fa-plus"></i>
+								</a>
+							</div>
+							<div class="btn-group">
+								<a href="#editable-sample_new" name="new-merchant-table"
+									data-toggle="modal" class="btn btn-success green"> 新增商家 <i
+									class="fa fa-plus"></i>
+								</a>
+							</div>
+							<div class="btn-group pull-right">
+								<button class="btn btn-primary dropdown-toggle"
+									data-toggle="dropdown">
+									工具栏<i class="fa fa-angle-down"></i>
+								</button>
+								<ul class="dropdown-menu pull-right">
+									<li><a href="#">打印</a></li>
+									<li><a href="#">另存为PDF</a></li>
+									<li><a href="#">导出到Excel</a></li>
+								</ul>
+							</div>
+						</div>
+						<div class="clearfix">
+							<div class="form-inline" >
+								<div class="form-group">
+									<input type="text" class="form-control" name="merchantName"
+										placeholder="请输入商家名称">
+								</div>
+								<div class="form-group">
+									<select class="form-control" style="width: 140px" name="province" id="province" onchange="provinceChange(this.value)">
+										<option value='0'>--请选择省份--</option>
+									</select>
+								</div>
+								<div class="form-group">
+									<select class="form-control" style="width: 140px" name="city" id="city" onchange="cityChange(this.value)">
+										<option value='0'>--请选择城市--</option>
+									</select>
+								</div>
+								<div class="form-group">
+									<select class="form-control" style="width: 140px" name="county" id="county">
+										<option value='0'>--请选择区/县--</option>
+									</select>
+								</div>
+								<div class="form-group">
+									<select class="form-control" style="width: 140px" name="classifyId" id="classifyId">
+										<option value='0'>--请选择商家类型--</option>
+									</select>
+								</div>
+								<div class="layui-input-inline"  style="padding:0 10px;">
+									<span>&nbsp;上线时间</span>
+								</div>
+								<div class="form-group"  style="width:150px">
+									<input name="starttime" id="starttime" placeholder="开始时间" readonly onclick="layui.laydate({elem: this, istime: true, format: 'YYYY-MM-DD hh:mm:ss'})"
+									class="layui-input" >
+								</div>
+								<div class="layui-input-inline"  style="padding:0 10px;">
+									<span>至</span>
+								</div>
+								<div class="form-group"  style="width:150px">
+									<input name="endtime" id="endtime" placeholder="结束时间" readonly onclick="layui.laydate({elem: this, istime: true, format: 'YYYY-MM-DD hh:mm:ss'})"
+									class="layui-input" >
+								</div>
+								<button type="submit" name="search" class="btn btn-success">检索</button>
+								</div>
+							<br>
+
+						</div>
+						<div class="space15"></div>
+						<table class="table table-striped table-hover table-bordered"
+							id="merchant-tableList">
+							<thead>
+								<tr>
+									<th width="4%" class="center"><input type="checkbox"
+										class="checkall" id="checkall"/>全选</th>
+									<th width="5%" class="hidden-phone">商家ID</th>
+									<th width="10%" class="hidden-phone">商家名称</th>
+									<th width="5%" class="hidden-phone">省份</th>
+									<th width="5%" class="hidden-phone">城市</th>
+									<th width="5%" class="hidden-phone">区/县</th>
+									<th width="10%" class="hidden-phone">上线时间</th>
+									<th width="5%" class="hidden-phone">联系人</th>
+									<th width="10%" class="hidden-phone">联系人电话</th>
+									<th width="6%" class="hidden-phone">类型</th>
+									<th width="20%" class="hidden-phone">操作</th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+						<ul class="pagination"></ul>
+					</div>
+				</div>
+			</section>
+		</section>
+		<!-- END WRAPPER  -->
+	</section>
+</div>
+
+
+
+<script src="${ctxPath}/static/system/olive/all/js/jquery.form.js"></script>
+<script
+	src="${ctxPath}/static/system/olive/all/js/jquery.validate.min.js"></script>
+<script
+	src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script>
+<!-- DATATABLE JS  -->
+<script
+	src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script>
+<script src="${ctxPath}/static/ui/layui/layui.js"></script>
+<!-- DATATABLE JS  -->
+<script src="${ctxPath}/static/web/puhui/merchant/list.js"></script>
+<script type="text/javascript">
+//去掉框架的回车事件
+	jQuery(document).ready(function() {
+		$(document).keydown(function(event){
+			  switch(event.keyCode){
+			     case 13:return false;
+			     }
+			});
+	//加载省
+        $.ajax({
+        	url : '${ctxPath}/area/getProvince',
+        	type : 'POST',
+        	dataType : 'json',
+        	success : function(data) {
+        		var obj = data.data;
+        		$('#province').empty();
+        		var tabDataHtml = "";
+        		tabDataHtml = tabDataHtml
+        		+ "<option value='0'>--请选择省份--</option>";
+        		for (var k = 0; k < obj.length; k++) {
+        			tabDataHtml = tabDataHtml
+        			+ "<option value="+obj[k].id+">"
+        			+ obj[k].areaName + "</option>";
+        		}
+        		$('#province').append(tabDataHtml);
+        	}
+        });
+
+	//加载省
+        $.ajax({
+        	url : '${ctxPath}/puhui/classify/getClssify',
+        	type : 'POST',
+        	dataType : 'json',
+        	success : function(data) {
+        		var obj = data.data;
+        		$('#classifyId').empty();
+        		var tabDataHtml = "";
+        		tabDataHtml = tabDataHtml
+        		+ "<option value='0'>--请选择商家类型--</option>";
+        		for (var k = 0; k < obj.length; k++) {
+        			tabDataHtml = tabDataHtml
+        			+ "<option value="+obj[k].id+">"
+        			+ obj[k].name + "</option>";
+        		}
+        		$('#classifyId').append(tabDataHtml);
+        	}
+        });
+
+
+		layui.use(['layer', 'laydate'], function() {
+			var layer = layui.layer;
+			//新建帐号
+			jQuery('a[name=new-merchant-table]').on('click', function(e) {
+				e.preventDefault();
+				var lifeId = jQuery(this).attr('data-id');
+				parent.layer.open({
+					type : 2,
+					title : '新增商家',
+					area : [ '80%', '80%' ],
+					content : '../merchant/add',
+					end : function() {
+
+					}
+				});
+			});
+		});
+		merchantTable.init();//初始化表格
+
+		$('#checkall').click(function() {
+			if ($(this).is(':checked')) {
+				$('input[class=checkchild]').attr("checked", "true");
+			} else {
+				$('input[class=checkchild]').attr("checked", null);
+			}
+		});
+	});
+
+	function provinceChange(id){
+		if(id == "0") {
+			$('#city').empty();
+			$('#county').empty();
+			$('#city').append("<option value='0'>--请选择城市--</option>");
+			$('#county').append("<option value='0'>--请选择区/县--</option>");
+			return;
+		}
+		$.ajax({
+    		url : '${ctxPath}/area/getByPid?pid='+id,
+    		type : 'POST',
+    		dataType : 'json',
+    		success : function(data) {
+    			var obj = data.data;
+    			$('#city').empty();
+    			var tabDataHtml = "";
+    			tabDataHtml = tabDataHtml
+    			+ "<option value='0'>--请选择城市--</option>";
+    			for (var k = 0; k < obj.length; k++) {
+    				tabDataHtml = tabDataHtml
+    				+ "<option value="+obj[k].id+">"
+    				+ obj[k].areaName + "</option>";
+    			}
+    			$('#city').append(tabDataHtml);
+    			$('#county').empty();
+    			$('#county').append("<option value='0'>--请选择区/县--</option>");
+    		}
+    	});
+	}
+
+	function cityChange(id){
+		if(id == "0") {
+			$('#county').empty();
+			$('#county').append("<option value='0'>--请选择区/县--</option>");
+			return;
+		}
+		$.ajax({
+    		url : '${ctxPath}/area/getByPid?pid='+id,
+    		type : 'POST',
+    		dataType : 'json',
+    		success : function(data) {
+    			var obj = data.data;
+    			$('#county').empty();
+    			var tabDataHtml = "";
+    			tabDataHtml = tabDataHtml
+    			+ "<option value='0'>--请选择区/县--</option>";
+    			for (var k = 0; k < obj.length; k++) {
+    				tabDataHtml = tabDataHtml
+    				+ "<option value="+obj[k].id+">"
+    				+ obj[k].areaName + "</option>";
+    			}
+    			$('#county').append(tabDataHtml);
+    		}
+    	});
+	}
+
+	function setType(){
+		var mmids = "";
+		jQuery('input[class=checkchild]').each(function(index, element) {
+			if (jQuery(this).is(':checked')) {
+				mmids = mmids + jQuery(this).val().trim() + ",";
+			}
+		});
+		$("#mmids").val(mmids);
+		if(mmids.length<=0){
+			layer.alert('请先选择商家',{title : '操作提示',icon: 2});
+		}else{
+	    	parent.layer.open({
+	    		type:2,
+	    		title:'批量设置类型',
+	    		area:['300px','300px'],
+	    		content:'../merchant/setTypePage',
+	    		end:function(){
+
+	    		}
+	    	});
+		}
+    }
+</script>
+<!-- END MAIN CONTENT -->
+
+<!-- END MAIN CONTENT -->
+<% layout("/system/public/footer.html",{title:'header'}){} %>

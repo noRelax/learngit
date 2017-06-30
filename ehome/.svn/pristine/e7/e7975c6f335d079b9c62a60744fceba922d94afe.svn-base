@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.sys.mapper.UserGroupMapper">
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.sys.model.UserGroupModel">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="group_name" property="groupName" jdbcType="VARCHAR" />
+		<result column="member_num" property="memberNum" jdbcType="VARCHAR"/>
+		<result column="group_type" property="groupType" />
+		<result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+	</resultMap>
+	<resultMap id="UserGroupMap" type="com.ehome.cloud.sys.model.UserGroupIdModel" >
+	    <id column="id" property="id" jdbcType="INTEGER" />
+	    <result column="user_id" property="userId" jdbcType="INTEGER" />
+	    <result column="group_id" property="groupId" jdbcType="INTEGER" />
+	</resultMap>
+	
+	
+	<select id="queryQTForList" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+		 select id,group_name,member_num,group_type,create_time from t_group where 1=1 
+		 and group_type=2
+	         <if test="keyword!=null and keyword!=''">
+	             and (group_name  LIKE CONCAT('%', #{keyword},'%') 
+	         </if>
+	</select>
+	
+	<select id="queryHTForList" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+		 select id,group_name,member_num,group_type,create_time from t_group where 1=1 
+		 and group_type=#{groupType}
+	        
+	</select>
+	
+	<select id="queryHTByList" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+		 select id,group_name,group_type,create_time from t_group where 1=1 
+		 and group_type=#{groupType}
+		 
+		 order by create_time desc
+	        
+	</select>
+	
+	<select id="queryQTByList" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+		 select id,group_name,group_type,create_time from t_group where 1=1 
+		 and group_type=#{groupType}
+	     
+	     order by create_time desc   
+	</select>
+	
+	<select id="queryById" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+		 select id,group_name,member_num,group_type,create_time from t_group 
+	     where id = #{id}
+	</select>
+	
+	<insert id="insertGroup" parameterType="com.ehome.cloud.sys.model.UserGroupModel" 
+	   useGeneratedKeys="true" keyProperty="id">
+	     insert into t_group (group_name,group_type)value(#{groupName},#{groupType})
+	</insert>
+	
+	<update id="updateGroup" parameterType="com.ehome.cloud.sys.model.UserGroupModel">
+	     update t_group set group_name = #{groupName},member_num = #{memberNum},group_type = #{groupType} where id = #{id}
+	</update>
+	
+	<delete id="deleteGroupById" parameterType="java.lang.Integer" >
+	    delete from t_user_group WHERE user_id = #{userId} and group_id = #{groupId}
+	</delete>
+	
+	<insert id="insertUserGroup" parameterType="java.lang.Integer" 
+	   useGeneratedKeys="true" keyProperty="id">
+	     insert into t_user_group (user_id,group_id)value(#{user_id},#{group_id})
+	</insert>
+	
+	<select id="queryUserId" resultType="java.lang.Integer">
+	  
+           SELECT user_id FROM t_user_group where group_id=#{groupId} 
+	</select>
+	
+	<select id="queryByType" resultType="java.lang.Integer">
+	       SELECT group_type From t_group WHERE id = #{groupId}
+	</select>
+	
+	<select id="queryAppUserId" resultType="java.lang.Integer">
+	  
+           SELECT app_user_id FROM t_app_user_group where group_id=#{groupId} 
+	</select>
+	
+	<delete id="deleteAppGroupById" parameterType="java.lang.Integer" >
+	    delete from t_app_user_group WHERE group_id = #{groupId} and app_user_id = #{userId}
+	</delete>
+	
+	<delete id="deleteById" parameterType="java.lang.Integer" >
+	    delete from t_group WHERE id= #{id}
+	</delete>
+	
+	<select id="queryEditById" resultMap="BaseResultMap">
+	    select * from t_group where id=#{id}
+	</select>
+	
+	<select id="queryMemberNum" resultMap="BaseResultMap">
+	    SELECT COUNT(0) as memberNum FROM( SELECT * FROM t_user_group WHERE group_id=#{groupId} )  tmp_count
+	</select>
+	
+	<select id="queryQTMemberNum" resultMap="BaseResultMap">
+	    SELECT COUNT(0) as memberNum FROM( SELECT * FROM t_app_user_group WHERE group_id=#{groupId} )  tmp_count
+	</select>
+	
+	<delete id="deleteAllUserGroup">
+	    delete from t_user_group WHERE group_id = #{groupId} AND user_id in
+	    <foreach collection="USER_IDS" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+	
+	<delete id="deleteAppAllUserGroup">
+	    delete from t_app_user_group WHERE group_id = #{groupId} AND app_user_id in
+	    <foreach collection="USER_IDS" item="item" index="index" open="(" separator="," close=")">
+			#{item}
+		</foreach> 
+	</delete>
+</mapper>

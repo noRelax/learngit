@@ -1,0 +1,17 @@
+<%
+include("/system/public/header.html",{title:'header'}){}
+%>
+
+<%
+layout("/system/public/aside.html",{title:'header'}){}
+%>
+
+  ${content!}
+
+
+<%
+include("/system/public/footer.html",{title:'header'}){}
+%>
+
+
+

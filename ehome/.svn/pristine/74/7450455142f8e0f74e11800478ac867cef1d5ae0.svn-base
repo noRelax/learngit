@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.marry.mapper.AppMarryReplyMapper">
+
+	<resultMap id="BaseResultMap"
+		type="com.ehome.cloud.app.marry.dto.AppMarryReplyDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="from_user_id" property="fromUserID" jdbcType="INTEGER" />
+		<result column="to_user_id" property="toUserId" jdbcType="INTEGER" />
+		<result column="reply_msg" property="replyMsg" jdbcType="VARCHAR" />
+		<result column="create_date" property="createDate" jdbcType="TIMESTAMP" />
+		<result column="portrait" property="fromUserPortrait" jdbcType="VARCHAR" />
+		<result column="to_nick_name" property="toUserNickName"
+			jdbcType="VARCHAR" />
+		<result column="frome_nick_name" property="fromUserNickName"
+			jdbcType="VARCHAR" />
+	</resultMap>
+
+
+	<select id="selectReplyListDtoByCommentId" resultMap="BaseResultMap">
+		SELECT A.REPLY_MSG,
+		A.CREATE_DATE, B.NICK_NAME AS FROME_NICK_NAME, A.FROM_USER_ID,
+		B.PORTRAIT, C.NICK_NAME
+		AS TO_NICK_NAME FROM
+		(select m.* from T_MARRY_REPLY m where m.coment_id=#{comentId}) A INNER JOIN T_APP_USER B ON
+		A.FROM_USER_ID = B.ID
+		INNER JOIN T_APP_USER C ON A.TO_USER_ID= C.ID
+		ORDER BY A.CREATE_DATE ASC
+	</select>
+
+</mapper>

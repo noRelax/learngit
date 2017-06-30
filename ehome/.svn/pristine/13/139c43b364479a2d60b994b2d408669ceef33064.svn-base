@@ -1,0 +1,450 @@
+<% include("/system/public/header.html",{title:'header'}){} %> <%
+layout("/system/public/aside.html",{title:'header'}){} %>
+
+<script type="text/javascript"></script>
+
+<!-- BEGIN WRAPPER  -->
+<div class="editalbeWrap">
+	<section id="main-content">
+		<!-- BEGIN WRAPPER  -->
+		<section class="wrapper site-min-height">
+			<section class="panel">
+				<header class="panel-heading">
+					<span class="label label-primary">会员管理</span> <span
+						class="tools pull-right"> <a href="javascript:;"
+						class="fa fa-chevron-down"></a> <a href="javascript:;"
+						class="fa fa-times"></a>
+					</span>
+				</header>
+				<div class="panel-body">
+					<div class="adv-table editable-table ">
+						<div class="clearfix">
+							<div class="btn-group">
+								<a href="javascript:;" name="editable-sample_new"
+									class="btn btn-success green"> 新增会员 <i class="fa fa-plus"></i>
+								</a>
+							</div>
+							<div class="btn-group">
+								<a href="javascript:;" name="data-import"
+									class="btn btn-success green"> 导入会员信息 <i class="fa fa-plus"></i>
+								</a>
+							</div>
+							<div class="btn-group">
+								<a href="javascript:;" name="export-data"
+									class="btn btn-success green"> 导出表格 <i class="fa fa-plus"></i>
+								</a>
+							</div>
+							<div class="btn-group">
+								<a href="javascript:;" name="batch-transfer"
+									class="btn btn-success green"> 批量转出 <i class="fa fa-plus"></i>
+								</a>
+							</div>
+							<div class="btn-group">
+								<a href="javascript:;" name="batch-approval"
+									class="btn btn-success green"> 批量审核 <i class="fa fa-plus"></i>
+								</a>
+							</div>
+							<div class="btn-group">
+								<a href="javascript:;" name="batch-help"
+									class="btn btn-success green"> 导入帮扶信息 <i class="fa fa-plus"></i>
+								</a>
+							</div>
+						</div>
+						<div class="clearfix">
+							<div class="panel-body">
+								<form class="form-inline" role="form" name="searchForm">
+									<div class="form-group">
+										<input type="text" class="form-control" style="width: 300px"
+											name="keyword" placeholder="请输入会员号、姓名、身份证号、联系电话">
+									</div>
+									<div class="form-group">
+										<select class="form-control " name="sex">
+											<option value="0">全部性别</option>
+										</select>
+									</div>
+									<div class="form-group">
+										<select class="form-control " name="status">
+											<option value="0">全部会员状态</option>
+										</select>
+									</div>
+									<div class="form-group">
+										<select class="form-control " name="degree">
+											<option value="0">全部学历</option>
+										</select>
+									</div>
+									<div class="form-group">
+										<select class="form-control " name="auditStatus">
+											<option value="0">全部审核状态</option>
+										</select>
+									</div>
+									<div class="form-group">
+										<select class="form-control " name="userResource">
+											<option value="0">全部用户来源</option>
+										</select>
+									</div>
+									<div class="form-group">
+										<select class="form-control " name="political">
+											<option value="0">全部政治面貌</option>
+										</select>
+									</div>
+									<button type="submit" name="search" class="btn btn-success">检索</button>
+									<button type="button" name="reset" class="btn btn-success">重置检索</button>
+								</form>
+							</div>
+						</div>
+						<div class="space15"></div>
+						<table class="table table-striped table-hover table-bordered"
+							id="member-list">
+							<thead>
+								<tr>
+									<th width="5%" class="center"><input type="checkbox"
+										class="checkall" /></th>
+									<th width="7%" class="hidden-phone">会员号</th>
+									<th width="10%" class="hidden-phone">姓名</th>
+									<th width="12%" class="hidden-phone">身份证号</th>
+									<th width="10%" class="hidden-phone">联系电话</th>
+									<th width="13%" class="hidden-phone">工会名称</th>
+									<th width="8%" class="hidden-phone">审核状态</th>
+									<th width="10%" class="hidden-phone">添加时间</th>
+									<th width="7%" class="hidden-phone">来源</th>
+									<th width="18%" class="hidden-phone">操作</th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</section>
+		</section>
+		<!-- END WRAPPER  -->
+	</section>
+</div>
+</div>
+
+<script src="${ctxPath}/static/system/olive/all/js/jquery.form.js"></script>
+<script
+	src="${ctxPath}/static/system/olive/all/js/jquery.validate.min.js"></script>
+<script
+	src="${ctxPath}/static/system/olive/all/assets/data-tables/jquery.dataTables.js"></script>
+<!-- DATATABLE JS  -->
+<script
+	src="${ctxPath}/static/system/olive/all/assets/data-tables/DT_bootstrap.js"></script>
+<!-- DATATABLE JS  -->
+<script src="${ctxPath}/static/web/member/mem/js/mem_table.js"></script>
+<script type="text/javascript">
+	jQuery(document)
+			.ready(
+					function() {
+						var isAdd = ${isAdd};
+						if(isAdd==2){
+							jQuery('a[name=editable-sample_new]').hide();
+							jQuery('a[name=batch-help]').hide();
+							jQuery('a[name=data-import]').hide();
+						}
+						var sex = jQuery('select[name=sex]');
+						var status = jQuery('select[name=status]');
+						var degree = jQuery('select[name=degree]');
+						var auditStatus = jQuery('select[name=auditStatus]');
+						var userResource = jQuery('select[name=userResource]');
+						var political = jQuery('select[name=political]');
+						var dictSex = '${dictSex}', dictMemStatus = '${dictMemStatus}', dictEducation = '${dictEducation}', dictAuditStatus = '${dictAuditStatus}', dictUserResource = '${dictUserResource}', dictPolitical = '${dictPolitical}';
+						if (dictSex != null) {
+							dictSex = jQuery.parseJSON(dictSex);
+							for ( var x in dictSex)
+								sex
+										.append("<option value='"+dictSex[x].dictKey+"'>"
+												+ dictSex[x].dictValue
+												+ "</option>");
+						}
+						if (dictMemStatus != null) {
+							dictMemStatus = jQuery.parseJSON(dictMemStatus);
+							for ( var x in dictMemStatus)
+								status
+										.append("<option value='"+dictMemStatus[x].dictKey+"'>"
+												+ dictMemStatus[x].dictValue
+												+ "</option>");
+						}
+						if (dictEducation != null) {
+							dictEducation = jQuery.parseJSON(dictEducation);
+							for ( var x in dictEducation)
+								degree
+										.append("<option value='"+dictEducation[x].dictKey+"'>"
+												+ dictEducation[x].dictValue
+												+ "</option>");
+						}
+						if (dictAuditStatus != null) {
+							dictAuditStatus = jQuery.parseJSON(dictAuditStatus);
+							for ( var x in dictAuditStatus)
+								auditStatus
+										.append("<option value='"+dictAuditStatus[x].dictKey+"'>"
+												+ dictAuditStatus[x].dictValue
+												+ "</option>");
+						}
+						if (dictUserResource != null) {
+							dictUserResource = jQuery
+									.parseJSON(dictUserResource);
+							for ( var x in dictUserResource)
+								userResource
+										.append("<option value='"+dictUserResource[x].dictKey+"'>"
+												+ dictUserResource[x].dictValue
+												+ "</option>");
+						}
+						if (dictPolitical != null) {
+							dictPolitical = jQuery.parseJSON(dictPolitical);
+							for ( var x in dictPolitical)
+								political
+										.append("<option value='"+dictPolitical[x].dictKey+"'>"
+												+ dictPolitical[x].dictValue
+												+ "</option>");
+						}
+
+						layui
+								.use(
+										'layer',
+										function() {
+											var layer = layui.layer;
+											//新建帐号
+											jQuery(
+													'a[name=editable-sample_new]')
+													.on(
+															'click',
+															function(e) {
+																e
+																		.preventDefault();
+																parent.layer
+																		.open({
+																			type : 2,
+																			title : '新增会员',
+																			area : [
+																					'80%',
+																					'80%' ],
+																			content : '../member/add-member.html',
+																			end : function() {
+																				window.parent.location
+																						.reload();
+																			}
+																		});
+															});
+											//批量导入
+											jQuery('a[name=data-import]')
+													.on(
+															'click',
+															function(e) {
+																e
+																		.preventDefault();
+																parent.layer
+																		.open({
+																			type : 2,
+																			title : '批量导入会员',
+																			area : [
+																					'500px',
+																					'500px' ],
+																			content : '../member/import-member.html',
+																			end : function() {
+
+																			}
+																		});
+															});
+											//批量导入
+											jQuery('a[name=batch-help]')
+													.on(
+															'click',
+															function(e) {
+																e
+																		.preventDefault();
+																parent.layer
+																		.open({
+																			type : 2,
+																			title : '导入帮扶信息',
+																			area : [
+																					'500px',
+																					'500px' ],
+																			content : '../helpApply/import-help-member.html',
+																			end : function() {
+
+																			}
+																		});
+															});
+
+											//导出excel
+											jQuery('a[name=export-data]')
+													.on(
+															'click',
+															function(e) {
+																e
+																		.preventDefault();
+																var form = jQuery('form[name=searchForm]');
+																form
+																		.attr(
+																				"action",
+																				'../member/export');
+																//触发submit事件，提交表单   
+																form.submit();
+															});
+											//批量转出
+											jQuery('a[name=batch-transfer]')
+													.on(
+															'click',
+															function(e) {
+																e
+																		.preventDefault();
+																var idList = new Array();
+																jQuery(
+																		'input[class=checkchild]')
+																		.each(
+																				function(
+																						index,
+																						element) {
+																					if (jQuery(
+																							this)
+																							.is(
+																									':checked')) {
+																						var pkId = Number(jQuery(
+																								this)
+																								.val());
+																						idList
+																								.push(pkId);
+																					}
+																				});
+																if (idList.length <= 0) {
+																	layer
+																			.alert(
+																					'请先选择会员记录',
+																					{
+																						title : '操作提示',
+																						icon : 2
+																					});
+																} else {
+																	parent.layer
+																			.open({
+																				type : 2,
+																				title : '批量转出',
+																				area : [
+																						'500px',
+																						'500px' ],
+																				content : '../member/transfer.html?memberIds='
+																						+ idList,
+																				end : function() {
+
+																				}
+																			});
+																}
+															});
+											//批量审核
+											jQuery('a[name=batch-approval]')
+													.on(
+															'click',
+															function(e) {
+																e
+																		.preventDefault();
+																var idList = new Array();
+																jQuery(
+																		'input[class=checkchild]')
+																		.each(
+																				function(
+																						index,
+																						element) {
+																					if (jQuery(
+																							this)
+																							.is(
+																									':checked')) {
+																						var pkId = Number(jQuery(
+																								this)
+																								.val());
+																						idList
+																								.push(pkId);
+																					}
+																				});
+																if (idList.length <= 0) {
+																	layer
+																			.alert(
+																					'请先选择会员记录',
+																					{
+																						title : '操作提示',
+																						icon : 2
+																					});
+																} else {
+																	parent.layer
+																			.open({
+																				content : '请选择审核结果?',
+																				btn : [
+																						'通过',
+																						'不通过' ],
+																				yes : function(
+																						index,
+																						layero) {
+																					jQuery
+																							.post(
+																									'../member/updateStatus',
+																									{
+																										'memberIds' : idList,
+																										"auditStatus" : 1
+																									},
+																									function(
+																											data) {
+																										if (data.status == 10000) {
+																											parent.layer
+																													.alert(
+																															data.data,
+																															{
+																																title : '操作提示',
+																																icon : 1,
+																																time : 2000,
+																																end : function() {
+																																	parent.layer
+																																			.closeAll();
+																																}
+																															});
+																										} else {
+																											layer
+																													.alert(
+																															data.data,
+																															{
+																																title : '操作提示',
+																																icon : 2
+																															});
+																										}
+																									},
+																									'json');
+																				},
+																				btn2 : function(
+																						index,
+																						layero) {
+																					parent.layer
+																							.open({
+																								type : 2,
+																								title : '审核不通过',
+																								area : [
+																										'300px',
+																										'300px' ],
+																								content : '../member/unApproval.html?memberIds='
+																										+ idList,
+																								end : function() {
+																									window.parent.location
+																											.reload();
+																								}
+																							});
+																				},
+																				cancel : function() {
+																				}
+																			});
+																}
+															});
+
+										});
+						memberTable.init();//初始化表格
+						$('input[class=checkall]').click(
+								function() {
+									if ($(this).is(':checked')) {
+										$('input[class=checkchild]').attr(
+												"checked", "true");
+									} else {
+										$('input[class=checkchild]').attr(
+												"checked", null);
+									}
+								});
+					});
+</script>
+<!-- END MAIN CONTENT -->
+<% layout("/system/public/footer.html",{title:'header'}){} %>

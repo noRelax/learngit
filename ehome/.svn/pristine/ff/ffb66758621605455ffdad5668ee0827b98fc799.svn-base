@@ -1,0 +1,219 @@
+package com.ehome.cloud.marry.dto;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import com.ehome.core.annotation.CodeField;
+import com.ehome.core.model.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+/**
+ * 
+ * @Title:MarryPhotoDto
+ * @Description:TODO
+ * @author:张钟武
+ * @date:2017年4月17日 上午10:37:10
+ * @version:
+ */
+public class MarryPhotoDto extends BaseEntity implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3983394992389086295L;
+
+	private String keyword;
+	private Integer searchType;
+	private Integer pictureId;
+	private String pictureUrl;
+	private String idea;
+	private String location;
+	private Integer appUserId;
+	private Integer thumbUpNum;
+	private Integer commentNum;
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+	private Date publicTime;
+	private Integer selectRequire;
+	@CodeField(code = "CODE_IS_RECOMMENDED", renderField = "isRecommendedName")
+	private Integer isRecommended;
+	@CodeField(code = "CODE_IS_SHIEIDING", renderField = "isShieldingName")
+	private Integer isShielding;
+	private String startPublictTime;
+	private String endPublicTime;
+	private String isRecommendedName;
+	private String isShieldingName;
+	private Integer sourceDevice;
+	private Integer isNew;
+	@CodeField(code = "CODE_BLACKLIST", renderField = "blacklistName")
+	private Integer blacklist;
+	private String blacklistName;
+
+	public Integer getIsNew() {
+		return isNew;
+	}
+
+	public void setIsNew(Integer isNew) {
+		this.isNew = isNew;
+	}
+
+	public Integer getBlacklist() {
+		return blacklist;
+	}
+
+	public void setBlacklist(Integer blacklist) {
+		this.blacklist = blacklist;
+	}
+
+	public String getBlacklistName() {
+		return blacklistName;
+	}
+
+	public void setBlacklistName(String blacklistName) {
+		this.blacklistName = blacklistName;
+	}
+
+	public Integer getSourceDevice() {
+		return sourceDevice;
+	}
+
+	public void setSourceDevice(Integer sourceDevice) {
+		this.sourceDevice = sourceDevice;
+	}
+
+	public String getIsRecommendedName() {
+		return isRecommendedName;
+	}
+
+	public void setIsRecommendedName(String isRecommendedName) {
+		this.isRecommendedName = isRecommendedName;
+	}
+
+	public String getIsShieldingName() {
+		return isShieldingName;
+	}
+
+	public void setIsShieldingName(String isShieldingName) {
+		this.isShieldingName = isShieldingName;
+	}
+
+	public Integer getSelectRequire() {
+		return selectRequire;
+	}
+
+	public void setSelectRequire(Integer selectRequire) {
+		this.selectRequire = selectRequire;
+	}
+
+	public String getPictureUrl() {
+		return pictureUrl;
+	}
+
+	public void setPictureUrl(String pictureUrl) {
+		this.pictureUrl = pictureUrl;
+	}
+
+	public String getStartPublictTime() {
+		return startPublictTime;
+	}
+
+	public void setStartPublictTime(String startPublictTime) {
+		this.startPublictTime = startPublictTime;
+	}
+
+	public String getEndPublicTime() {
+		return endPublicTime;
+	}
+
+	public void setEndPublicTime(String endPublicTime) {
+		this.endPublicTime = endPublicTime;
+	}
+
+	public Integer getSearchType() {
+		return searchType;
+	}
+
+	public void setSearchType(Integer searchType) {
+		this.searchType = searchType;
+	}
+
+	public String getKeyword() {
+		return keyword;
+	}
+
+	public void setKeyword(String keyword) {
+		this.keyword = keyword;
+	}
+
+	public Integer getPictureId() {
+		return pictureId;
+	}
+
+	public void setPictureId(Integer pictureId) {
+		this.pictureId = pictureId;
+	}
+
+	public String getIdea() {
+		return idea;
+	}
+
+	public void setIdea(String idea) {
+		this.idea = idea;
+	}
+
+	public String getLocation() {
+		return location;
+	}
+
+	public void setLocation(String location) {
+		this.location = location;
+	}
+
+	public Integer getAppUserId() {
+		return appUserId;
+	}
+
+	public void setAppUserId(Integer appUserId) {
+		this.appUserId = appUserId;
+	}
+
+	public Integer getThumbUpNum() {
+		return thumbUpNum;
+	}
+
+	public void setThumbUpNum(Integer thumbUpNum) {
+		this.thumbUpNum = thumbUpNum;
+	}
+
+	public Integer getCommentNum() {
+		return commentNum;
+	}
+
+	public void setCommentNum(Integer commentNum) {
+		this.commentNum = commentNum;
+	}
+
+	public Date getPublicTime() {
+		return publicTime;
+	}
+
+	public void setPublicTime(Date publicTime) {
+		this.publicTime = publicTime;
+	}
+
+	public Integer getIsRecommended() {
+		return isRecommended;
+	}
+
+	public void setIsRecommended(Integer isRecommended) {
+		this.isRecommended = isRecommended;
+	}
+
+	public Integer getIsShielding() {
+		return isShielding;
+	}
+
+	public void setIsShielding(Integer isShielding) {
+		this.isShielding = isShielding;
+	}
+
+}

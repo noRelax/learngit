@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!-- 如果需要访问这条sql语，需要通过其唯一标识访问到 唯一标识就是 namespace+id的组合 -->
+<mapper namespace="com.ehome.cloud.sys.mapper.OrgainMapper">
+
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.sys.model.OrgainModel">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="orgain_code" property="orgainCode" jdbcType="VARCHAR" />
+		<result column="orgain_name" property="orgainName" jdbcType="VARCHAR" />
+		<result column="parent_id" property="parentId" jdbcType="INTEGER" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="is_end_level" property="isEndLevel" jdbcType="INTEGER" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="orgain_type" property="orgainType" jdbcType="INTEGER" />
+		<result column="level_num" property="levelNum" jdbcType="INTEGER" />
+		<result column="province" property="province" jdbcType="INTEGER" />
+		<result column="city" property="city" jdbcType="INTEGER" />
+		<result column="county" property="county" jdbcType="INTEGER" />
+		<result column="street" property="street" jdbcType="VARCHAR" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+		<result column="pids" property="pids" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<resultMap id="treeResultMap" type="com.ehome.cloud.sys.model.TreeModel">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="parent_id" property="pId" jdbcType="VARCHAR" />
+		<result column="orgain_name" property="name" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<!-- 注意id的赋值 -->
+	<insert id="insertOrgain" parameterType="com.ehome.cloud.sys.model.OrgainModel"
+		useGeneratedKeys="true" keyProperty="id">
+		insert into
+		t_orgain(orgain_code,orgain_name,parent_id,sort,is_end_level,remark,orgain_type,level_num,province,city,county,street,status,pids)
+		values(#{orgainCode},#{orgainName},#{parentId},#{sort},#{isEndLevel},#{remark},#{orgainType},#{levelNum},#{province},#{city},#{county},#{street},#{status},#{pids})
+	</insert>
+
+	<update id="updateOrgain" parameterType="com.ehome.cloud.sys.model.OrgainModel">
+		update t_orgain set
+		orgain_code=#{orgainCode},orgain_name=#{orgainName},parent_id=#{parentId},sort=#{sort},is_end_level=#{isEndLevel},remark=#{remark},orgain_type=#{orgainType},level_num=#{levelNum},province=#{province},city=#{city},county=#{county},street=#{street},status=#{status},pids=#{pids}
+		where id=#{id}
+	</update>
+
+	<delete id="deleteOrgainById" parameterType="java.lang.Integer">
+		delete from t_orgain where id = #{id}
+	</delete>
+
+	<select id="queryForList" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select
+		id,orgain_code,orgain_name,parent_id,sort,is_end_level,remark,orgain_type,level_num,province,city,county,street,status,pids
+		from t_orgain where 1=1
+		<if test="keyword!=null and keyword!=''">
+			and user_name != #{keyword}
+		</if>
+	</select>
+
+	<select id="queryTreelist" resultType="java.util.HashMap">
+		select id,orgain_code,orgain_name name,parent_id pId,sort,is_end_level
+		endLeve,remark,orgain_type
+		type,level_num,province,city,county,street,status,pids
+		from t_orgain
+		where FIND_IN_SET(id, getChildLst(#{baseOrgId})) order by sort asc
+	</select>
+
+	<!-- 查询子节点 -->
+	<select id="getChilds" resultType="java.util.HashMap"
+		parameterType="java.lang.String">
+		select
+		a.id,
+		a.parent_id pId,
+		a.orgain_name name,
+		a.orgain_code code,
+		a.orgain_type type,
+		a.is_end_level endLeve,
+		a.remark,
+		a.sort orderby,
+		a.company_nature
+		from t_orgain a
+		where a.parent_id=#{pid}
+		order by a.sort asc;
+	</select>
+
+	<select id="queryByIdReturnMap" resultType="java.util.HashMap"
+		parameterType="java.lang.Integer">
+		select
+		a.id,
+		a.parent_id,
+		a.orgain_name,
+		a.orgain_code,
+		a.orgain_type,
+		a.is_end_level,
+		a.sort,
+		a.remark,
+		a.company_nature
+		from t_orgain a
+		where a.id=#{id}
+
+	</select>
+
+	<select id="queryUsersByOrgainId" resultType="java.util.HashMap"
+		parameterType="java.lang.Integer">
+		select * from t_user where orgain_id=#{orgainId}
+	</select>
+
+	<select id="queryUsersByDeptId" resultType="java.util.HashMap"
+		parameterType="java.lang.Integer">
+		select * from t_user where dept_id=#{deptId}
+	</select>
+
+
+	<insert id="insertOrgainByMap" parameterType="java.util.HashMap"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO t_orgain (
+		orgain_code,orgain_name,parent_id,sort,is_end_level,remark,orgain_type,level_num,province,city,county,street,status,pids,company_nature
+		) VALUES (
+		#{orgain_code},#{orgain_name},#{parent_id},#{sort},#{is_end_level},#{remark},#{orgain_type},#{level_num},#{province},#{city},#{county},#{street},#{status},#{pids},#{company_nature}
+		)
+	</insert>
+
+	<update id="updateOrgainByMap" parameterType="java.util.HashMap">
+		update t_orgain set
+		orgain_name=#{orgain_name},
+		sort=#{sort},
+		is_end_level=#{is_end_level},
+		remark=#{remark},
+		orgain_type=#{orgain_type},
+		company_nature=#{company_nature}
+		WHERE
+		id = #{id}
+	</update>
+
+	<select id="findTreeNode" resultMap="treeResultMap">
+		SELECT * FROM t_orgain WHERE 1=1
+		AND FIND_IN_SET(id, getChildLst(#{baseOrgId}))
+		<if test="isChild!=null and isChild !=0">
+			AND id != #{baseOrgId}
+		</if>
+		order by sort asc
+	</select>
+
+	<select id="queryOrgainList" resultMap="BaseResultMap">
+		SELECT t.id,t.orgain_name FROM t_orgain t WHERE t.id IN
+		<foreach collection="orgIdList" item="item" index="index"
+			open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</select>
+
+	<select id="queryById" resultType="com.ehome.cloud.sys.model.OrgainModel">
+		SELECT * FROM t_orgain WHERE 1=1 AND id = #{id}
+	</select>
+	
+	<select id="queryByPId" resultType="java.util.HashMap">
+		select id,orgain_code,orgain_name name,orgain_name t,parent_id pId,sort,is_end_level
+		endLeve,remark,orgain_type
+		type,level_num,province,city,county,street,status,pids,'true' as isParent
+		from t_orgain
+		where 1=1 AND (parent_id=#{id}
+		<if test="queryid!=null and queryid!=''">
+		 OR id = #{id}
+		</if>) order by sort asc
+	</select>
+
+    <select id="seletctUpperUnionId" resultType="java.lang.Integer">
+    SELECT orgain_id FROM t_user WHERE id=#{unionChairId}
+    </select>
+    
+    <select id="quserUnionChairName" resultMap="BaseResultMap">
+    SELECT * FROM t_orgain WHERE id = #{id} 
+    </select>
+    
+    <select id="quserySupUnionChairName" resultMap="BaseResultMap">
+     SELECT orgain_name FROM t_orgain WHERE id= #{id}
+    </select>
+    
+    <select id="selectOrgainType" resultMap="BaseResultMap">
+      SELECT orgain_type,parent_id FROM t_orgain WHERE id=#{id}
+    </select>
+    
+    <select id="selectOrgainId" resultType="java.lang.Integer">
+      SELECT id FROM t_orgain WHERE id=#{id}
+    </select>
+</mapper>

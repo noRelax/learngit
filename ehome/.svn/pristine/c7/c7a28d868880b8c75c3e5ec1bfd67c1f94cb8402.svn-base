@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ehome.cloud.help.mapper.SignTableDetailMapper">
+	
+	<resultMap id="BaseResultMap" type="com.ehome.cloud.help.dto.SignTableDetailDto">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="name" property="name" jdbcType="VARCHAR" />
+		<result column="sex" property="sex" jdbcType="INTEGER"/>
+		<result column="id_card" property="idCard" jdbcType="VARCHAR"/>
+		<result column="help_type" property="helpProject" jdbcType="INTEGER"/>
+		<result column="card_num" property="cardNum" jdbcType="VARCHAR" />
+		<result column="company" property="companyOrAddress" jdbcType="VARCHAR" />
+		<result column="amount_number" property="amountNum" jdbcType="DECIMAL" />
+		<result column="phone" property="cellphone" jdbcType="VARCHAR" />
+		<result column="employer_num" property="employerNum" jdbcType="VARCHAR" />
+		<result column="document_num" property="documentNum" jdbcType="VARCHAR" />
+		<result column="brithday" property="birthday" jdbcType="TIMESTAMP" />
+	</resultMap>
+
+	<sql id="commonSQL">
+		SELECT
+		t.id,t.signtable_name,t.total_amount,t.total_employer,t.amount_source,t.help_project,t.create_date,t.city_id
+		FROM
+		t_signledtable t
+	</sql>
+
+	<select id="selectDtoBySignId" resultMap="BaseResultMap" >
+		SELECT A.AMOUNT_SOURCE, A.HELP_TYPE, A.NAME, A.SEX, A.AMOUNT_NUMBER, A.CARD_NUM,A.COMPANY,A.EMPLOYER_NO,A.ID_CARD ,A.BRITHDAY, B.DOCUMENT_NUM, A.PHONE FROM (SELECT T.ID, T.FK_HELPAPPLYID, T.EMPLOYER_NUM, T.DOCUMENT_NUM FROM T_SIGNLEDTABLE_DETAIL T WHERE T.FK_SIGNID=#{SIGNID}) B , T_HELP_APPLY A  WHERE 
+		B.FK_HELPAPPLYID = A.ID
+	</select>
+
+</mapper>
