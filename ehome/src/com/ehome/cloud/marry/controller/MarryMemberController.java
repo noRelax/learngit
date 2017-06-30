@@ -60,7 +60,7 @@ public class MarryMemberController extends BaseController {
 
 	@Resource
 	private IGoldCoinService goldCoinService;
-
+asdas
 	/**
 	 * 首页
 	 * 
